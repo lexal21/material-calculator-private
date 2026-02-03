@@ -5,7 +5,7 @@
   "main": "calculator.js",
   "scripts": {
     "test": "node test.js",
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "keywords": [
     "roofing",
