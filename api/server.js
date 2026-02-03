@@ -3,8 +3,10 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const cookieParser = require('cookie-parser');
-const parser = require('../pdf-parser');
-const auth = require('../auth');
+
+// Import from api directory
+const parser = require('./pdf-parser');
+const auth = require('./auth');
 
 const app = express();
 
