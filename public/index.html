@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Roofing Material Calculator</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .user-bar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 12px 24px;
+      border-bottom-left-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 1000;
+    }
+    
+    .user-info {
+      font-size: 14px;
+      color: #1a1a1a;
+    }
+    
+    .user-name {
+      font-weight: 600;
+    }
+    
+    .btn-logout {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .btn-logout:hover {
+      background: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <div class="user-bar">
+    <div class="user-info">
+      <span class="user-name" id="userName">Loading...</span>
+    </div>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
+  
+  <div class="container">
+    <header>
+      <img src="logo.jpg" alt="Ashley River Roofing" class="logo">
+      <h1>Material Calculator</h1>
+      <p>Upload a Ridge Top PDF to calculate materials and pricing</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('home')">Home</button>
+      <button class="tab-btn" onclick="switchTab('calculator')">Materials</button>
+      <button class="tab-btn" onclick="switchTab('labor')">Labor</button>
+      <button class="tab-btn" onclick="switchTab('pricing')">Pricing</button>
+    </div>
+
+    <div id="homeTab" class="tab-content active">
+    <div class="upload-section">
+      <div class="location-select">
+        <label for="location">Job Location:</label>
+        <div class="tooltip-container">
+          <input 
+            type="text" 
+            id="location" 
+            list="locationList" 
+            placeholder="Start typing or select..."
+            autocomplete="off"
+          />
+          <span class="tooltip-icon" tabindex="0">?
+            <span class="tooltip-text">Location determines RoofRunner quantity. Coast areas (Charleston, Mount Pleasant, etc.) use 1.5 rolls per 10 sq. Inland areas use 1 roll per 10 sq.</span>
+          </span>
+        </div>
+        <datalist id="locationList">
+          <option value="Charleston">
+          <option value="James Island">
+          <option value="Johns Island">
+          <option value="Mount Pleasant">
+          <option value="North Charleston">
+          <option value="Hanahan">
+          <option value="Goose Creek">
+          <option value="Summerville">
+          <option value="Ladson">
+          <option value="Walterboro">
+          <option value="Beaufort">
+          <option value="Bluffton">
+          <option value="Sumter">
+          <option value="Myrtle Beach">
+          <option value="Georgetown">
+          <option value="Pawleys Island">
+          <option value="Columbia">
+          <option value="Lexington">
+          <option value="Irmo">
+          <option value="Blythewood">
+        </datalist>
+      </div>
+      
+      <div class="upload-box" id="uploadBox">
+        <input type="file" id="fileInput" accept=".pdf" hidden>
+        <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
+        <p class="upload-text">Click to upload or drag and drop</p>
+        <p class="upload-subtext">Ridge Top PDF reports only</p>
+        <button class="btn-primary" onclick="document.getElementById('fileInput').click()">Select PDF</button>
+      </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+      <div class="spinner"></div>
+      <p>Processing PDF...</p>
+    </div>
+    </div>
+
+    <div id="calculatorTab" class="tab-content">
+    <div id="results" style="display: none;">
+      <div class="section">
+        <h2>📐 Measurements</h2>
+        <div class="measurements-grid" id="measurements"></div>
+      </div>
+
+      <div class="section">
+        <h2>📦 Material List</h2>
+        <div class="material-actions no-print" style="margin-bottom: 16px; display: none;" id="materialActions">
+          <button class="btn-secondary btn-sm" onclick="selectAllMaterials()" title="Select all items">
+            Select All
+          </button>
+          <button class="btn-danger btn-sm" onclick="deleteSelectedMaterials()" title="Delete selected items">
+            Delete Selected
+          </button>
+          <button class="btn-secondary btn-sm" onclick="undoLastAction()" title="Undo last action" style="font-size: 18px; padding: 4px 12px;">
+            ↺
+          </button>
+        </div>
+        <table class="materials-table">
+          <thead>
+            <tr>
+              <th class="no-print" style="width: 40px;"></th>
+              <th>Item</th>
+              <th>Quantity</th>
+              <th>Unit Price</th>
+              <th>Total</th>
+              <th class="no-print"></th>
+            </tr>
+          </thead>
+          <tbody id="materialsTable"></tbody>
+        </table>
+        
+        <div style="margin: 16px 0; text-align: center;">
+          <button class="btn-secondary" onclick="addMoreAdditionalItems()" style="display: none;" id="addMoreItemsBtn">
+            + Add More Items
+          </button>
+        </div>
+        
+        <div class="totals-section">
+          <table class="totals-table">
+            <tbody id="totalsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-secondary" onclick="location.reload()">Upload Another</button>
+        <button class="btn-primary" onclick="printResults()">Print</button>
+        <button class="btn-primary" onclick="saveResults()">Save as PDF</button>
+      </div>
+    </div>
+
+    <div id="error" class="error" style="display: none;"></div>
+    </div>
+
+    <div id="laborTab" class="tab-content">
+      <div class="section">
+        <h2>👷 Labor Invoice Generator</h2>
+        <p class="pricing-note">Upload a Ridge Top PDF in the Calculator tab first, then view auto-calculated labor costs here.</p>
+        
+        <div id="laborNotReady" style="display: block; padding: 40px; text-align: center; color: #718096;">
+          <p>📋 Upload a PDF in the Calculator tab to generate labor invoice</p>
+        </div>
+        
+        <div id="laborResults" style="display: none;">
+          <div class="location-select" style="margin-bottom: 24px;">
+            <label for="laborLocation">Labor Location:</label>
+            <select id="laborLocation" onchange="updateLaborLocation(this.value)" style="padding: 8px 12px; border: 2px solid #cbd5e0; border-radius: 4px;">
+              <option value="Greater Charleston">Greater Charleston ($80/sq)</option>
+              <option value="Out of Area" selected>Out of Area ($90/sq)</option>
+            </select>
+          </div>
+          
+          <table class="materials-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="laborTable"></tbody>
+          </table>
+          
+          <div class="totals-section">
+            <table class="totals-table">
+              <tbody>
+                <tr class="subtotal-row">
+                  <td colspan="2"><strong>SUBTOTAL</strong></td>
+                  <td id="laborSubtotal" style="text-align: right;"><strong>$0.00</strong></td>
+                </tr>
+                <tr class="grand-total-row">
+                  <td colspan="2"><strong style="font-size: 1.2em;">TOTAL LABOR</strong></td>
+                  <td id="laborGrandTotal" style="text-align: right; font-size: 1.2em; color: #2B7BA3;"><strong>$0.00</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="actions">
+            <button class="btn-primary" onclick="printLabor()">Print Labor Invoice</button>
+            <button class="btn-primary" onclick="saveLaborPDF()">Save as PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pricingTab" class="tab-content">
+      <div class="section">
+        <h2>💰 Manage Pricing</h2>
+        <p class="pricing-note">Edit material prices below. Changes are saved automatically and will be used in all future calculations.</p>
+        
+        <div class="pricing-controls">
+          <div class="template-selector">
+            <label for="templateSelect">Price List Template:</label>
+            <select id="templateSelect" onchange="loadSelectedTemplate()">
+              <option value="">Current Pricing</option>
+            </select>
+            <button class="btn-secondary btn-sm" onclick="showSaveTemplateDialog()">Save as Template</button>
+            <button class="btn-danger btn-sm" onclick="deleteSelectedTemplate()">Delete Template</button>
+          </div>
+          
+          <div class="search-box">
+            <input 
+              type="text" 
+              id="pricingSearch" 
+              placeholder="Search materials..." 
+              onkeyup="filterPricingTable()"
+            />
+          </div>
+        </div>
+        
+        <table class="pricing-table">
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th>Unit</th>
+              <th>Price</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="pricingTableBody">
+            <!-- Populated by JavaScript -->
+          </tbody>
+        </table>
+        
+        <div class="pricing-actions">
+          <button class="btn-secondary" onclick="resetPricing()">Reset to Defaults</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
+  <script src="locations.js"></script>
+  <script src="all-materials.js"></script>
+  <script src="templates.js"></script>
+  <script src="pricing.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Uploads (temporary PDF files)
+uploads/
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Vercel
+.vercel
+
+# Build files
+dist/
+build/
+
+# Temporary files
+*.tmp
+logo-base64.txt
+logo-dataurl.txt

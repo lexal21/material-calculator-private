@@ -1,0 +1,29 @@
+{
+  "name": "roofing-material-calculator",
+  "version": "1.0.0",
+  "description": "Automated material calculation for roofing jobs from Ridge Top reports",
+  "main": "calculator.js",
+  "scripts": {
+    "test": "node test.js",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "roofing",
+    "materials",
+    "automation",
+    "calculator"
+  ],
+  "author": "Roofus",
+  "license": "MIT",
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "express": "^5.2.1",
+    "express-basic-auth": "^1.2.1",
+    "multer": "^2.0.2",
+    "pdf-parse-fork": "^1.2.0",
+    "pdfmake": "^0.3.3"
+  },
+  "engines": {
+    "node": ">=14.x"
+  }
+}
