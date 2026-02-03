@@ -255,13 +255,10 @@
         const data = await response.json();
         
         if (data.success) {
-          successMessage.textContent = 'Account created! Redirecting to login...';
+          successMessage.innerHTML = data.message.replace(/Your hash: (.+)/, '<br><br><strong style="color: #dc2626;">COPY THIS HASH:</strong><br><code style="background: #f3f4f6; padding: 8px; display: block; word-break: break-all; font-size: 12px;">$1</code><br>Send this to your admin to activate your account.');
           successMessage.style.display = 'block';
           
-          // Redirect to login after 2 seconds
-          setTimeout(() => {
-            window.location.href = 'login.html';
-          }, 2000);
+          // Don't redirect - let them copy the hash
         } else {
           errorMessage.textContent = data.message || 'Registration failed';
           errorMessage.style.display = 'block';
