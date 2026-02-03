@@ -11,7 +11,7 @@ const crypto = require('crypto');
 const HARDCODED_USERS = {
   'alexallen@ashleyriverroofing.com': {
     name: 'Alex Allen',
-    password: '', // Will be set after first registration
+    password: '908e212865f04c4a5a98420df313e59852c174ac189fe37bb464d73be73536e4', // Activated
     uploads: []
   },
   'austin@ashleyriverroofing.com': {
