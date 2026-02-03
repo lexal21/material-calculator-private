@@ -6,22 +6,10 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/server-authenticated.js"
-    },
-    {
-      "src": "/upload",
-      "dest": "/server-authenticated.js"
-    },
-    {
-      "src": "/pricing",
-      "dest": "/server-authenticated.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/server-authenticated.js"
+      "source": "/(.*)",
+      "destination": "/server-authenticated.js"
     }
   ],
   "headers": [
