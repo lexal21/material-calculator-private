@@ -16,7 +16,7 @@ const HARDCODED_USERS = {
   },
   'austin@ashleyriverroofing.com': {
     name: 'Austin',
-    password: '', // Will be set after first registration
+    password: '03b816815bb194ceb17ee51e842937b7e367476d0b0464a9f5cb7ba8c22acde0', // Activated
     uploads: []
   }
 };
