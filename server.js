@@ -33,17 +33,24 @@ const upload = multer({
 function requireAuth(req, res, next) {
   const sessionId = req.cookies.session;
   
+  console.log('[AUTH] Path:', req.path, 'Session:', sessionId ? 'exists' : 'missing');
+  
   if (!sessionId) {
+    console.log('[AUTH] No session, redirecting to login');
     return res.redirect('/login.html');
   }
   
   const validation = auth.validateSession(sessionId);
   
+  console.log('[AUTH] Validation:', validation.valid ? 'VALID' : 'INVALID');
+  
   if (!validation.valid) {
+    console.log('[AUTH] Invalid session, clearing and redirecting');
     res.clearCookie('session');
     return res.redirect('/login.html');
   }
   
+  console.log('[AUTH] Authenticated as:', validation.user.email);
   req.user = validation.user;
   next();
 }
@@ -80,13 +87,18 @@ app.post('/api/register', (req, res) => {
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
   
+  console.log('[LOGIN] Attempt:', email);
+  
   if (!email || !password) {
     return res.json({ success: false, message: 'Email and password are required' });
   }
   
   const result = auth.loginUser(email, password);
   
+  console.log('[LOGIN] Result:', result.success ? 'SUCCESS' : 'FAILED');
+  
   if (result.success) {
+    console.log('[LOGIN] Setting cookie with sessionId:', result.sessionId);
     // Set session cookie (30 days)
     res.cookie('session', result.sessionId, {
       maxAge: 30 * 24 * 60 * 60 * 1000,
