@@ -91,8 +91,9 @@ app.post('/api/login', (req, res) => {
     res.cookie('session', result.sessionId, {
       maxAge: 30 * 24 * 60 * 60 * 1000,
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax'
+      secure: true, // Always use secure on Vercel (HTTPS)
+      sameSite: 'lax',
+      path: '/'
     });
   }
   

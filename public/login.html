@@ -192,8 +192,10 @@
         const data = await response.json();
         
         if (data.success) {
-          // Redirect to main app
-          window.location.href = '/';
+          // Redirect to main app after a brief delay to ensure cookie is set
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 100);
         } else {
           errorMessage.textContent = data.message || 'Login failed';
           errorMessage.style.display = 'block';
