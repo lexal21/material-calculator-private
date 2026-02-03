@@ -208,7 +208,13 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Material Calculator (Authenticated) running on port ${port}`);
-  console.log(`Approved users: ${auth.APPROVED_EMAILS.join(', ')}`);
-});
+// Only start server if not in Vercel (Vercel uses serverless functions)
+if (process.env.VERCEL !== '1') {
+  app.listen(port, () => {
+    console.log(`Material Calculator (Authenticated) running on port ${port}`);
+    console.log(`Approved users: ${auth.APPROVED_EMAILS.join(', ')}`);
+  });
+}
+
+// Export for Vercel
+module.exports = app;
