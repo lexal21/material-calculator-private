@@ -1449,12 +1449,24 @@ function toggleLaborSelection(index) {
 
 function selectAllLabor() {
   const checkboxes = document.querySelectorAll('.labor-checkbox');
-  selectedLabor.clear();
-  checkboxes.forEach((checkbox, i) => {
-    checkbox.checked = true;
-    const rowIndex = parseInt(checkbox.getAttribute('data-labor-row'));
-    selectedLabor.add(rowIndex);
-  });
+  
+  // Check if all are already selected
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+  
+  if (allChecked) {
+    // Deselect all
+    checkboxes.forEach(cb => {
+      cb.checked = false;
+    });
+    selectedLabor.clear();
+  } else {
+    // Select all
+    checkboxes.forEach(cb => {
+      cb.checked = true;
+      const rowIndex = parseInt(cb.getAttribute('data-labor-row'));
+      selectedLabor.add(rowIndex);
+    });
+  }
 }
 
 function deleteSelectedLabor() {
@@ -1467,13 +1479,18 @@ function deleteSelectedLabor() {
     return;
   }
   
+  if (!window.laborData) {
+    alert('No labor data available');
+    return;
+  }
+  
   // Save current state to undo stack
-  laborUndoStack.push(JSON.parse(JSON.stringify(laborCalc.items)));
+  laborUndoStack.push(JSON.parse(JSON.stringify(window.laborData.items)));
   
   // Delete selected items (in reverse to maintain indices)
   const indicesToDelete = Array.from(selectedLabor).sort((a, b) => b - a);
   indicesToDelete.forEach(index => {
-    laborCalc.items.splice(index, 1);
+    window.laborData.items.splice(index, 1);
   });
   
   // Clear selection
@@ -1481,7 +1498,7 @@ function deleteSelectedLabor() {
   
   // Re-render table
   const laborTable = document.getElementById('laborTable');
-  laborTable.innerHTML = laborCalc.items.map((item, index) => createLaborRow(item, index)).join('');
+  laborTable.innerHTML = window.laborData.items.map((item, index) => createLaborRow(item, index)).join('');
   
   updateLaborTotals();
 }
@@ -1492,15 +1509,20 @@ function undoLastLaborAction() {
     return;
   }
   
+  if (!window.laborData) {
+    alert('No labor data available');
+    return;
+  }
+  
   // Restore previous state
-  laborCalc.items = laborUndoStack.pop();
+  window.laborData.items = laborUndoStack.pop();
   
   // Clear selection
   selectedLabor.clear();
   
   // Re-render table
   const laborTable = document.getElementById('laborTable');
-  laborTable.innerHTML = laborCalc.items.map((item, index) => createLaborRow(item, index)).join('');
+  laborTable.innerHTML = window.laborData.items.map((item, index) => createLaborRow(item, index)).join('');
   
   updateLaborTotals();
 }
