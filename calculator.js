@@ -359,13 +359,13 @@ function calculateMaterials(measurements, location = 'inland') {
     total: stepFlashingQty * MATERIALS.step_flashing.price
   });
 
-  // Joint Sealant - set to 0, user decides quantity needed
+  // Joint Sealant - 2 tubes on every job
   materials.push({
     name: MATERIALS.joint_sealant.name,
-    quantity: 0,
+    quantity: 2,
     unit: MATERIALS.joint_sealant.unit,
     unitPrice: MATERIALS.joint_sealant.price,
-    total: 0
+    total: 2 * MATERIALS.joint_sealant.price
   });
 
   return materials;
