@@ -56,7 +56,7 @@ function calculateLabor(measurements, materials, location = 'Out of Area') {
       editable: false
     },
     {
-      name: 'Steep Charge for 8-9/12 pitch',
+      name: 'Steep Charge for 8-9.5/12 pitch',
       quantity: pitchData.tier_8_9,
       unit: 'SQ',
       unitPrice: 5.00,
@@ -64,7 +64,7 @@ function calculateLabor(measurements, materials, location = 'Out of Area') {
       editable: true
     },
     {
-      name: 'Steep Charge for 10-11/12 pitch',
+      name: 'Steep Charge for 10-11.5/12 pitch',
       quantity: pitchData.tier_10_11,
       unit: 'SQ',
       unitPrice: 10.00,

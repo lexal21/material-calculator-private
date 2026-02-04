@@ -175,15 +175,16 @@ function extractPitchData(text) {
     const faceNum = match[1];
     const sqFt = parseFloat(match[2]);
     const squares = parseFloat(match[3]);
-    const pitch = parseInt(match[4]);
+    const pitch = parseFloat(match[4]); // Parse as float to handle decimals like 9.5, 11.5
     
     if (!isNaN(pitch) && !isNaN(squares) && !isNaN(sqFt)) {
       pitchData.slopes.push({ face: `F${faceNum}`, sqFt, squares, pitch });
       
       // Categorize by tier (8/12 and above triggers steep charges)
-      if (pitch === 8 || pitch === 9) {
+      // 8-9.5 pitch: $5/sq, 10-11.5 pitch: $10/sq, 12+ pitch: $20/sq
+      if (pitch >= 8 && pitch <= 9.5) {
         pitchData.tier_8_9 += squares;
-      } else if (pitch === 10 || pitch === 11) {
+      } else if (pitch >= 10 && pitch <= 11.5) {
         pitchData.tier_10_11 += squares;
       } else if (pitch >= 12) {
         pitchData.tier_12_plus += squares;
