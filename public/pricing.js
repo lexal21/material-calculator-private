@@ -1,15 +1,18 @@
-// Default material pricing
+// Default material pricing - Updated 2/26 per Austin
 const DEFAULT_PRICING = {
   'Landmark PRO Shingles': { unit: 'Bundle', price: 35 },
   'SwiftStart Starter Strip': { unit: 'Bundle', price: 52 },
   'Shadow Ridge Hip & Ridge Cap': { unit: 'Bundle', price: 65.5 },
   'Drip Edge (1-1/2 X 3-3/4")': { unit: 'Piece', price: 9.25 },
   'Ice & Water Shield': { unit: 'Roll', price: 69 },
-  'RoofRunner Synthetic Underlayment': { unit: 'Roll', price: 82 },
+  'RoofRunner Synthetic Underlayment': { unit: 'Roll', price: 85.75 },
   'Ridge Vent (12" / 4 ft)': { unit: 'Piece', price: 9 },
   '7/16 OSB Plywood': { unit: 'Sheet', price: 15.99 },
   '1-1/4" Roofing Nails': { unit: 'Box', price: 39.99 },
-  'Button Caps': { unit: 'Bag', price: 27 }
+  'Button Caps': { unit: 'Box', price: 19.50 },
+  'L Flashing (Trim Coil)': { unit: 'Roll', price: 134.50 },
+  'Step Flashing': { unit: 'Bundle', price: 38.00 },
+  'Joint Sealant 10z Black': { unit: 'Tube', price: 7.29 }
 };
 
 // Load pricing from localStorage or use defaults
