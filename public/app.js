@@ -66,6 +66,31 @@ loadCurrentUser();
 // File input change handler
 fileInput.addEventListener('change', handleFileSelect);
 
+// Select PDF button handler (works on mobile)
+const selectPDFBtn = document.getElementById('selectPDFBtn');
+if (selectPDFBtn) {
+  selectPDFBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fileInput.click();
+  });
+  
+  // Also add touch handler for iOS
+  selectPDFBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fileInput.click();
+  });
+}
+
+// Upload box click handler (desktop)
+uploadBox.addEventListener('click', (e) => {
+  // Only trigger if not clicking the button directly
+  if (e.target.id !== 'selectPDFBtn' && !e.target.closest('.btn-primary')) {
+    fileInput.click();
+  }
+});
+
 // Drag and drop handlers
 uploadBox.addEventListener('dragover', (e) => {
   e.preventDefault();
