@@ -1,6 +1,5 @@
 const fs = require('fs');
 const pdf = require('pdf-parse-fork');
-const { parseConcatenatedNumbers } = require('./parse-numbers');
 
 /**
  * Extract measurements from Ridge Top PDF report
@@ -157,53 +156,109 @@ function estimateRidgeCount(measurements) {
  * @param {string} text - Full PDF text
  * @returns {object} Pitch data with square footage per tier
  */
+/**
+ * Parse concatenated numbers using validation
+ * @param {string} numbersStr - Concatenated numbers like "869.48.6910"
+ * @returns {object|null} Parsed { sqFt, squares, pitch } or null
+ */
+function parseConcatenatedNumbers(numbersStr) {
+  const parts = numbersStr.split('.');
+  const numDecimals = parts.length - 1;
+  
+  if (numDecimals === 2) {
+    for (let sqftDecimals = 1; sqftDecimals <= 2; sqftDecimals++) {
+      const sqFt = parseFloat(parts[0] + '.' + parts[1].substring(0, sqftDecimals));
+      const squaresInt = parts[1].substring(sqftDecimals);
+      const squaresDec = parts[2].substring(0, 2);
+      const squares = parseFloat(squaresInt + '.' + squaresDec);
+      const pitch = parseFloat(parts[2].substring(2));
+      
+      const expectedSquares = sqFt / 100;
+      const diff = Math.abs(expectedSquares - squares);
+      const tolerance = expectedSquares * 0.05;
+      
+      if (diff < tolerance && pitch >= 4 && pitch <= 16 && !isNaN(sqFt) && !isNaN(squares) && !isNaN(pitch)) {
+        return { sqFt, squares, pitch };
+      }
+    }
+  } else if (numDecimals === 3) {
+    for (let sqftDecimals = 1; sqftDecimals <= 2; sqftDecimals++) {
+      const sqFt = parseFloat(parts[0] + '.' + parts[1].substring(0, sqftDecimals));
+      const squaresInt = parts[1].substring(sqftDecimals);
+      
+      for (let squaresDec = 1; squaresDec <= Math.min(2, parts[2].length); squaresDec++) {
+        const squaresDecStr = parts[2].substring(0, squaresDec);
+        const squares = parseFloat(squaresInt + '.' + squaresDecStr);
+        const pitchInt = parts[2].substring(squaresDec);
+        const pitch = parseFloat(pitchInt + '.' + parts[3]);
+        
+        const expectedSquares = sqFt / 100;
+        const diff = Math.abs(expectedSquares - squares);
+        const tolerance = Math.max(expectedSquares * 0.05, 0.01);
+        
+        if (diff < tolerance && pitch >= 4 && pitch <= 16 && !isNaN(sqFt) && !isNaN(squares) && !isNaN(pitch)) {
+          return { sqFt, squares, pitch };
+        }
+      }
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Extract pitch data from detailed slope table for steep charge calculation
+ * @param {string} text - Full PDF text
+ * @returns {object} Pitch data with square footage per tier
+ */
 function extractPitchData(text) {
   const pitchData = {
     slopes: [],
-    tier_8_9: 0,    // 8-9/12 pitch squares
-    tier_10_11: 0,  // 10-11/12 pitch squares
-    tier_12_plus: 0 // 12/12+ pitch squares
+    tier_8_9: 0,
+    tier_10_11: 0,
+    tier_12_plus: 0
   };
   
-  // Ridge Top PDFs text is concatenated like:
-  // "Main LevelF1869.48.6910" = F1, 869.4 sqft, 8.69 squares, 10/12 pitch
-  // "Main LevelF2817.220.177.5" = F28, 17.22 sqft, 0.17 squares, 7.5/12 pitch
-  
-  // Split text into lines and look for the table section
   const lines = text.split('\n');
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     
-    // Pattern: (Level)F(numbers)
-    // Face number can be ambiguous (F1 vs F18), so try both interpretations
-    const levelMatch = line.match(/^(Main Level|Upper Level|Lower Level)F([\d.]+)$/i);
+    const tableMatch = line.match(/^(Main Level|Upper Level|Lower Level)F(\d{1,2})([\d.]+)$/i);
     
-    if (levelMatch) {
-      const level = levelMatch[1];
-      const allNumbers = levelMatch[2];
+    if (tableMatch) {
+      const level = tableMatch[1];
+      const faceNum = tableMatch[2];
+      const numbersStr = tableMatch[3];
       
-      // Try interpreting as 1-digit face number
-      let parsed = null;
-      let faceNum = null;
+      const parsed = parseConcatenatedNumbers(numbersStr);
       
-      if (allNumbers.length > 1) {
-        faceNum = allNumbers.substring(0, 1);
-        const numbersStr = allNumbers.substring(1);
-        parsed = parseConcatenatedNumbers(numbersStr);
-      }
-      
-      // If that didn't work, try 2-digit face number
-      if (!parsed && allNumbers.length > 2) {
-        faceNum = allNumbers.substring(0, 2);
-        const numbersStr = allNumbers.substring(2);
-        parsed = parseConcatenatedNumbers(numbersStr);
-      }
-      
-      if (parsed && faceNum) {
+      if (parsed) {
         const { sqFt, squares, pitch } = parsed;
         pitchData.slopes.push({ face: `F${faceNum}`, level, sqFt, squares, pitch });
         
+        if (pitch >= 8 && pitch < 10) {
+          pitchData.tier_8_9 += squares;
+        } else if (pitch >= 10 && pitch < 12) {
+          pitchData.tier_10_11 += squares;
+        } else if (pitch >= 12) {
+          pitchData.tier_12_plus += squares;
+        }
+      }
+    }
+  }
+  
+  pitchData.tier_8_9 = Math.round(pitchData.tier_8_9 * 100) / 100;
+  pitchData.tier_10_11 = Math.round(pitchData.tier_10_11 * 100) / 100;
+  pitchData.tier_12_plus = Math.round(pitchData.tier_12_plus * 100) / 100;
+  
+  return pitchData;
+}
+      
+      if (!isNaN(pitch) && !isNaN(squares) && !isNaN(sqFt)) {
+        pitchData.slopes.push({ face: `F${faceNum}`, level, sqFt, squares, pitch });
+        
+        // Categorize by tier (8/12 and above triggers steep charges)
         if (pitch >= 8 && pitch < 10) {
           pitchData.tier_8_9 += squares;
         } else if (pitch >= 10 && pitch < 12) {

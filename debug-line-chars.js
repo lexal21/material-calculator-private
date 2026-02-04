@@ -8,12 +8,12 @@ async function debugPDF() {
   
   const lines = data.text.split('\n');
   
-  console.log('Looking for lines with "Main Level" and "F":\n');
-  lines.forEach((line, i) => {
-    if (line.includes('Main Level') && line.includes('F')) {
-      console.log(`Line ${i}: "${line}"`);
-    }
-  });
+  // Find line 88 which has "Main LevelF1869.48.6910"
+  const line = lines[88];
+  console.log('Line 88:');
+  console.log('Content:', line);
+  console.log('Length:', line.length);
+  console.log('Char codes:', [...line].map((c, i) => `${i}:${c}(${c.charCodeAt(0)})`).join(' '));
 }
 
 debugPDF().catch(console.error);

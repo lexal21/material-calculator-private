@@ -1,6 +1,5 @@
 const fs = require('fs');
 const pdf = require('pdf-parse-fork');
-const { parseConcatenatedNumbers } = require('./parse-numbers');
 
 /**
  * Extract measurements from Ridge Top PDF report
@@ -175,35 +174,72 @@ function extractPitchData(text) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     
-    // Pattern: (Level)F(numbers)
-    // Face number can be ambiguous (F1 vs F18), so try both interpretations
-    const levelMatch = line.match(/^(Main Level|Upper Level|Lower Level)F([\d.]+)$/i);
+    // Pattern: (Level)F(1-2 digits)(numbers)
+    const tableMatch = line.match(/^(Main Level|Upper Level|Lower Level)F(\d{1,2})([\d.]+)$/i);
     
-    if (levelMatch) {
-      const level = levelMatch[1];
-      const allNumbers = levelMatch[2];
+    if (tableMatch) {
+      const level = tableMatch[1];
+      const faceNum = tableMatch[2];
+      const numbersStr = tableMatch[3]; // Everything after F##, e.g., "869.48.6910"
       
-      // Try interpreting as 1-digit face number
-      let parsed = null;
-      let faceNum = null;
+      // Strategy: Find the decimal points and split accordingly
+      // Format is always: SQFT.XXSQUARES.YYPITCH or SQFT.XXSQUARES.YYPITCH.ZZ
+      // where XX and YY are always 2 digits after decimals
       
-      if (allNumbers.length > 1) {
-        faceNum = allNumbers.substring(0, 1);
-        const numbersStr = allNumbers.substring(1);
-        parsed = parseConcatenatedNumbers(numbersStr);
+      // Count decimal points
+      const decimals = (numbersStr.match(/\./g) || []).length;
+      
+      let sqFt, squares, pitch;
+      
+      if (decimals === 2) {
+        // Format: XXX.XXYY.YYPITCH (e.g., "869.488.6910" or "0650.0110")
+        // Split by the decimal points
+        const parts = numbersStr.split('.');
+        // parts[0] = sqft integer part
+        // parts[1] = sqft decimal (2 digits) + squares integer + squares decimal (2 digits)  
+        // parts[2] = pitch
+        
+        // This is tricky - let me use a different approach
+        // Work from right to left: pitch is rightmost number after last decimal
+        const lastDotIndex = numbersStr.lastIndexOf('.');
+        pitch = parseFloat(numbersStr.substring(lastDotIndex));
+        
+        const remaining = numbersStr.substring(0, lastDotIndex);
+        const secondLastDotIndex = remaining.lastIndexOf('.');
+        squares = parseFloat(remaining.substring(secondLastDotIndex));
+        sqFt = parseFloat(remaining.substring(0, secondLastDotIndex));
+        
+      } else if (decimals === 3) {
+        // Format: XXX.XXYY.YYPITCH.ZZ (e.g., "17.220.177.5")
+        // Last two parts are pitch (7.5)
+        // Middle part is squares (.17 = 0.17)
+        // First part is sqft (17.22)
+        
+        const parts = numbersStr.split('.');
+        sqFt = parseFloat(parts[0] + '.' + parts[1]);
+        squares = parseFloat('0.' + parts[2]);
+        pitch = parseFloat(parts[2].substring(parts[2].length - 1) + '.' + parts[3]);
+        
+        // Actually, let me reconsider. Looking at "17.220.177.5":
+        // It's likely: 17.22 (sqft), 0.17 (squares), 7.5 (pitch)
+        // So parts = ["17", "220", "177", "5"]
+        // sqft = "17" + "." + first 2 chars of "220" = 17.22
+        // squares = "0." + last 2 chars of "220" = 0.17  - wait that's wrong
+        
+        // Let me look at the pattern again:
+        // "17.220.177.5" splits to ["17", "220", "177", "5"]
+        // I think it's: 17.22, 0.17, 7.5
+        // So: sqft=17.22, squares=0.17, pitch=7.5
+        
+        sqFt = parseFloat(parts[0] + '.' + parts[1].substring(0, 2));
+        squares = parseFloat('0.' + parts[1].substring(2));
+        pitch = parseFloat(parts[2].substring(0, 1) + '.' + parts[3]);
       }
       
-      // If that didn't work, try 2-digit face number
-      if (!parsed && allNumbers.length > 2) {
-        faceNum = allNumbers.substring(0, 2);
-        const numbersStr = allNumbers.substring(2);
-        parsed = parseConcatenatedNumbers(numbersStr);
-      }
-      
-      if (parsed && faceNum) {
-        const { sqFt, squares, pitch } = parsed;
+      if (!isNaN(pitch) && !isNaN(squares) && !isNaN(sqFt)) {
         pitchData.slopes.push({ face: `F${faceNum}`, level, sqFt, squares, pitch });
         
+        // Categorize by tier (8/12 and above triggers steep charges)
         if (pitch >= 8 && pitch < 10) {
           pitchData.tier_8_9 += squares;
         } else if (pitch >= 10 && pitch < 12) {
