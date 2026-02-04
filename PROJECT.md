@@ -1,8 +1,9 @@
 # Roofing Material Calculator - Project Documentation
 
-**Last Updated:** February 2, 2026  
-**Status:** ✅ Core features complete, ready for production testing  
-**Server:** http://localhost:3000
+**Last Updated:** February 4, 2026  
+**Status:** ✅ Critical bugs fixed, deployed to production, UI improvements next  
+**Live URL:** https://material-calculator-sand.vercel.app  
+**Local Dev:** http://localhost:3000
 
 ---
 
@@ -72,6 +73,33 @@ Automated roofing material calculator that parses Ridge Top PDF reports and gene
 
 ---
 
+## 🐛 Bug Fixes (February 4, 2026)
+
+### Critical Issues Resolved
+**Test Case:** Phillip Green PDF  
+**Tester:** Austin (@austinm1996)
+
+1. **Steep Charge Calculation (FIXED ✅)**
+   - **Problem:** Pitch data extraction failed when PDF text concatenated table columns
+   - **Example:** "MainLevelF1869.48.6910" instead of separate columns
+   - **Solution:** Created `parse-numbers.js` validation module using relationship `squares ≈ sqft / 100`
+   - **Result:** Now correctly shows ~30.78 squares for 10-11.5 pitch tier (was showing 0)
+   - **Files Modified:** `parse-numbers.js` (new), `pdf-parser.js`
+
+2. **Labor Calculation Precision (FIXED ✅)**
+   - **Problem:** Floating-point errors causing incorrect totals (e.g., $3,255.07 instead of $3,255.30)
+   - **Solution:** Applied `Math.round(x * 100) / 100` to all labor totals
+   - **Result:** Labor totals now match expected precision
+   - **Files Modified:** `labor-calculator.js`, `public/app.js` (lines 1275-1283)
+
+3. **Small Material Price List Issue (FIXED ✅)**
+   - **Status:** Confirmed working by Austin
+   - **Details:** [Not documented - minor fix]
+
+**All fixes deployed to Vercel production:** https://material-calculator-sand.vercel.app
+
+---
+
 ## 📁 File Structure
 
 ```
@@ -80,10 +108,12 @@ material-calculator/
 ├── calculator.js             # Material calculation engine
 ├── labor-calculator.js       # Labor calculation engine
 ├── pdf-parser.js             # Ridge Top PDF extraction
+├── parse-numbers.js          # Validation-based number parsing
 ├── package.json              # Dependencies
-├── PROJECT.md               # This file
-├── README.md                # Original quick start
-├── TODO.md                  # Old todos (outdated)
+├── PROJECT.md                # This file (project documentation)
+├── UI-TASKS.md               # UI improvement tasks
+├── README.md                 # Original quick start
+├── TODO.md                   # Old todos (outdated)
 ├── public/                  # Frontend files
 │   ├── index.html           # Main UI
 │   ├── app.js               # Frontend logic (1400+ lines)
@@ -163,26 +193,36 @@ Open http://localhost:3000
 
 ## 📋 Next Steps / Roadmap
 
-### Phase 1: Testing & Polish (1-2 weeks)
-- [ ] Test with 10+ real Ridge Top PDFs
-- [ ] Verify all calculations against Austin's Excel
-- [ ] Edge case testing (missing data, unusual roof shapes)
-- [ ] Labor PDF export (currently placeholder)
-- [ ] Mobile testing on actual devices
+### Phase 1: UI Improvements (CURRENT PHASE)
+**See `UI-TASKS.md` for detailed task list**
 
-### Phase 2: Dev Tools Upgrade (1-2 hours)
+**Priority tasks:**
+1. Labor PDF generation (match material invoice format)
+2. Material tab template dropdown (quick access to saved templates)
+3. Labor tab checkboxes functionality (select all, delete, undo)
+4. Labor tab dropdown selectors & add items button
+
+**Estimated time:** 1-2 days
+
+### Phase 2: Additional Testing (After UI improvements)
+- [ ] Test with 10+ more real Ridge Top PDFs
+- [ ] Edge case testing (missing data, unusual roof shapes)
+- [ ] Mobile testing on actual devices
+- [ ] Load testing (multiple simultaneous users)
+
+### Phase 3: Dev Tools Upgrade (Optional - 1-2 hours)
 - [ ] Install Nodemon (auto-restart server on file changes)
 - [ ] Add Browser-sync (auto-refresh browser)
 - [ ] Optional: ESLint for code quality
 
-### Phase 3: Production Deployment (2-4 hours)
-- [ ] Choose hosting platform (Railway recommended)
-- [ ] Set up environment variables
-- [ ] Configure domain (if needed)
+### Phase 4: Production Enhancements (Future)
+- [x] ~~Choose hosting platform~~ (Vercel - DONE)
+- [x] ~~Deploy to production~~ (DONE - https://material-calculator-sand.vercel.app)
+- [ ] Configure custom domain (if needed)
 - [ ] Add uptime monitoring (UptimeRobot free tier)
 - [ ] Set up Sentry for error tracking (free tier: 5K events/month)
 
-### Phase 4: Advanced Features (Future)
+### Phase 5: Advanced Features (Future)
 - [ ] Save invoices to database (history/search)
 - [ ] User accounts (multi-user support)
 - [ ] Email invoices directly to suppliers
@@ -190,7 +230,7 @@ Open http://localhost:3000
 - [ ] Analytics dashboard (most common materials, average job cost)
 - [ ] Automated testing suite (Playwright)
 
-### Phase 5: Productization (Long-term)
+### Phase 6: Productization (Long-term)
 - [ ] Multi-tenant SaaS version
 - [ ] White-label for other roofing contractors
 - [ ] API for third-party integrations
@@ -200,10 +240,15 @@ Open http://localhost:3000
 
 ## 🐛 Known Issues / Limitations
 
-**None currently blocking!**
+**✅ All critical bugs fixed as of February 4, 2026**
 
-**Future improvements:**
-- Labor PDF export not yet implemented (shows alert)
+**Planned improvements (see UI-TASKS.md):**
+- Labor PDF export not yet implemented (shows alert) - Task #4
+- Labor tab checkboxes non-functional - Task #2
+- Material template dropdown not on material tab - Task #3
+- Labor item dropdown/add items missing - Task #1
+
+**Future enhancements:**
 - No database (invoices not saved - could add SQLite/PostgreSQL)
 - No user authentication (single-user currently)
 - PDF parsing assumes Ridge Top format (won't work with other report types)
@@ -276,10 +321,14 @@ Note: Stop server before editing to avoid file locks
 
 **2026-01-31:** Initial build, basic PDF parsing, 3 materials  
 **2026-02-01:** Full material list (10 items), Labor tab (19 items), print CSS fixes  
-**2026-02-02:** UI redesign (8 rounds), electric blue theme, quantity alignment, spacing fixes
+**2026-02-02:** UI redesign (8 rounds), electric blue theme, quantity alignment, spacing fixes  
+**2026-02-04:** Fixed steep charge calculation, labor precision rounding, material prices. Deployed to Vercel production.
 
-**See `memory/2026-02-02.md` for detailed change log**
+**See `memory/2026-02-04.md` for detailed change log**
 
 ---
 
-**🎉 Project Status: Ready for Production Testing!**
+**🎉 Project Status: Critical Bugs Fixed - UI Improvements Next!**
+
+**Live:** https://material-calculator-sand.vercel.app  
+**Next:** See `UI-TASKS.md` for upcoming work

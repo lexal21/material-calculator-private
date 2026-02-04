@@ -453,6 +453,9 @@ function displayResults(data) {
     materialActions.style.display = 'block';
   }
   
+  // Initialize and show material template selector
+  populateMaterialTemplateSelector();
+  
   // Store measurements globally for labor tab
   window.currentMeasurements = data.measurements;
   window.currentRawMeasurements = data.raw;
@@ -1761,5 +1764,77 @@ function undoLastAction() {
   
   window.selectedMaterials.clear();
   recalculateTotals();
+}
+
+// ============================================
+// MATERIALS TEMPLATE SELECTOR FUNCTIONALITY
+// ============================================
+
+// Populate material template selector dropdown
+function populateMaterialTemplateSelector() {
+  if (!window.priceTemplates) return;
+  
+  const selector = document.getElementById('materialTemplateSelect');
+  const selectorContainer = document.getElementById('materialTemplateSelector');
+  
+  if (!selector || !selectorContainer) return;
+  
+  const templates = window.priceTemplates.getNames();
+  
+  // Clear and rebuild options
+  selector.innerHTML = '<option value="">Current Pricing</option>';
+  
+  templates.forEach(template => {
+    const option = document.createElement('option');
+    option.value = template.id;
+    option.textContent = template.name;
+    selector.appendChild(option);
+  });
+  
+  // Show the selector if we have data loaded
+  if (window.materialsData && window.materialsData.length > 0) {
+    selectorContainer.style.display = 'block';
+  }
+}
+
+// Apply selected template to materials table
+function applyTemplateToMaterials() {
+  const selector = document.getElementById('materialTemplateSelect');
+  const templateId = selector.value;
+  
+  if (!templateId || !window.priceTemplates || !window.materialsData) {
+    return;
+  }
+  
+  if (!confirm('Apply this price template? This will update prices in the materials table.')) {
+    selector.value = ''; // Reset to "Current Pricing"
+    return;
+  }
+  
+  const template = window.priceTemplates.loadTemplate(templateId);
+  if (!template || !template.pricing) {
+    alert('Could not load template');
+    return;
+  }
+  
+  // Update material prices from template
+  window.materialsData.forEach(material => {
+    if (template.pricing[material.name]) {
+      material.unitPrice = template.pricing[material.name].price;
+      material.total = material.quantity * material.unitPrice;
+    }
+  });
+  
+  // Refresh the materials table display
+  const tableBody = document.getElementById('materialsTable');
+  tableBody.innerHTML = window.materialsData.map((item, index) => createMaterialRow(item, index)).join('');
+  
+  // Add misc items back
+  for (let i = 1; i <= 3; i++) {
+    tableBody.innerHTML += createAdditionalItemRow(i);
+  }
+  
+  recalculateTotals();
+  alert('Template prices applied successfully!');
 }
 
