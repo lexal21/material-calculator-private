@@ -98,9 +98,45 @@ function applyTemplate(templateId) {
   if (template) {
     savePricing(template.pricing);
     populatePricingTable();
+    
+    // Also update materials table if it exists
+    if (window.materialsData && window.materialsData.length > 0) {
+      updateMaterialPrices(template.pricing);
+    }
+    
     return true;
   }
   return false;
+}
+
+// Update material prices in the calculator table
+function updateMaterialPrices(pricing) {
+  if (!window.materialsData) return;
+  
+  window.materialsData.forEach((item, index) => {
+    const row = document.querySelector(`tr[data-row="${index}"]`);
+    if (row && pricing[item.name]) {
+      const newPrice = pricing[item.name].price;
+      item.unitPrice = newPrice;
+      item.total = item.quantity * newPrice;
+      
+      // Update displayed values
+      const priceInput = row.querySelector('[data-field="unitPrice"]');
+      if (priceInput) {
+        priceInput.value = newPrice.toFixed(2);
+      }
+      
+      const totalCell = row.querySelector('[data-field="total"]');
+      if (totalCell) {
+        totalCell.textContent = `$${item.total.toFixed(2)}`;
+      }
+    }
+  });
+  
+  // Recalculate totals
+  if (typeof calculateTotals === 'function') {
+    calculateTotals();
+  }
 }
 
 // Delete a template

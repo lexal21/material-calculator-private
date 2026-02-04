@@ -1426,10 +1426,21 @@ function updateLaborLocation(location) {
 }
 
 function printLabor() {
-  applyZeroQuantityClasses();
-  setTimeout(() => {
-    window.print();
-  }, 50);
+  if (!window.laborData || !window.laborData.items || window.laborData.items.length === 0) {
+    alert('No labor data to print. Please upload a PDF first.');
+    return;
+  }
+  
+  // Generate PDF definition
+  const docDefinition = buildLaborPDFDocDefinition();
+  
+  // Open PDF in new window for printing
+  try {
+    pdfMake.createPdf(docDefinition).open();
+  } catch (error) {
+    console.error('Labor PDF generation error:', error);
+    alert('Error generating labor print preview. Please try again.');
+  }
 }
 
 function saveLaborPDF() {
@@ -1438,7 +1449,16 @@ function saveLaborPDF() {
     return;
   }
   
-  generateLaborPDF();
+  // Generate PDF definition
+  const docDefinition = buildLaborPDFDocDefinition();
+  
+  // Open PDF in new window for printing
+  try {
+    pdfMake.createPdf(docDefinition).open();
+  } catch (error) {
+    console.error('Labor PDF generation error:', error);
+    alert('Error generating labor PDF. Please try again.');
+  }
 }
 
 // ============================================
