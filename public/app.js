@@ -1234,6 +1234,9 @@ function displayLaborResults(data) {
   document.getElementById('laborNotReady').style.display = 'none';
   document.getElementById('laborResults').style.display = 'block';
   
+  // Initialize labor item selector dropdown
+  initializeLaborItemSelector();
+  
   // Populate labor table
   const laborTable = document.getElementById('laborTable');
   laborTable.innerHTML = laborCalc.items.map((item, index) => createLaborRow(item, index)).join('');
@@ -1437,6 +1440,77 @@ function saveLaborPDF() {
 // Labor undo stack
 window.laborUndoStack = [];
 window.selectedLabor = new Set();
+window.laborItemCounter = 0; // Track custom labor items added
+
+// Labor-specific items that can be added manually
+const laborItemOptions = [
+  { name: 'Select Item...', unit: 'EA', unitPrice: 0 },
+  { name: 'Flash Chimney', unit: 'EA', unitPrice: 75.00 },
+  { name: 'Flash Brick Chimney', unit: 'EA', unitPrice: 150.00 },
+  { name: 'Install Pan for Dead Valley (Brick)', unit: 'EA', unitPrice: 150.00 },
+  { name: 'Install Pan for Dead Valley (Vinyl)', unit: 'EA', unitPrice: 75.00 },
+  { name: 'Load roof by hand', unit: 'SQ', unitPrice: 10.00 },
+  { name: 'Load roof greater than two storys', unit: 'SQ', unitPrice: 20.00 },
+  { name: 'Tear Off Extra Layer', unit: 'SQ', unitPrice: 5.00 },
+  { name: 'Reattach Vinyl Soffit (per 100 SF)', unit: 'EA', unitPrice: 100.00 },
+  { name: 'Flat Roof Installation (Bitumen)', unit: 'SQ', unitPrice: 100.00 },
+  { name: 'Metal Roof Installation (tear-off + install)', unit: 'SQ', unitPrice: 300.00 },
+  { name: 'Custom Item...', unit: 'EA', unitPrice: 0 }
+];
+
+// Populate labor item selector on page load
+function initializeLaborItemSelector() {
+  const selector = document.getElementById('laborItemSelector');
+  if (selector) {
+    selector.innerHTML = laborItemOptions.map(item => 
+      `<option value="${item.name}" data-unit="${item.unit}" data-price="${item.unitPrice}">${item.name}</option>`
+    ).join('');
+  }
+}
+
+// Add selected labor item to the table
+function addMoreLaborItems() {
+  if (!window.laborData) {
+    alert('Please upload a PDF first');
+    return;
+  }
+  
+  const selector = document.getElementById('laborItemSelector');
+  const selectedOption = selector.options[selector.selectedIndex];
+  const itemName = selectedOption.value;
+  
+  if (itemName === 'Select Item...') {
+    alert('Please select an item to add');
+    return;
+  }
+  
+  const unit = selectedOption.getAttribute('data-unit');
+  const unitPrice = parseFloat(selectedOption.getAttribute('data-price'));
+  
+  // Create new labor item
+  const newItem = {
+    name: itemName,
+    quantity: 0,
+    unit: unit,
+    unitPrice: unitPrice,
+    total: 0,
+    editable: true,
+    manualEntry: true
+  };
+  
+  // Add to labor data
+  window.laborData.items.push(newItem);
+  window.laborItemCounter++;
+  
+  // Re-render table
+  const laborTable = document.getElementById('laborTable');
+  laborTable.innerHTML = window.laborData.items.map((item, index) => createLaborRow(item, index)).join('');
+  
+  // Reset selector
+  selector.selectedIndex = 0;
+  
+  updateLaborTotals();
+}
 
 function toggleLaborSelection(index) {
   const checkbox = document.querySelector(`.labor-checkbox[data-labor-row="${index}"]`);
