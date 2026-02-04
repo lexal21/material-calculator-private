@@ -1452,9 +1452,15 @@ function saveLaborPDF() {
   // Generate PDF definition
   const docDefinition = buildLaborPDFDocDefinition();
   
-  // Open PDF in new window for printing
+  // Generate filename
+  const customerName = document.getElementById('customerName')?.value || 'Customer';
+  const filename = customerName 
+    ? `${customerName.replace(/[^a-z0-9]/gi, '_')}_LaborInvoice.pdf`
+    : 'LaborInvoice.pdf';
+  
+  // Create and download PDF
   try {
-    pdfMake.createPdf(docDefinition).open();
+    pdfMake.createPdf(docDefinition).download(filename);
   } catch (error) {
     console.error('Labor PDF generation error:', error);
     alert('Error generating labor PDF. Please try again.');

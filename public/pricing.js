@@ -117,6 +117,12 @@ function showSaveTemplateDialog() {
     if (window.priceTemplates) {
       window.priceTemplates.saveCurrentAsTemplate(templateName.trim());
       populateTemplateSelector();
+      
+      // Also update materials tab dropdown if function exists
+      if (typeof populateMaterialTemplateSelector === 'function') {
+        populateMaterialTemplateSelector();
+      }
+      
       alert('Template saved successfully!');
     }
   }
@@ -138,6 +144,12 @@ function deleteSelectedTemplate() {
     if (window.priceTemplates) {
       window.priceTemplates.deleteTemplate(templateId);
       populateTemplateSelector();
+      
+      // Also update materials tab dropdown if function exists
+      if (typeof populateMaterialTemplateSelector === 'function') {
+        populateMaterialTemplateSelector();
+      }
+      
       alert('Template deleted successfully!');
     }
   }
