@@ -339,24 +339,24 @@ function calculateMaterials(measurements, location = 'inland') {
     });
   }
 
-  // L Flashing (Trim Coil) - calculated but set to 0, user decides if needed
+  // L Flashing (Trim Coil) - use calculated quantity if available
   const lFlashingQty = measurements.flashingLength ? calculateLFlashing(measurements.flashingLength) : 0;
   materials.push({
     name: MATERIALS.l_flashing.name,
-    quantity: 0, // Set to 0 by default, user can edit
+    quantity: lFlashingQty,
     unit: MATERIALS.l_flashing.unit,
     unitPrice: MATERIALS.l_flashing.price,
-    total: 0
+    total: lFlashingQty * MATERIALS.l_flashing.price
   });
 
-  // Step Flashing - calculated but set to 0, user decides if needed
+  // Step Flashing - use calculated quantity if available
   const stepFlashingQty = measurements.stepFlashing ? calculateStepFlashing(measurements.stepFlashing) : 0;
   materials.push({
     name: MATERIALS.step_flashing.name,
-    quantity: 0, // Set to 0 by default, user can edit
+    quantity: stepFlashingQty,
     unit: MATERIALS.step_flashing.unit,
     unitPrice: MATERIALS.step_flashing.price,
-    total: 0
+    total: stepFlashingQty * MATERIALS.step_flashing.price
   });
 
   // Joint Sealant - set to 0, user decides quantity needed
