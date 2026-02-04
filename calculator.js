@@ -208,7 +208,9 @@ function parseMeasurements(data) {
     eaveLength: parseFloat(data.eave_edge_length) || 0,
     ridgeLength: parseFloat(data.ridge_length) || 0,
     valleyLength: parseFloat(data.valley_length) || 0,
-    ridgeCount: parseInt(data.ridge_count) || 1 // Default to 1 if not specified
+    ridgeCount: parseInt(data.ridge_count) || 1, // Default to 1 if not specified
+    flashingLength: parseFloat(data.flashing_length) || 0,
+    stepFlashing: parseFloat(data.step_flashing) || 0
   };
 }
 
