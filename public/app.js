@@ -2030,19 +2030,13 @@ function buildLaborPDFDocDefinition() {
   return docDefinition;
 }
 
-// Generate and download Labor PDF
+// Generate and open Labor PDF for printing (like materials tab)
 function generateLaborPDF() {
   const docDefinition = buildLaborPDFDocDefinition();
   
-  // Generate filename
-  const customerName = document.getElementById('customerName')?.value || 'Customer';
-  const filename = customerName 
-    ? `${customerName.replace(/[^a-z0-9]/gi, '_')}_LaborInvoice.pdf`
-    : 'LaborInvoice.pdf';
-  
-  // Create and download PDF
+  // Open PDF in new window for printing
   try {
-    pdfMake.createPdf(docDefinition).download(filename);
+    pdfMake.createPdf(docDefinition).open();
   } catch (error) {
     console.error('Labor PDF generation error:', error);
     alert('Error generating labor PDF. Please try again.');
