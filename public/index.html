@@ -135,6 +135,14 @@
 
       <div class="section">
         <h2>📦 Material List</h2>
+        
+        <div class="template-selector-materials no-print" style="margin-bottom: 16px; display: none;" id="materialTemplateSelector">
+          <label for="materialTemplateSelect" style="font-weight: 600; margin-right: 8px;">Price List:</label>
+          <select id="materialTemplateSelect" onchange="applyTemplateToMaterials()" style="padding: 8px 12px; border: 2px solid #cbd5e0; border-radius: 4px; min-width: 200px;">
+            <option value="">Current Pricing</option>
+          </select>
+        </div>
+        
         <div class="material-actions no-print" style="margin-bottom: 16px; display: none;" id="materialActions">
           <button class="btn-secondary btn-sm" onclick="selectAllMaterials()" title="Select all items">
             Select All
@@ -221,10 +229,17 @@
                 <th>Quantity</th>
                 <th>Unit Price</th>
                 <th>Total</th>
+                <th class="no-print"></th>
               </tr>
             </thead>
             <tbody id="laborTable"></tbody>
           </table>
+          
+          <div style="margin: 16px 0; text-align: center;">
+            <button class="btn-secondary" onclick="addMoreLaborItems()" style="display: inline-block;" id="addMoreLaborItemsBtn">
+              + Add More Items
+            </button>
+          </div>
           
           <div class="totals-section">
             <table class="totals-table">
@@ -287,6 +302,12 @@
             <!-- Populated by JavaScript -->
           </tbody>
         </table>
+        
+        <div style="margin: 16px 0; text-align: center;">
+          <button class="btn-secondary" onclick="addMorePricingItems()" id="addMorePricingItemsBtn">
+            + Add More Items
+          </button>
+        </div>
         
         <div class="pricing-actions">
           <button class="btn-secondary" onclick="resetPricing()">Reset to Defaults</button>

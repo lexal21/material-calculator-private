@@ -36,7 +36,7 @@ function calculateLabor(measurements, materials, location = 'Out of Area') {
       quantity: squaresWithWaste,
       unit: 'SQ',
       unitPrice: baseRate,
-      total: squaresWithWaste * baseRate,
+      total: Math.round(squaresWithWaste * baseRate * 100) / 100, // Fix floating-point precision
       editable: false
     },
     {
@@ -44,7 +44,7 @@ function calculateLabor(measurements, materials, location = 'Out of Area') {
       quantity: starterBundles,
       unit: 'BD',
       unitPrice: 25.00,
-      total: starterBundles * 25.00,
+      total: Math.round(starterBundles * 25.00 * 100) / 100,
       editable: false
     },
     {
@@ -52,7 +52,7 @@ function calculateLabor(measurements, materials, location = 'Out of Area') {
       quantity: hipRidgeBundles,
       unit: 'BD',
       unitPrice: 25.00,
-      total: hipRidgeBundles * 25.00,
+      total: Math.round(hipRidgeBundles * 25.00 * 100) / 100,
       editable: false
     },
     {
@@ -60,7 +60,7 @@ function calculateLabor(measurements, materials, location = 'Out of Area') {
       quantity: pitchData.tier_8_9,
       unit: 'SQ',
       unitPrice: 5.00,
-      total: pitchData.tier_8_9 * 5.00,
+      total: Math.round(pitchData.tier_8_9 * 5.00 * 100) / 100,
       editable: true
     },
     {
@@ -68,7 +68,7 @@ function calculateLabor(measurements, materials, location = 'Out of Area') {
       quantity: pitchData.tier_10_11,
       unit: 'SQ',
       unitPrice: 10.00,
-      total: pitchData.tier_10_11 * 10.00,
+      total: Math.round(pitchData.tier_10_11 * 10.00 * 100) / 100,
       editable: true
     },
     {
@@ -76,7 +76,7 @@ function calculateLabor(measurements, materials, location = 'Out of Area') {
       quantity: pitchData.tier_12_plus,
       unit: 'SQ',
       unitPrice: 20.00,
-      total: pitchData.tier_12_plus * 20.00,
+      total: Math.round(pitchData.tier_12_plus * 20.00 * 100) / 100,
       editable: true
     },
     {
@@ -84,7 +84,7 @@ function calculateLabor(measurements, materials, location = 'Out of Area') {
       quantity: plywoodSheets,
       unit: 'SH',
       unitPrice: plywoodSheets > 10 ? 10.00 : 30.00,
-      total: plywoodSheets * (plywoodSheets > 10 ? 10.00 : 30.00),
+      total: Math.round(plywoodSheets * (plywoodSheets > 10 ? 10.00 : 30.00) * 100) / 100,
       editable: true
     },
     {
@@ -92,7 +92,7 @@ function calculateLabor(measurements, materials, location = 'Out of Area') {
       quantity: stepFlashingLength,
       unit: 'LF',
       unitPrice: 2.00,
-      total: stepFlashingLength * 2.00,
+      total: Math.round(stepFlashingLength * 2.00 * 100) / 100,
       editable: true
     },
     {
@@ -100,7 +100,7 @@ function calculateLabor(measurements, materials, location = 'Out of Area') {
       quantity: flashingLength,
       unit: 'LF',
       unitPrice: 2.00,
-      total: flashingLength * 2.00,
+      total: Math.round(flashingLength * 2.00 * 100) / 100,
       editable: true
     },
     // Manual entry items (default to 0)

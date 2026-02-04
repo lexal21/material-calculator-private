@@ -152,7 +152,7 @@ function estimateRidgeCount(measurements) {
 }
 
 /**
- * Extract pitch data from Annotations section for steep charge calculation
+ * Extract pitch data from detailed slope table for steep charge calculation
  * @param {string} text - Full PDF text
  * @returns {object} Pitch data with square footage per tier
  */
@@ -164,33 +164,47 @@ function extractPitchData(text) {
     tier_12_plus: 0 // 12/12+ pitch squares
   };
   
-  // Find all slope entries in Annotations section
-  // Format: Main LevelF1682.756.837
-  // Pattern breakdown: F[1-2 digits][sqft with .##][squares with .## or .#][pitch 1-2 digits]
-  // Both sqft and squares always have 2 decimal places: ###.## and #.## or ##.##
-  const slopePattern = /(?:Main Level|Upper Level|Lower Level)F(\d{1,2}?)(\d+\.\d{2})(\d+\.\d{1,2})(\d{1,2})$/gm;
+  // Ridge Top PDFs have a detailed table with columns:
+  // Level | FACE | SQ FT | # SQs | Slope - Rise / 12
+  // Example: Main Level | F1 | 869.4 | 8.69 | 10
   
-  let match;
-  while ((match = slopePattern.exec(text)) !== null) {
-    const faceNum = match[1];
-    const sqFt = parseFloat(match[2]);
-    const squares = parseFloat(match[3]);
-    const pitch = parseFloat(match[4]); // Parse as float to handle decimals like 9.5, 11.5
+  // Split text into lines and look for the table section
+  const lines = text.split('\n');
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
     
-    if (!isNaN(pitch) && !isNaN(squares) && !isNaN(sqFt)) {
-      pitchData.slopes.push({ face: `F${faceNum}`, sqFt, squares, pitch });
+    // Look for lines that start with level indicators and contain face numbers
+    // Pattern: (Main Level|Upper Level|Lower Level) F## number number pitch
+    const tableMatch = line.match(/^(Main Level|Upper Level|Lower Level)\s+F(\d+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)$/i);
+    
+    if (tableMatch) {
+      const level = tableMatch[1];
+      const faceNum = tableMatch[2];
+      const sqFt = parseFloat(tableMatch[3]);
+      const squares = parseFloat(tableMatch[4]);
+      const pitch = parseFloat(tableMatch[5]);
       
-      // Categorize by tier (8/12 and above triggers steep charges)
-      // 8-9.5 pitch: $5/sq, 10-11.5 pitch: $10/sq, 12+ pitch: $20/sq
-      if (pitch >= 8 && pitch <= 9.5) {
-        pitchData.tier_8_9 += squares;
-      } else if (pitch >= 10 && pitch <= 11.5) {
-        pitchData.tier_10_11 += squares;
-      } else if (pitch >= 12) {
-        pitchData.tier_12_plus += squares;
+      if (!isNaN(pitch) && !isNaN(squares) && !isNaN(sqFt) && squares > 0) {
+        pitchData.slopes.push({ face: `F${faceNum}`, level, sqFt, squares, pitch });
+        
+        // Categorize by tier (8/12 and above triggers steep charges)
+        // Using >= and < for cleaner boundaries
+        if (pitch >= 8 && pitch < 10) {
+          pitchData.tier_8_9 += squares;
+        } else if (pitch >= 10 && pitch < 12) {
+          pitchData.tier_10_11 += squares;
+        } else if (pitch >= 12) {
+          pitchData.tier_12_plus += squares;
+        }
       }
     }
   }
+  
+  // Round to 2 decimal places to avoid floating point errors
+  pitchData.tier_8_9 = Math.round(pitchData.tier_8_9 * 100) / 100;
+  pitchData.tier_10_11 = Math.round(pitchData.tier_10_11 * 100) / 100;
+  pitchData.tier_12_plus = Math.round(pitchData.tier_12_plus * 100) / 100;
   
   return pitchData;
 }
