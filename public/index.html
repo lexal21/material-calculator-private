@@ -201,9 +201,22 @@
             </select>
           </div>
           
+          <div class="material-actions no-print" style="margin-bottom: 16px; display: flex;" id="laborActions">
+            <button class="btn-secondary btn-sm" onclick="selectAllLabor()" title="Select all items">
+              Select All
+            </button>
+            <button class="btn-danger btn-sm" onclick="deleteSelectedLabor()" title="Delete selected items">
+              Delete Selected
+            </button>
+            <button class="btn-secondary btn-sm" onclick="undoLastLaborAction()" title="Undo last action" style="font-size: 18px; padding: 4px 12px;">
+              ↺
+            </button>
+          </div>
+          
           <table class="materials-table">
             <thead>
               <tr>
+                <th class="checkbox-cell no-print" style="width: 40px;"></th>
                 <th>Item</th>
                 <th>Quantity</th>
                 <th>Unit Price</th>

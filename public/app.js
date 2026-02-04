@@ -1303,6 +1303,10 @@ function createLaborRow(item, index) {
   
   return `
     <tr data-labor-row="${index}" class="${item.quantity === 0 ? 'zero-quantity' : ''}">
+      <td class="checkbox-cell no-print">
+        <input type="checkbox" class="labor-checkbox" data-labor-row="${index}" 
+onchange="toggleLaborSelection(${index})">
+      </td>
       <td data-label="Item">${item.name}</td>
       <td data-label="Quantity" class="editable-cell" data-print-value="${item.quantity.toFixed(2)} ${pluralUnit}">
         <div class="quantity-cell">
@@ -1424,6 +1428,81 @@ function printLabor() {
 
 function saveLaborPDF() {
   alert('Labor PDF export coming soon!');
+}
+
+// ============================================
+// LABOR SELECTION & UNDO FUNCTIONALITY
+// ============================================
+
+// Labor undo stack
+window.laborUndoStack = [];
+window.selectedLabor = new Set();
+
+function toggleLaborSelection(index) {
+  const checkbox = document.querySelector(`.labor-checkbox[data-labor-row="${index}"]`);
+  if (checkbox.checked) {
+    selectedLabor.add(index);
+  } else {
+    selectedLabor.delete(index);
+  }
+}
+
+function selectAllLabor() {
+  const checkboxes = document.querySelectorAll('.labor-checkbox');
+  selectedLabor.clear();
+  checkboxes.forEach((checkbox, i) => {
+    checkbox.checked = true;
+    const rowIndex = parseInt(checkbox.getAttribute('data-labor-row'));
+    selectedLabor.add(rowIndex);
+  });
+}
+
+function deleteSelectedLabor() {
+  if (selectedLabor.size === 0) {
+    alert('No items selected');
+    return;
+  }
+  
+  if (!confirm(`Delete ${selectedLabor.size} selected item(s)?`)) {
+    return;
+  }
+  
+  // Save current state to undo stack
+  laborUndoStack.push(JSON.parse(JSON.stringify(laborCalc.items)));
+  
+  // Delete selected items (in reverse to maintain indices)
+  const indicesToDelete = Array.from(selectedLabor).sort((a, b) => b - a);
+  indicesToDelete.forEach(index => {
+    laborCalc.items.splice(index, 1);
+  });
+  
+  // Clear selection
+  selectedLabor.clear();
+  
+  // Re-render table
+  const laborTable = document.getElementById('laborTable');
+  laborTable.innerHTML = laborCalc.items.map((item, index) => createLaborRow(item, index)).join('');
+  
+  updateLaborTotals();
+}
+
+function undoLastLaborAction() {
+  if (laborUndoStack.length === 0) {
+    alert('Nothing to undo');
+    return;
+  }
+  
+  // Restore previous state
+  laborCalc.items = laborUndoStack.pop();
+  
+  // Clear selection
+  selectedLabor.clear();
+  
+  // Re-render table
+  const laborTable = document.getElementById('laborTable');
+  laborTable.innerHTML = laborCalc.items.map((item, index) => createLaborRow(item, index)).join('');
+  
+  updateLaborTotals();
 }
 
 // ============================================
