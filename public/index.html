@@ -306,9 +306,12 @@
           </tbody>
         </table>
         
-        <div style="margin: 16px 0; text-align: center;">
+        <div style="margin: 16px 0; text-align: center; display: flex; align-items: center; justify-content: center; gap: 12px;">
+          <select id="pricingItemSelector" class="editable-input" style="min-width: 300px; padding: 8px;">
+            <!-- Options populated by JavaScript -->
+          </select>
           <button class="btn-secondary" onclick="addMorePricingItems()" id="addMorePricingItemsBtn">
-            + Add More Items
+            + Add Item
           </button>
         </div>
         

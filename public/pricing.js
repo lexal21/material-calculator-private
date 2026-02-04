@@ -147,9 +147,68 @@ function populateTemplateSelector() {
   });
 }
 
+// Initialize pricing item selector
+function initializePricingItemSelector() {
+  const selector = document.getElementById('pricingItemSelector');
+  if (selector && window.ALL_MATERIALS) {
+    selector.innerHTML = window.ALL_MATERIALS.map(item => 
+      `<option value="${item.name}" data-unit="${item.unit}" data-price="${item.price}">${item.name}</option>`
+    ).join('');
+  }
+}
+
+// Add selected item to pricing table
+function addMorePricingItems() {
+  const selector = document.getElementById('pricingItemSelector');
+  const selectedOption = selector.options[selector.selectedIndex];
+  const itemName = selectedOption.value;
+  
+  if (itemName === 'Custom Item...') {
+    const customName = prompt('Enter custom material name:');
+    if (!customName || !customName.trim()) {
+      return;
+    }
+    
+    const customUnit = prompt('Enter unit (e.g., Piece, Bundle, Roll):', 'Piece');
+    const customPrice = parseFloat(prompt('Enter price:', '0'));
+    
+    if (!customUnit || isNaN(customPrice)) {
+      alert('Invalid unit or price');
+      return;
+    }
+    
+    // Add custom item to pricing
+    const pricing = loadPricing();
+    pricing[customName.trim()] = { unit: customUnit.trim(), price: customPrice };
+    savePricing(pricing);
+    populatePricingTable();
+    
+    return;
+  }
+  
+  // Check if item already exists
+  const pricing = loadPricing();
+  if (pricing[itemName]) {
+    alert('This material is already in the pricing table');
+    return;
+  }
+  
+  const unit = selectedOption.getAttribute('data-unit');
+  const price = parseFloat(selectedOption.getAttribute('data-price'));
+  
+  // Add to pricing
+  pricing[itemName] = { unit: unit, price: price };
+  savePricing(pricing);
+  populatePricingTable();
+  
+  // Reset selector
+  selector.selectedIndex = 0;
+}
+
 // Initialize pricing table when page loads
 document.addEventListener('DOMContentLoaded', () => {
   populatePricingTable();
+  initializePricingItemSelector();
   if (window.priceTemplates) {
     populateTemplateSelector();
   }
