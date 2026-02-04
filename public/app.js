@@ -1433,7 +1433,12 @@ function printLabor() {
 }
 
 function saveLaborPDF() {
-  alert('Labor PDF export coming soon!');
+  if (!window.laborData || !window.laborData.items || window.laborData.items.length === 0) {
+    alert('No labor data to export. Please upload a PDF first.');
+    return;
+  }
+  
+  generateLaborPDF();
 }
 
 // ============================================
@@ -1836,5 +1841,211 @@ function applyTemplateToMaterials() {
   
   recalculateTotals();
   alert('Template prices applied successfully!');
+}
+
+// ============================================
+// LABOR PDF GENERATION
+// ============================================
+
+// Build Labor PDF document definition
+function buildLaborPDFDocDefinition() {
+  // Get customer info (same as materials)
+  const customerName = document.getElementById('customerName')?.value || 'Customer';
+  const shingleColor = document.getElementById('shingleColorInput')?.value || '';
+  const address = window.currentRawMeasurements?.address || '';
+  const orderNum = document.getElementById('jobNumber')?.value || window.currentJobNumber || window.currentRawMeasurements?.order_number || '';
+  const laborLocation = document.getElementById('laborLocation')?.value || 'Charleston Area';
+  
+  // Build labor table body
+  const laborTableBody = [
+    [
+      { text: 'Item', style: 'tableHeader' },
+      { text: 'Quantity', style: 'tableHeader', alignment: 'right' },
+      { text: 'Unit Price', style: 'tableHeader', alignment: 'right' },
+      { text: 'Total', style: 'tableHeader', alignment: 'right' }
+    ]
+  ];
+  
+  // Add labor items from table (only non-zero quantities)
+  if (window.laborData && window.laborData.items) {
+    window.laborData.items.forEach(item => {
+      if (item.quantity > 0 && item.total > 0) {
+        const pluralUnit = pluralizeUnit(item.quantity, item.unit);
+        laborTableBody.push([
+          item.name,
+          { text: `${item.quantity} ${pluralUnit}`, alignment: 'right' },
+          { text: `$${item.unitPrice.toFixed(2)}`, alignment: 'right' },
+          { text: `$${item.total.toFixed(2)}`, alignment: 'right' }
+        ]);
+      }
+    });
+  }
+  
+  // Calculate total
+  const laborTotal = window.laborData?.items?.reduce((sum, item) => {
+    return sum + (item.total || 0);
+  }, 0) || 0;
+  
+  // PDF document definition
+  const docDefinition = {
+    pageSize: 'LETTER',
+    pageMargins: [72, 54, 72, 72],
+    
+    content: [
+      // Header with logo
+      {
+        columns: [
+          {
+            width: '*',
+            text: 'LABOR INVOICE',
+            style: 'header',
+            alignment: 'left',
+            margin: [0, 0, 0, 0]
+          },
+          {
+            width: 180,
+            image: 'logo',
+            fit: [180, 75],
+            alignment: 'right',
+            margin: [0, 0, 0, 0]
+          }
+        ],
+        margin: [0, 0, 0, 20]
+      },
+      
+      // Customer Information
+      {
+        columns: [
+          {
+            width: '50%',
+            stack: [
+              { text: 'CUSTOMER INFORMATION', style: 'sectionHeader', margin: [0, 0, 0, 10] },
+              { text: `Customer: ${customerName}`, margin: [0, 0, 0, 5] },
+              { text: `Address: ${address}`, margin: [0, 0, 0, 5] },
+              { text: `Job Number: ${orderNum}`, margin: [0, 0, 0, 5] },
+              { text: `Shingle Color: ${shingleColor || 'Not specified'}`, margin: [0, 0, 0, 5] },
+              { text: `Labor Location: ${laborLocation}`, margin: [0, 0, 0, 5] }
+            ]
+          },
+          {
+            width: '50%',
+            stack: []
+          }
+        ],
+        margin: [0, 0, 0, 20]
+      },
+      
+      // Labor Items Table
+      {
+        text: 'LABOR ITEMS',
+        style: 'sectionHeader',
+        margin: [0, 0, 0, 10]
+      },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['*', 'auto', 'auto', 'auto'],
+          body: laborTableBody
+        },
+        layout: {
+          hLineWidth: function(i, node) {
+            return (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0.5;
+          },
+          vLineWidth: function(i, node) {
+            return 0;
+          },
+          hLineColor: function(i, node) {
+            return '#E5E7EB';
+          },
+          paddingLeft: function(i) { return 8; },
+          paddingRight: function(i) { return 8; },
+          paddingTop: function(i) { return 8; },
+          paddingBottom: function(i) { return 8; }
+        },
+        margin: [0, 0, 0, 20]
+      },
+      
+      // Total
+      {
+        columns: [
+          { width: '*', text: '' },
+          {
+            width: 200,
+            stack: [
+              {
+                columns: [
+                  { width: '*', text: 'TOTAL LABOR:', alignment: 'right', bold: true, fontSize: 14 },
+                  { width: 80, text: `$${laborTotal.toFixed(2)}`, alignment: 'right', bold: true, fontSize: 14, color: '#2B7BA3' }
+                ],
+                margin: [0, 0, 0, 0]
+              }
+            ]
+          }
+        ]
+      },
+      
+      // Footer note
+      {
+        text: `Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`,
+        style: 'footer',
+        margin: [0, 40, 0, 0]
+      }
+    ],
+    
+    styles: {
+      header: {
+        fontSize: 18,
+        bold: true,
+        color: '#2B7BA3'
+      },
+      sectionHeader: {
+        fontSize: 12,
+        bold: true,
+        color: '#1a1a1a'
+      },
+      tableHeader: {
+        bold: true,
+        fontSize: 10,
+        color: '#1a1a1a',
+        fillColor: '#F9FAFB'
+      },
+      footer: {
+        fontSize: 8,
+        color: '#718096',
+        alignment: 'center',
+        italics: true
+      }
+    },
+    
+    defaultStyle: {
+      fontSize: 10,
+      color: '#1a1a1a'
+    },
+    
+    images: {
+      logo: 'data:image/jpeg;base64,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'
+    }
+  };
+  
+  return docDefinition;
+}
+
+// Generate and download Labor PDF
+function generateLaborPDF() {
+  const docDefinition = buildLaborPDFDocDefinition();
+  
+  // Generate filename
+  const customerName = document.getElementById('customerName')?.value || 'Customer';
+  const filename = customerName 
+    ? `${customerName.replace(/[^a-z0-9]/gi, '_')}_LaborInvoice.pdf`
+    : 'LaborInvoice.pdf';
+  
+  // Create and download PDF
+  try {
+    pdfMake.createPdf(docDefinition).download(filename);
+  } catch (error) {
+    console.error('Labor PDF generation error:', error);
+    alert('Error generating labor PDF. Please try again.');
+  }
 }
 
