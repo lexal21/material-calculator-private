@@ -32,3 +32,5 @@ build/
 *.tmp
 logo-base64.txt
 logo-dataurl.txt
+
+.vercel

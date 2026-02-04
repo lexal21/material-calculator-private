@@ -31,7 +31,7 @@ const MATERIALS = {
   roofrunner: {
     name: 'RoofRunner Synthetic Underlayment',
     unit: 'Roll',
-    price: 82
+    price: 85.75
   },
   ridge_vent: {
     name: 'Ridge Vent (12" / 4 ft)',
@@ -50,8 +50,23 @@ const MATERIALS = {
   },
   button_caps: {
     name: 'Button Caps',
-    unit: 'Bag',
-    price: 27
+    unit: 'Box',
+    price: 19.50
+  },
+  l_flashing: {
+    name: 'L Flashing (Trim Coil)',
+    unit: 'Roll',
+    price: 134.50
+  },
+  step_flashing: {
+    name: 'Step Flashing',
+    unit: 'Bundle',
+    price: 38.00
+  },
+  joint_sealant: {
+    name: 'Joint Sealant 10z Black',
+    unit: 'Tube',
+    price: 7.29
   }
 };
 
@@ -148,6 +163,24 @@ function calculateRoofingNails(totalSquares) {
  */
 function calculateButtonCaps(totalSquares) {
   return Math.ceil(totalSquares / 24);
+}
+
+/**
+ * Calculate L Flashing (Trim Coil) rolls
+ * @param {number} flashingLength - Total flashing length in feet
+ * @returns {number} Number of rolls (100 LF each)
+ */
+function calculateLFlashing(flashingLength) {
+  return Math.ceil(flashingLength / 100);
+}
+
+/**
+ * Calculate Step Flashing bundles
+ * @param {number} stepFlashingLength - Total step flashing length in feet
+ * @returns {number} Number of bundles (40 LF each)
+ */
+function calculateStepFlashing(stepFlashingLength) {
+  return Math.ceil(stepFlashingLength / 40);
 }
 
 /**
@@ -305,6 +338,35 @@ function calculateMaterials(measurements, location = 'inland') {
       total: buttonCapsQty * MATERIALS.button_caps.price
     });
   }
+
+  // L Flashing (Trim Coil) - calculated but set to 0, user decides if needed
+  const lFlashingQty = measurements.flashingLength ? calculateLFlashing(measurements.flashingLength) : 0;
+  materials.push({
+    name: MATERIALS.l_flashing.name,
+    quantity: 0, // Set to 0 by default, user can edit
+    unit: MATERIALS.l_flashing.unit,
+    unitPrice: MATERIALS.l_flashing.price,
+    total: 0
+  });
+
+  // Step Flashing - calculated but set to 0, user decides if needed
+  const stepFlashingQty = measurements.stepFlashing ? calculateStepFlashing(measurements.stepFlashing) : 0;
+  materials.push({
+    name: MATERIALS.step_flashing.name,
+    quantity: 0, // Set to 0 by default, user can edit
+    unit: MATERIALS.step_flashing.unit,
+    unitPrice: MATERIALS.step_flashing.price,
+    total: 0
+  });
+
+  // Joint Sealant - set to 0, user decides quantity needed
+  materials.push({
+    name: MATERIALS.joint_sealant.name,
+    quantity: 0,
+    unit: MATERIALS.joint_sealant.unit,
+    unitPrice: MATERIALS.joint_sealant.price,
+    total: 0
+  });
 
   return materials;
 }
