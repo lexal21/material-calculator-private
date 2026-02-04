@@ -1,4 +1,5 @@
 // Default material pricing - Updated 2/26 per Austin
+const PRICING_VERSION = '2026-02-04';
 const DEFAULT_PRICING = {
   'Landmark PRO Shingles': { unit: 'Bundle', price: 35 },
   'SwiftStart Starter Strip': { unit: 'Bundle', price: 52 },
@@ -17,8 +18,18 @@ const DEFAULT_PRICING = {
 
 // Load pricing from localStorage or use defaults
 function loadPricing() {
+  const storedVersion = localStorage.getItem('pricingVersion');
   const stored = localStorage.getItem('materialPricing');
-  return stored ? JSON.parse(stored) : { ...DEFAULT_PRICING };
+  
+  // If version changed or no pricing stored, use defaults
+  if (storedVersion !== PRICING_VERSION || !stored) {
+    const newPricing = { ...DEFAULT_PRICING };
+    savePricing(newPricing);
+    localStorage.setItem('pricingVersion', PRICING_VERSION);
+    return newPricing;
+  }
+  
+  return JSON.parse(stored);
 }
 
 // Save pricing to localStorage

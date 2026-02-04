@@ -1,5 +1,7 @@
 // Price List Templates System
 
+const TEMPLATES_VERSION = '2026-02-04';
+
 const DEFAULT_TEMPLATES = {
   '2-26-pricing': {
     name: '2/26 Pricing',
@@ -41,8 +43,18 @@ const DEFAULT_TEMPLATES = {
 
 // Load templates from localStorage or use defaults
 function loadTemplates() {
+  const storedVersion = localStorage.getItem('templatesVersion');
   const stored = localStorage.getItem('priceTemplates');
-  return stored ? JSON.parse(stored) : { ...DEFAULT_TEMPLATES };
+  
+  // If version changed or no templates stored, use defaults
+  if (storedVersion !== TEMPLATES_VERSION || !stored) {
+    const newTemplates = { ...DEFAULT_TEMPLATES };
+    saveTemplates(newTemplates);
+    localStorage.setItem('templatesVersion', TEMPLATES_VERSION);
+    return newTemplates;
+  }
+  
+  return JSON.parse(stored);
 }
 
 // Save templates to localStorage
