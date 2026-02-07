@@ -1842,16 +1842,21 @@ function applyTemplateToMaterials() {
     return;
   }
   
-  const template = window.priceTemplates.loadTemplate(templateId);
-  if (!template || !template.pricing) {
-    alert('Could not load template');
+  // Apply template globally (updates pricing.js localStorage)
+  window.priceTemplates.applyTemplate(templateId);
+  
+  // Get the applied pricing
+  const pricing = window.getCurrentPricing ? window.getCurrentPricing() : null;
+  
+  if (!pricing) {
+    alert('Could not load template pricing');
     return;
   }
   
-  // Update material prices from template
+  // Update material prices from applied template
   window.materialsData.forEach(material => {
-    if (template.pricing[material.name]) {
-      material.unitPrice = template.pricing[material.name].price;
+    if (pricing[material.name]) {
+      material.unitPrice = pricing[material.name].price;
       material.total = material.quantity * material.unitPrice;
     }
   });
@@ -1863,6 +1868,11 @@ function applyTemplateToMaterials() {
   // Add misc items back
   for (let i = 1; i <= 3; i++) {
     tableBody.innerHTML += createAdditionalItemRow(i);
+  }
+  
+  // Force update pricing tab if it exists
+  if (typeof populatePricingTable === 'function') {
+    setTimeout(() => populatePricingTable(), 100);
   }
   
   recalculateTotals();

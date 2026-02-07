@@ -52,16 +52,19 @@ function populatePricingTable() {
       <td>${name}</td>
       <td>${data.unit}</td>
       <td>
-        <input 
+        $<input 
           type="number" 
           step="0.01" 
-          value="${data.price}" 
+          value="${data.price.toFixed(2)}" 
           class="price-input"
           data-material="${name}"
           onchange="updatePrice('${name}', this.value)"
+          style="width: 100px; padding: 4px;"
         />
       </td>
-      <td>$${data.price.toFixed(2)}</td>
+      <td>
+        <button class="delete-btn" onclick="deletePricingItem('${name}')" title="Delete this item">×</button>
+      </td>
     </tr>
   `).join('');
 }
@@ -71,7 +74,17 @@ function updatePrice(materialName, newPrice) {
   const pricing = loadPricing();
   pricing[materialName].price = parseFloat(newPrice);
   savePricing(pricing);
-  populatePricingTable();
+  // Don't repopulate table on every change to avoid losing focus
+}
+
+// Delete a pricing item
+function deletePricingItem(materialName) {
+  if (confirm(`Delete "${materialName}" from pricing list?`)) {
+    const pricing = loadPricing();
+    delete pricing[materialName];
+    savePricing(pricing);
+    populatePricingTable();
+  }
 }
 
 // Reset all pricing to defaults
@@ -98,14 +111,59 @@ function filterPricingTable() {
   });
 }
 
-// Load selected template
+// Load selected template - FIX: Now updates pricing table immediately
 function loadSelectedTemplate() {
   const select = document.getElementById('templateSelect');
   const templateId = select.value;
   
-  if (templateId && window.priceTemplates) {
+  if (!templateId) {
+    return; // No template selected, do nothing
+  }
+  
+  if (window.priceTemplates) {
     if (confirm('Load this price template? This will replace current pricing.')) {
+      // Apply the template
       window.priceTemplates.applyTemplate(templateId);
+      
+      // Force immediate refresh of pricing table display
+      setTimeout(() => {
+        populatePricingTable();
+      }, 50);
+      
+      // Update materials calculator if data exists
+      if (window.materialsData && window.materialsData.length > 0) {
+        const pricing = getCurrentPricing();
+        window.materialsData.forEach((item, index) => {
+          const row = document.querySelector(`tr[data-row="${index}"]`);
+          if (row && pricing[item.name]) {
+            const newPrice = pricing[item.name].price;
+            item.unitPrice = newPrice;
+            item.total = item.quantity * newPrice;
+            
+            // Update displayed price input
+            const priceInput = row.querySelector('.price-input');
+            if (priceInput) {
+              priceInput.value = newPrice.toFixed(2);
+            }
+            
+            // Update total cell
+            const totalCell = row.querySelector('.row-total');
+            if (totalCell) {
+              totalCell.textContent = '$' + item.total.toFixed(2);
+            }
+          }
+        });
+        
+        // Recalculate totals
+        if (typeof recalculateTotals === 'function') {
+          recalculateTotals();
+        }
+      }
+      
+      alert('Template loaded successfully!');
+    } else {
+      // User cancelled, reset selector
+      select.value = '';
     }
   }
 }
@@ -186,8 +244,17 @@ function initializePricingItemSelector() {
 // Add selected item to pricing table
 function addMorePricingItems() {
   const selector = document.getElementById('pricingItemSelector');
+  if (!selector) return;
+  
   const selectedOption = selector.options[selector.selectedIndex];
+  if (!selectedOption) return;
+  
   const itemName = selectedOption.value;
+  
+  if (!itemName || itemName === 'Select Item...') {
+    alert('Please select an item to add');
+    return;
+  }
   
   if (itemName === 'Custom Item...') {
     const customName = prompt('Enter custom material name:');
@@ -196,10 +263,15 @@ function addMorePricingItems() {
     }
     
     const customUnit = prompt('Enter unit (e.g., Piece, Bundle, Roll):', 'Piece');
-    const customPrice = parseFloat(prompt('Enter price:', '0'));
+    if (!customUnit || !customUnit.trim()) {
+      return;
+    }
     
-    if (!customUnit || isNaN(customPrice)) {
-      alert('Invalid unit or price');
+    const customPriceStr = prompt('Enter price:', '0');
+    const customPrice = parseFloat(customPriceStr);
+    
+    if (isNaN(customPrice)) {
+      alert('Invalid price');
       return;
     }
     
@@ -209,6 +281,10 @@ function addMorePricingItems() {
     savePricing(pricing);
     populatePricingTable();
     
+    // Reset selector
+    selector.selectedIndex = 0;
+    
+    alert(`Added "${customName.trim()}" to pricing list`);
     return;
   }
   
@@ -222,6 +298,11 @@ function addMorePricingItems() {
   const unit = selectedOption.getAttribute('data-unit');
   const price = parseFloat(selectedOption.getAttribute('data-price'));
   
+  if (!unit || isNaN(price)) {
+    alert('Invalid item data');
+    return;
+  }
+  
   // Add to pricing
   pricing[itemName] = { unit: unit, price: price };
   savePricing(pricing);
@@ -229,6 +310,8 @@ function addMorePricingItems() {
   
   // Reset selector
   selector.selectedIndex = 0;
+  
+  alert(`Added "${itemName}" to pricing list`);
 }
 
 // Initialize pricing table when page loads
