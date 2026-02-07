@@ -1,4 +1,4 @@
-// Project Management System
+﻿// Project Management System
 // Handles saving/loading calculator sessions to localStorage
 
 const PROJECT_STORAGE_KEY = 'calculator-projects';
@@ -87,7 +87,7 @@ function saveCurrentSession() {
     }
     
     localStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(data));
-    console.log('✓ Session auto-saved:', {
+    console.log('âœ“ Session auto-saved:', {
       materials: data.materialsData?.length || 0,
       customer: data.customerName || 'None',
       hasLabor: !!data.laborData
@@ -383,7 +383,7 @@ function startNewProject() {
     dropdown.value = '';
   }
   
-  console.log('✓ Started new project - ready for upload');
+  console.log('âœ“ Started new project - ready for upload');
 }
 
 // ============================================
@@ -405,7 +405,7 @@ function populateProjectDropdown() {
   if (currentSession) {
     const option = document.createElement('option');
     option.value = 'current';
-    option.textContent = '► Current Session (auto-saved)';
+    option.textContent = 'â–º Current Session (auto-saved)';
     dropdown.appendChild(option);
   }
   
@@ -427,6 +427,30 @@ function showSaveProjectDialog() {
       alert('Project saved successfully!');
     }
   }
+}
+
+
+// Show delete project dialog
+function showDeleteProjectDialog() {
+  const dropdown = document.getElementById('projectDropdown');
+  if (!dropdown || !dropdown.value) {
+    alert('Please select a project to delete from the dropdown.');
+    return;
+  }
+  
+  const projectId = dropdown.value;
+  
+  if (projectId === 'current') {
+    if (!confirm('Delete current auto-saved session? This cannot be undone.')) {
+      return;
+    }
+    localStorage.removeItem(CURRENT_SESSION_KEY);
+    populateProjectDropdown();
+    alert('Current session deleted.');
+    return;
+  }
+  
+  deleteProject(projectId);
 }
 
 // Handle project dropdown change
@@ -519,6 +543,7 @@ window.projectManager = {
   deleteProject,
   startNewProject,
   showSaveProjectDialog,
+  showDeleteProjectDialog,
   populateProjectDropdown,
   onProjectDropdownChange,
   getSavedProjects

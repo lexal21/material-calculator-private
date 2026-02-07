@@ -94,6 +94,22 @@
       background: #059669;
     }
     
+    .btn-delete-project {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #ef4444;
+      color: white;
+    }
+    
+    .btn-delete-project:hover {
+      background: #dc2626;
+    }
+    
     .project-dropdown {
       padding: 8px 12px;
       border: 2px solid #cbd5e0;
@@ -140,6 +156,9 @@
         </button>
         <button class="btn-save-project" onclick="projectManager.showSaveProjectDialog()" title="Save current project">
           💾 Save As...
+        </button>
+        <button class="btn-delete-project" onclick="projectManager.showDeleteProjectDialog()" title="Delete selected project">
+          Delete Project
         </button>
       </div>
       <div class="project-controls-right">
