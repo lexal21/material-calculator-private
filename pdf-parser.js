@@ -219,6 +219,64 @@ function estimateRidgeCount(measurements) {
 }
 
 /**
+ * Parse concatenated old format numbers: "30.050.312" = 30.05 sqft, 0.3 sq, 12/12 pitch
+ */
+function parseOldFormatNumbers(numbersStr) {
+  const parts = numbersStr.split('.');
+  if (parts.length < 3) return null; // Need at least 2 decimals
+  
+  // Try area with 2 decimal places (most common)
+  // Pattern: XXX.XXYYY.ZZPITCH
+  for (let areaDecimals = 1; areaDecimals <= 2; areaDecimals++) {
+    if (parts[1].length < areaDecimals) continue;
+    
+    const areaInt = parts[0];
+    const areaDec = parts[1].substring(0, areaDecimals);
+    const testArea = parseFloat(areaInt + '.' + areaDec);
+    
+    // Remaining digits after area decimals
+    const remaining = parts[1].substring(areaDecimals);
+    
+    // Try squares with 1-2 decimal places
+    if (remaining.length >= 1 && parts.length >= 3 && parts[2].length >= 2) {
+      const squaresInt = remaining;
+      
+      // Try 1 decimal place for squares (e.g., 0.3)
+      if (parts[2].length >= 2) {
+        const squaresDec1 = parts[2].substring(0, 1);
+        const testSquares1 = parseFloat(squaresInt + '.' + squaresDec1);
+        const testRise1 = parseInt(parts[2].substring(1));
+        
+        const expectedSquares1 = testArea / 100;
+        const error1 = Math.abs(expectedSquares1 - testSquares1);
+        const tolerance1 = Math.max(expectedSquares1 * 0.15, 0.5);
+        
+        if (error1 < tolerance1 && testRise1 >= 4 && testRise1 <= 16) {
+          return { sqFt: testArea, squares: testSquares1, rise: testRise1 };
+        }
+      }
+      
+      // Try 2 decimal places for squares (e.g., 11.66)
+      if (parts[2].length >= 3) {
+        const squaresDec2 = parts[2].substring(0, 2);
+        const testSquares2 = parseFloat(squaresInt + '.' + squaresDec2);
+        const testRise2 = parseInt(parts[2].substring(2));
+        
+        const expectedSquares2 = testArea / 100;
+        const error2 = Math.abs(expectedSquares2 - testSquares2);
+        const tolerance2 = Math.max(expectedSquares2 * 0.15, 0.5);
+        
+        if (error2 < tolerance2 && testRise2 >= 4 && testRise2 <= 16) {
+          return { sqFt: testArea, squares: testSquares2, rise: testRise2 };
+        }
+      }
+    }
+  }
+  
+  return null;
+}
+
+/**
  * Extract pitch data from Variables section
  */
 function extractPitchData(text) {
@@ -265,60 +323,58 @@ function extractPitchData(text) {
     }
     
     // Try OLD format: "Main LevelF11165.9711.666" = F1, 1165.97 sqft, 11.66 squares, 6/12 pitch
-    const oldMatch = line.match(/^(Main Level|Upper Level|Lower Level)F(\d)([\d.]+)$/i);
+    // Also handles: "Main LevelF1030.050.312" = F10, 30.05 sqft, 0.3 squares, 12/12 pitch  
+    const oldMatch = line.match(/^(Main Level|Upper Level|Lower Level)F(\d{1,2})([\d.]+)$/i);
     if (!oldMatch) continue;
     
-    const facetNum = oldMatch[2]; // Single digit facet (F1, F2, etc.)
-    const numbersStr = oldMatch[3]; // Everything after: "1165.9711.666"
+    let facetNum = oldMatch[2]; // Could be 1 or 2 digits
+    let numbersStr = oldMatch[3]; // Everything after facet number
     
-    // Old format pattern: AREA.XXXXXXSQUARES.XXXXPITCH
-    // e.g., "1165.9711.666" = 1165.97 sqft, 11.66 squares, 6/12 pitch
-    // The trick: we know squares ≈ area / 100, so use that to split correctly
+    // IMPORTANT: When facet is 2 digits (F10), the first digit of numbersStr is actually part of the area!
+    // e.g., "F1030.050.312" could be F10 + "30.050.312" OR F1 + "030.050.312"
+    // We need to try both interpretations and validate
     
-    // Split by decimals
-    const parts = numbersStr.split('.');
-    if (parts.length < 3) continue; // Need at least 2 decimals
-    
-    // Try different split points
     let sqFt, squares, rise;
-    let bestMatch = null;
+    let validParse = false;
     
-    // Try area with 2 decimal places (most common)
-    // Pattern: XXX.XXYYY.ZZPITCH or XXXX.XXYY.ZZPITCH
-    for (let areaDecimals = 2; areaDecimals <= 2; areaDecimals++) {
-      if (parts[1].length < areaDecimals) continue;
-      
-      const areaInt = parts[0];
-      const areaDec = parts[1].substring(0, areaDecimals);
-      const testArea = parseFloat(areaInt + '.' + areaDec);
-      
-      // Remaining digits after area decimals
-      const remaining = parts[1].substring(areaDecimals);
-      
-      // Try squares with 2 decimal places
-      if (remaining.length >= 1 && parts.length >= 3 && parts[2].length >= 3) {
-        const squaresInt = remaining;
-        const squaresDec = parts[2].substring(0, 2);
-        const testSquares = parseFloat(squaresInt + '.' + squaresDec);
-        
-        // Rise is after squares decimals
-        const testRise = parseInt(parts[2].substring(2));
-        
-        // Validate: squares should be ≈ area / 100
-        const expectedSquares = testArea / 100;
-        const error = Math.abs(expectedSquares - testSquares);
-        const tolerance = Math.max(expectedSquares * 0.1, 0.5);
-        
-        if (error < tolerance && testRise >= 4 && testRise <= 16) {
-          sqFt = testArea;
-          squares = testSquares;
-          rise = testRise;
-          break;
-        }
+    // Try as 2-digit facet first (if facetNum length is 2)
+    if (facetNum.length === 2) {
+      const parsed = parseOldFormatNumbers(numbersStr);
+      if (parsed) {
+        sqFt = parsed.sqFt;
+        squares = parsed.squares;
+        rise = parsed.rise;
+        validParse = true;
       }
     }
     
-    if (sqFt && squares && rise) {
+    // If 2-digit failed or facet is single digit, try as 1-digit facet
+    if (!validParse && facetNum.length === 2) {
+      // Try treating first digit as facet, rest as area
+      const realFacet = facetNum[0];
+      const newNumbersStr = facetNum[1] + numbersStr;
+      const parsed = parseOldFormatNumbers(newNumbersStr);
+      if (parsed) {
+        facetNum = realFacet;
+        sqFt = parsed.sqFt;
+        squares = parsed.squares;
+        rise = parsed.rise;
+        validParse = true;
+      }
+    }
+    
+    // Single digit facet
+    if (!validParse && facetNum.length === 1) {
+      const parsed = parseOldFormatNumbers(numbersStr);
+      if (parsed) {
+        sqFt = parsed.sqFt;
+        squares = parsed.squares;
+        rise = parsed.rise;
+        validParse = true;
+      }
+    }
+    
+    if (validParse && sqFt && squares && rise) {
       pitchData.push({
         label: `F${facetNum}`,
         area: sqFt,
