@@ -233,20 +233,54 @@ app.get('/pricing', (req, res) => {
   });
 });
 
+// Diagnostic endpoint (protected)
+app.get('/api/diagnostic', requireAuth, (req, res) => {
+  const diagnostics = {
+    server: 'running',
+    user: req.user.email,
+    environment: process.env.NODE_ENV || 'production',
+    tmpDir: '/tmp/',
+    tmpDirExists: fs.existsSync('/tmp/'),
+    tmpDirWritable: (() => {
+      try {
+        const testFile = '/tmp/test-' + Date.now() + '.txt';
+        fs.writeFileSync(testFile, 'test');
+        fs.unlinkSync(testFile);
+        return true;
+      } catch (err) {
+        return false;
+      }
+    })(),
+    modules: {
+      pdfParse: (() => { try { require('pdf-parse'); return 'installed'; } catch { return 'missing'; } })(),
+      pdfLib: (() => { try { require('pdf-lib'); return 'installed'; } catch { return 'missing'; } })()
+    }
+  };
+  res.json(diagnostics);
+});
+
 // Upload and process endpoint (protected + tracked)
 app.post('/upload', upload.single('pdf'), async (req, res) => {
+  console.log('[UPLOAD] Request received from:', req.user.email);
+  
   if (!req.file) {
+    console.log('[UPLOAD] ERROR: No file uploaded');
     return res.status(400).json({ error: 'No file uploaded' });
   }
+
+  console.log('[UPLOAD] File received:', req.file.originalname, 'Size:', req.file.size, 'Path:', req.file.path);
 
   try {
     const location = req.body.location || 'inland';
     const customPricing = req.body.pricing ? JSON.parse(req.body.pricing) : null;
     
+    console.log('[UPLOAD] Starting PDF parse...');
     const result = await parser.parseAndCalculate(req.file.path, location);
+    console.log('[UPLOAD] Parse successful. Found', result.materials.length, 'materials');
     
     // Apply custom pricing if provided
     if (customPricing) {
+      console.log('[UPLOAD] Applying custom pricing');
       result.materials.forEach(item => {
         if (customPricing[item.name]) {
           item.unitPrice = customPricing[item.name].price;
@@ -258,6 +292,7 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
     // Clean up uploaded file
     if (fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
+      console.log('[UPLOAD] Cleaned up temp file');
     }
     
     // Calculate subtotal and tax
@@ -276,6 +311,7 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
       });
     }
     
+    console.log('[UPLOAD] SUCCESS. Sending results.');
     res.json({
       success: true,
       measurements: result.measurements,
@@ -286,6 +322,9 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
       grandTotal: grandTotal
     });
   } catch (err) {
+    console.error('[UPLOAD] ERROR:', err.message);
+    console.error('[UPLOAD] Stack:', err.stack);
+    
     // Clean up on error
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
@@ -293,7 +332,8 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
     
     res.status(500).json({
       error: 'Failed to process PDF',
-      message: err.message
+      message: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   }
 });
