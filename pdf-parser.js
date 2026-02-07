@@ -170,19 +170,38 @@ function parseOldFormat(text) {
  * Extract address from PDF
  */
 function extractAddress(text) {
-  // NEW format has address early in document
-  // Look for pattern: "127 Chesterbrook Lane, Lexington, SC 29072"
-  const addressMatch = text.match(/(\d+\s+[A-Za-z\s]+(?:Lane|Street|Road|Drive|Avenue|Court|Circle|Way|Blvd|Boulevard)[,\s]+[A-Za-z\s]+,?\s*[A-Z]{2}\s*\d{5})/i);
+  // Remove extra line breaks to join multi-line addresses
+  const cleanedText = text.replace(/\n+/g, ' ').replace(/\s+/g, ' ');
+  
+  // Look for pattern: "122 LAKE LINDEN DRIVE, BLUFFTON, SC 29910"
+  // OR: "801 BENT GREEN COURT, SUMMERVILLE, SOUTH CAROLINA 29485"
+  // Supports: Lane, Street, Road, Drive, Avenue, Court, Circle, Way, Boulevard
+  const addressMatch = cleanedText.match(/(\d+\s+[A-Za-z\s]+(?:Lane|Street|Road|Drive|Avenue|Court|Circle|Way|Blvd|Boulevard)[,\s]+[A-Za-z\s]+,?\s*(?:[A-Z]{2}|[A-Z][a-z]+\s+[A-Z][a-z]+)\s*\d{5})/i);
   if (addressMatch) {
-    return addressMatch[1].trim();
+    // Clean up the match (remove extra spaces and ", UNITED STATES")
+    return addressMatch[1].replace(/\s+/g, ' ').replace(/, UNITED STATES$/, '').trim();
   }
   
-  // Fallback: look in first few lines
-  const lines = text.split('\n');
-  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+  // Fallback: look for address pattern in first 500 chars
+  const firstPart = text.substring(0, 500);
+  const lines = firstPart.split('\n');
+  for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (/\d+.*(?:Lane|Street|Road|Drive|Ave|Court)/i.test(line)) {
-      return line;
+    // Look for street number at start of line
+    if (/^\d+\s+[A-Za-z]/i.test(line)) {
+      // Try to build full address from consecutive lines
+      let address = line;
+      for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+        const nextLine = lines[j].trim();
+        if (nextLine && !/^(Order|Insured|This report)/i.test(nextLine)) {
+          address += ' ' + nextLine;
+          // Stop if we found zip code
+          if (/\d{5}/.test(nextLine)) break;
+        }
+      }
+      if (/\d{5}/.test(address)) {
+        return address.replace(/\s+/g, ' ').replace(/, USA$/, '').trim();
+      }
     }
   }
   
