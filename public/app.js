@@ -1405,16 +1405,22 @@ function calculateLaborFromData(data) {
   // Plywood pricing rule: >10 sheets = $10/sheet
   const plywoodPrice = plywoodSheets > 10 ? 10.00 : 30.00;
   
+  // Helper to safely round quantities (avoid .toFixed on NaN/undefined)
+  const safeRound = (val) => {
+    const num = parseFloat(val) || 0;
+    return Math.round(num * 100) / 100;
+  };
+  
   const items = [
-    { name: 'Labor - Squares', quantity: parseFloat(squaresWithWaste.toFixed(2)), unit: 'SQ', unitPrice: baseRate, total: Math.round(squaresWithWaste * baseRate * 100) / 100, editable: false },
-    { name: 'Starter per Bundle', quantity: parseFloat(starterBundles.toFixed(2)), unit: 'BD', unitPrice: 25.00, total: Math.round(starterBundles * 25.00 * 100) / 100, editable: false },
-    { name: 'Hip and Ridge Cap per Bundle', quantity: parseFloat(hipRidgeBundles.toFixed(2)), unit: 'BD', unitPrice: 25.00, total: Math.round(hipRidgeBundles * 25.00 * 100) / 100, editable: false },
-    { name: 'Steep Charge for 8-9/12 pitch', quantity: parseFloat(pitchData.tier_8_9.toFixed(2)), unit: 'SQ', unitPrice: 5.00, total: Math.round(pitchData.tier_8_9 * 5.00 * 100) / 100, editable: true },
-    { name: 'Steep Charge for 10-11/12 pitch', quantity: parseFloat(pitchData.tier_10_11.toFixed(2)), unit: 'SQ', unitPrice: 10.00, total: Math.round(pitchData.tier_10_11 * 10.00 * 100) / 100, editable: true },
-    { name: 'Steep Charge for 12/12 pitch or Greater', quantity: parseFloat(pitchData.tier_12_plus.toFixed(2)), unit: 'SQ', unitPrice: 20.00, total: Math.round(pitchData.tier_12_plus * 20.00 * 100) / 100, editable: true },
-    { name: 'Plywood Replacement', quantity: parseFloat(plywoodSheets.toFixed(2)), unit: 'SH', unitPrice: plywoodPrice, total: Math.round(plywoodSheets * plywoodPrice * 100) / 100, editable: true },
-    { name: 'Install Step Flashing per LF', quantity: parseFloat(stepFlashingLength.toFixed(2)), unit: 'LF', unitPrice: 2.00, total: Math.round(stepFlashingLength * 2.00 * 100) / 100, editable: true },
-    { name: 'Install L-Flashing per LF', quantity: parseFloat(flashingLength.toFixed(2)), unit: 'LF', unitPrice: 2.00, total: Math.round(flashingLength * 2.00 * 100) / 100, editable: true },
+    { name: 'Labor - Squares', quantity: safeRound(squaresWithWaste), unit: 'SQ', unitPrice: baseRate, total: safeRound(squaresWithWaste * baseRate), editable: false },
+    { name: 'Starter per Bundle', quantity: safeRound(starterBundles), unit: 'BD', unitPrice: 25.00, total: safeRound(starterBundles * 25.00), editable: false },
+    { name: 'Hip and Ridge Cap per Bundle', quantity: safeRound(hipRidgeBundles), unit: 'BD', unitPrice: 25.00, total: safeRound(hipRidgeBundles * 25.00), editable: false },
+    { name: 'Steep Charge for 8-9/12 pitch', quantity: safeRound(pitchData.tier_8_9), unit: 'SQ', unitPrice: 5.00, total: safeRound(pitchData.tier_8_9 * 5.00), editable: true },
+    { name: 'Steep Charge for 10-11/12 pitch', quantity: safeRound(pitchData.tier_10_11), unit: 'SQ', unitPrice: 10.00, total: safeRound(pitchData.tier_10_11 * 10.00), editable: true },
+    { name: 'Steep Charge for 12/12 pitch or Greater', quantity: safeRound(pitchData.tier_12_plus), unit: 'SQ', unitPrice: 20.00, total: safeRound(pitchData.tier_12_plus * 20.00), editable: true },
+    { name: 'Plywood Replacement', quantity: safeRound(plywoodSheets), unit: 'SH', unitPrice: plywoodPrice, total: safeRound(plywoodSheets * plywoodPrice), editable: true },
+    { name: 'Install Step Flashing per LF', quantity: safeRound(stepFlashingLength), unit: 'LF', unitPrice: 2.00, total: safeRound(stepFlashingLength * 2.00), editable: true },
+    { name: 'Install L-Flashing per LF', quantity: safeRound(flashingLength), unit: 'LF', unitPrice: 2.00, total: safeRound(flashingLength * 2.00), editable: true },
     { name: 'Flash Chimney', quantity: 0, unit: 'EA', unitPrice: 75.00, total: 0, editable: true, manualEntry: true },
     { name: 'Flash Brick Chimney', quantity: 0, unit: 'EA', unitPrice: 150.00, total: 0, editable: true, manualEntry: true },
     { name: 'Install Pan for Dead Valley (Brick)', quantity: 0, unit: 'EA', unitPrice: 150.00, total: 0, editable: true, manualEntry: true },
@@ -1433,22 +1439,27 @@ function calculateLaborFromData(data) {
 }
 
 function createLaborRow(item, index) {
-  const pluralUnit = pluralizeUnit(item.quantity, item.unit);
+  // Safely handle potentially invalid numbers
+  const quantity = parseFloat(item.quantity) || 0;
+  const unitPrice = parseFloat(item.unitPrice) || 0;
+  const total = parseFloat(item.total) || 0;
+  
+  const pluralUnit = pluralizeUnit(quantity, item.unit);
   
   return `
-    <tr data-labor-row="${index}" class="${item.quantity === 0 ? 'zero-quantity' : ''}">
+    <tr data-labor-row="${index}" class="${quantity === 0 ? 'zero-quantity' : ''}">
       <td class="checkbox-cell no-print">
         <input type="checkbox" class="labor-checkbox" data-labor-row="${index}" 
 onchange="toggleLaborSelection(${index})">
       </td>
       <td data-label="Item">${item.name}</td>
-      <td data-label="Quantity" class="editable-cell" data-print-value="${item.quantity.toFixed(2)} ${pluralUnit}">
+      <td data-label="Quantity" class="editable-cell" data-print-value="${quantity.toFixed(2)} ${pluralUnit}">
         <div class="quantity-cell">
           <span class="unit-label unit-before">${pluralUnit}</span>
           <input 
             type="number" 
             class="editable-input quantity-input" 
-            value="${item.quantity.toFixed(2)}" 
+            value="${quantity.toFixed(2)}" 
             min="0"
             step="0.01"
             data-labor-row="${index}"
@@ -1465,14 +1476,14 @@ onchange="toggleLaborSelection(${index})">
           step="0.01"
           min="0"
           class="editable-input price-input" 
-          value="${item.unitPrice.toFixed(2)}" 
+          value="${unitPrice.toFixed(2)}" 
           data-labor-row="${index}"
           data-field="unitPrice"
           onchange="updateLaborRow(${index})"
           aria-label="Unit price for ${item.name}"
         />
       </td>
-      <td data-label="Total" class="row-total">$${item.total.toFixed(2)}</td>
+      <td data-label="Total" class="row-total">$${total.toFixed(2)}</td>
     </tr>
   `;
 }
