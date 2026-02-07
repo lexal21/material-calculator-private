@@ -177,10 +177,7 @@ app.post('/api/login', (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
-  const sessionId = req.cookies.session;
-  if (sessionId) {
-    auth.logoutUser(sessionId);
-  }
+  // Clear session cookie (stateless auth - no server-side session to delete)
   res.clearCookie('session');
   res.json({ success: true });
 });
