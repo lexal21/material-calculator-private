@@ -3,7 +3,7 @@ const pdf = require('pdf-parse-fork');
 const { parseConcatenatedNumbers } = require('./parse-numbers');
 
 /**
- * Extract measurements from Ridge Top PDF report
+ * Extract measurements from Ridge Top PDF report (supports old and new formats)
  * @param {string} pdfPath - Path to PDF file
  * @returns {Promise<object>} Extracted measurements
  */
@@ -13,247 +13,269 @@ async function parseRidgeTopPDF(pdfPath) {
   
   const text = data.text;
   
-  // Ridge Top format has labels on one line, values on the next
-  // Find the "Roof Summary" section
-  const summaryMatch = text.match(/Roof Summary[\s\S]*?([\d.]+)\s*ft\s*²([\d.]+)\s*sq\s*²([\d.]+)\s*ft([\d.]+)\s*ft([\d.]+)\s*ft([\d.]+)\s*ft([\d.]+)\s*ft([\d.]+)\s*ft([\d.]+)\s*ft/i);
+  console.log('Attempting to parse Ridge Top PDF...');
   
-  let measurements = {
-    roof_sq: '0',
-    hip_length: '0',
-    ridge_length: '0',
-    rake_edge_length: '0',
-    valley_length: '0',
-    eave_edge_length: '0',
-    flashing_length: '0',
-    step_flashing: '0',
-    address: extractAddress(text),
-    order_number: extractOrderNumber(text)
-  };
+  // Try NEW format first (2025+ format)
+  let measurements = parseNewFormat(text);
   
-  if (summaryMatch) {
-    measurements = {
-      roof_area: summaryMatch[1],      // 2257.74 ft²
-      roof_sq: summaryMatch[2],         // 22.58 sq
-      hip_length: summaryMatch[3],      // 128.07 ft
-      ridge_length: summaryMatch[4],    // 29 ft
-      rake_edge_length: summaryMatch[5], // 52.89 ft
-      valley_length: summaryMatch[6],   // 56.95 ft
-      eave_edge_length: summaryMatch[7], // 189.56 ft
-      flashing_length: summaryMatch[8], // 28.15 ft
-      step_flashing: summaryMatch[9],   // 14.56 ft
-      address: extractAddress(text),
-      order_number: extractOrderNumber(text),
-      customer_name: extractCustomerName(text)
-    };
+  // If new format failed, try OLD format
+  if (!measurements || !measurements.roof_sq || parseFloat(measurements.roof_sq) === 0) {
+    console.log('New format failed, trying old format...');
+    measurements = parseOldFormat(text);
+  } else {
+    console.log('Successfully parsed NEW format!');
   }
   
-  // Estimate ridge count based on complexity
+  // Extract common fields
+  measurements.address = extractAddress(text);
+  measurements.order_number = extractOrderNumber(text);
+  measurements.customer_name = extractCustomerName(text);
   measurements.ridge_count = estimateRidgeCount(measurements);
-  
-  // Extract pitch data for steep charges
   measurements.pitch_data = extractPitchData(text);
   
   return measurements;
 }
 
 /**
- * Extract a numeric value using regex
- * @param {string} text - Full PDF text
- * @param {RegExp} pattern - Regex pattern to match
- * @returns {string} Extracted value or '0'
+ * Parse NEW Ridge Top format (2025+)
+ * Clean labeled format with "Roof Area3,078.69 ft²" style
  */
-function extractValue(text, pattern) {
-  const match = text.match(pattern);
-  return match ? match[1] : '0';
+function parseNewFormat(text) {
+  console.log('Trying NEW format parser...');
+  
+  const measurements = {};
+  
+  // Extract roof squares
+  const roofSqMatch = text.match(/Roof\s+Squares\s*([\d,]+(?:\.\d+)?)\s*sq/i);
+  if (roofSqMatch) {
+    measurements.roof_sq = roofSqMatch[1].replace(/,/g, '');
+    console.log('  ✓ Roof Squares:', measurements.roof_sq);
+  }
+  
+  // Extract roof area
+  const roofAreaMatch = text.match(/Roof\s+Area\s*([\d,]+(?:\.\d+)?)\s*ft/i);
+  if (roofAreaMatch) {
+    measurements.roof_area = roofAreaMatch[1].replace(/,/g, '');
+    console.log('  ✓ Roof Area:', measurements.roof_area);
+  }
+  
+  // Extract perimeter
+  const perimeterMatch = text.match(/Perimeter\s*([\d,]+)\s*['"]?\s*(\d+)?/i);
+  if (perimeterMatch) {
+    const feet = perimeterMatch[1].replace(/,/g, '');
+    const inches = perimeterMatch[2] || '0';
+    measurements.perimeter = parseFloat(feet) + (parseFloat(inches) / 12);
+    console.log('  ✓ Perimeter:', measurements.perimeter);
+  }
+  
+  // Extract eave
+  const eaveMatch = text.match(/Eave\s*([\d,]+)\s*['"]?\s*(\d+)?/i);
+  if (eaveMatch) {
+    const feet = eaveMatch[1].replace(/,/g, '');
+    const inches = eaveMatch[2] || '0';
+    measurements.eave_edge_length = parseFloat(feet) + (parseFloat(inches) / 12);
+    console.log('  ✓ Eave:', measurements.eave_edge_length);
+  }
+  
+  // Extract rake
+  const rakeMatch = text.match(/Rake\s*([\d,]+)\s*['"]?/i);
+  if (rakeMatch) {
+    measurements.rake_edge_length = rakeMatch[1].replace(/,/g, '');
+    console.log('  ✓ Rake:', measurements.rake_edge_length);
+  }
+  
+  // Extract ridge
+  const ridgeMatch = text.match(/Ridge\s*([\d,]+)\s*['"]?\s*(\d+)?/i);
+  if (ridgeMatch) {
+    const feet = ridgeMatch[1].replace(/,/g, '');
+    const inches = ridgeMatch[2] || '0';
+    measurements.ridge_length = parseFloat(feet) + (parseFloat(inches) / 12);
+    console.log('  ✓ Ridge:', measurements.ridge_length);
+  }
+  
+  // Extract hip
+  const hipMatch = text.match(/Hip\s*([\d,]+)\s*['"]?/i);
+  if (hipMatch) {
+    measurements.hip_length = hipMatch[1].replace(/,/g, '');
+    console.log('  ✓ Hip:', measurements.hip_length);
+  }
+  
+  // Extract valley
+  const valleyMatch = text.match(/Valley\s*([\d,]+)\s*['"]?\s*(\d+)?/i);
+  if (valleyMatch) {
+    const feet = valleyMatch[1].replace(/,/g, '');
+    const inches = valleyMatch[2] || '0';
+    measurements.valley_length = parseFloat(feet) + (parseFloat(inches) / 12);
+    console.log('  ✓ Valley:', measurements.valley_length);
+  }
+  
+  // Extract step flashing
+  const stepMatch = text.match(/Step\s+Flashing\s*([\d,]+)\s*['"]?\s*(\d+)?/i);
+  if (stepMatch) {
+    const feet = stepMatch[1].replace(/,/g, '');
+    const inches = stepMatch[2] || '0';
+    measurements.step_flashing = parseFloat(feet) + (parseFloat(inches) / 12);
+    console.log('  ✓ Step Flashing:', measurements.step_flashing);
+  }
+  
+  // Extract wall flashing (if present)
+  const wallMatch = text.match(/Wall\s+Flashing\s*([\d,]+)\s*['"]?\s*(\d+)?/i);
+  if (wallMatch) {
+    const feet = wallMatch[1].replace(/,/g, '');
+    const inches = wallMatch[2] || '0';
+    measurements.flashing_length = parseFloat(feet) + (parseFloat(inches) / 12);
+    console.log('  ✓ Wall Flashing:', measurements.flashing_length);
+  }
+  
+  // Check if we got key data
+  if (!measurements.roof_sq || parseFloat(measurements.roof_sq) === 0) {
+    console.log('  ✗ NEW format: Missing roof_sq');
+    return null;
+  }
+  
+  console.log('  ✓ NEW format successfully parsed!');
+  return measurements;
+}
+
+/**
+ * Parse OLD Ridge Top format (legacy)
+ * Concatenated format that was harder to parse
+ */
+function parseOldFormat(text) {
+  console.log('Trying OLD format parser...');
+  
+  // Old regex pattern (from original pdf-parser.js)
+  const summaryMatch = text.match(/Roof Summary[\s\S]*?([\d.]+)\s*ft\s*²([\d.]+)\s*sq\s*²([\d.]+)\s*ft([\d.]+)\s*ft([\d.]+)\s*ft([\d.]+)\s*ft([\d.]+)\s*ft([\d.]+)\s*ft([\d.]+)\s*ft/i);
+  
+  if (summaryMatch) {
+    console.log('  ✓ OLD format matched!');
+    return {
+      roof_area: summaryMatch[1],
+      roof_sq: summaryMatch[2],
+      hip_length: summaryMatch[3],
+      ridge_length: summaryMatch[4],
+      rake_edge_length: summaryMatch[5],
+      valley_length: summaryMatch[6],
+      eave_edge_length: summaryMatch[7],
+      flashing_length: summaryMatch[8],
+      step_flashing: summaryMatch[9]
+    };
+  }
+  
+  console.log('  ✗ OLD format: No match');
+  return null;
 }
 
 /**
  * Extract address from PDF
- * @param {string} text - Full PDF text
- * @returns {string} Address
  */
 function extractAddress(text) {
-  // Ridge Top PDFs have address at the very beginning
-  // Format: "239 MAYWOOD \nDRIVE, \nMONCKS \nCORNER, SC \n29461, USA"
+  // NEW format has address early in document
+  // Look for pattern: "127 Chesterbrook Lane, Lexington, SC 29072"
+  const addressMatch = text.match(/(\d+\s+[A-Za-z\s]+(?:Lane|Street|Road|Drive|Avenue|Court|Circle|Way|Blvd|Boulevard)[,\s]+[A-Za-z\s]+,?\s*[A-Z]{2}\s*\d{5})/i);
+  if (addressMatch) {
+    return addressMatch[1].trim();
+  }
   
+  // Fallback: look in first few lines
   const lines = text.split('\n');
-  const addressParts = [];
-  
-  // Look for the address in first 8 lines (before "Order #")
-  for (let i = 0; i < Math.min(lines.length, 8); i++) {
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
     const line = lines[i].trim();
-    
-    // Stop if we hit metadata
-    if (/Order #|Insured name|This report/i.test(line)) {
-      break;
+    if (/\d+.*(?:Lane|Street|Road|Drive|Ave|Court)/i.test(line)) {
+      return line;
     }
-    
-    // Skip empty lines
-    if (!line) continue;
-    
-    // Collect address parts
-    addressParts.push(line);
   }
   
-  // Join and clean up
-  let address = addressParts.join(' ').replace(/\s+/g, ' ').trim();
-  
-  // Truncate after zip code (5 digits, optionally followed by -4 digits)
-  // This removes "United States" or any trailing text after zip
-  const zipMatch = address.match(/^(.*?\d{5}(?:-\d{4})?)/);
-  if (zipMatch) {
-    address = zipMatch[1].trim();
-  }
-  
-  // Remove trailing commas
-  address = address.replace(/,\s*$/, '');
-  
-  return address || '';
+  return '';
 }
 
 /**
- * Extract order number from PDF
- * @param {string} text - Full PDF text
- * @returns {string} Order number
+ * Extract order number
  */
 function extractOrderNumber(text) {
-  const match = text.match(/Order #:\s*(\d+)/i);
+  const match = text.match(/Order\s*#:\s*(\d+)/i);
   return match ? match[1] : '';
 }
 
 /**
- * Extract customer/insured name from PDF
- * @param {string} text - Full PDF text
- * @returns {string} Customer name
+ * Extract customer name
  */
 function extractCustomerName(text) {
-  const match = text.match(/Insured name:\s*([^\n]+)/i);
-  return match ? match[1].trim() : '';
+  const match = text.match(/Customer\/Insured\s*([^\n]+)/i);
+  if (match && match[1] && match[1].trim() !== 'N/A') {
+    return match[1].trim();
+  }
+  return '';
 }
 
 /**
- * Estimate ridge count based on measurements
- * Simple heuristic: more complex roofs have multiple ridges
- * @param {object} measurements - Extracted measurements
- * @returns {number} Estimated ridge count
+ * Estimate ridge count based on ridge length
  */
 function estimateRidgeCount(measurements) {
   const ridgeLength = parseFloat(measurements.ridge_length) || 0;
-  
-  // If ridge length is 0, no ridges
-  if (ridgeLength === 0) return 0;
-  
-  // Simple heuristic: 
-  // - Short ridges (< 50 ft): likely 1 ridge
-  // - Medium ridges (50-80 ft): likely 2-3 ridges
-  // - Long ridges (> 80 ft): likely 4+ ridges
   if (ridgeLength < 50) return 1;
   if (ridgeLength < 80) return Math.ceil(ridgeLength / 30);
   return Math.ceil(ridgeLength / 25);
 }
 
 /**
- * Extract pitch data from detailed slope table for steep charge calculation
- * @param {string} text - Full PDF text
- * @returns {object} Pitch data with square footage per tier
+ * Extract pitch data from Variables section
  */
 function extractPitchData(text) {
-  const pitchData = {
-    slopes: [],
-    tier_8_9: 0,    // 8-9/12 pitch squares
-    tier_10_11: 0,  // 10-11/12 pitch squares
-    tier_12_plus: 0 // 12/12+ pitch squares
-  };
+  const pitchData = [];
   
-  // Ridge Top PDFs text is concatenated like:
-  // "Main LevelF1869.48.6910" = F1, 869.4 sqft, 8.69 squares, 10/12 pitch
-  // "Main LevelF2817.220.177.5" = F28, 17.22 sqft, 0.17 squares, 7.5/12 pitch
-  
-  // Split text into lines and look for the table section
+  // NEW format: "F1916.93 ft²9.17 sq6:12" is concatenated
+  // Strategy: Match the whole pattern, then parse backwards using squares as anchor
   const lines = text.split('\n');
   
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+  for (const line of lines) {
+    // Look for facet lines: starts with F followed by numbers
+    const match = line.match(/^F(\d+)([\d,.]+)\s*ft[²2]([\d,.]+)\s*sq(\d+):(\d+)/i);
+    if (!match) continue;
     
-    // Pattern: (Level)F(numbers)
-    // Face number can be ambiguous (F1 vs F18), so try both interpretations
-    const levelMatch = line.match(/^(Main Level|Upper Level|Lower Level)F([\d.]+)$/i);
+    const fullFacetNum = match[1]; // This might be "1916" instead of "1"
+    const areaStr = match[2].replace(/,/g, '');
+    const squares = parseFloat(match[3].replace(/,/g, ''));
+    const rise = parseInt(match[4]);
+    const run = parseInt(match[5]);
     
-    if (levelMatch) {
-      const level = levelMatch[1];
-      const allNumbers = levelMatch[2];
+    // Expected area from squares (squares ≈ area / 100)
+    const expectedArea = squares * 100;
+    
+    // The fullFacetNum is concatenated: "1916" when it should be facet="1", area start="916"
+    // We need to figure out where facet ends and area begins
+    // Facets are typically 1-2 digits: F1, F2, F3, ... F14, etc.
+    
+    let facetNum = fullFacetNum;
+    let area = parseFloat(areaStr);
+    
+    // Try to find the correct split point
+    for (let facetLen = 1; facetLen <= 2 && facetLen < fullFacetNum.length; facetLen++) {
+      const testFacet = fullFacetNum.substring(0, facetLen);
+      const remainingDigits = fullFacetNum.substring(facetLen);
+      const testArea = parseFloat(remainingDigits + areaStr);
       
-      // Try interpreting as 1-digit face number
-      let parsed = null;
-      let faceNum = null;
-      
-      if (allNumbers.length > 1) {
-        faceNum = allNumbers.substring(0, 1);
-        const numbersStr = allNumbers.substring(1);
-        parsed = parseConcatenatedNumbers(numbersStr);
-      }
-      
-      // If that didn't work, try 2-digit face number
-      if (!parsed && allNumbers.length > 2) {
-        faceNum = allNumbers.substring(0, 2);
-        const numbersStr = allNumbers.substring(2);
-        parsed = parseConcatenatedNumbers(numbersStr);
-      }
-      
-      if (parsed && faceNum) {
-        const { sqFt, squares, pitch } = parsed;
-        pitchData.slopes.push({ face: `F${faceNum}`, level, sqFt, squares, pitch });
-        
-        if (pitch >= 8 && pitch < 10) {
-          pitchData.tier_8_9 += squares;
-        } else if (pitch >= 10 && pitch < 12) {
-          pitchData.tier_10_11 += squares;
-        } else if (pitch >= 12) {
-          pitchData.tier_12_plus += squares;
-        }
+      // Check if this matches expected area better
+      const error = Math.abs(testArea - expectedArea);
+      if (error < expectedArea * 0.1) { // Within 10%
+        facetNum = testFacet;
+        area = testArea;
+        break;
       }
     }
+    
+    pitchData.push({
+      label: `F${facetNum}`,
+      area: area,
+      squares: squares,
+      pitch: `${rise}:${run}`,
+      rise: rise,
+      run: run
+    });
   }
   
-  // Round to 2 decimal places to avoid floating point errors
-  pitchData.tier_8_9 = Math.round(pitchData.tier_8_9 * 100) / 100;
-  pitchData.tier_10_11 = Math.round(pitchData.tier_10_11 * 100) / 100;
-  pitchData.tier_12_plus = Math.round(pitchData.tier_12_plus * 100) / 100;
-  
+  console.log(`  ✓ Found ${pitchData.length} facets with pitch data`);
   return pitchData;
 }
 
-/**
- * Parse PDF and calculate materials in one step
- * @param {string} pdfPath - Path to PDF file
- * @param {string} location - 'coast' or 'inland' for RoofRunner calculation
- * @returns {Promise<object>} Measurements and calculated materials
- */
-async function parseAndCalculate(pdfPath, location = 'inland') {
-  const calculator = require('./calculator');
-  
-  const rawMeasurements = await parseRidgeTopPDF(pdfPath);
-  const measurements = calculator.parseMeasurements(rawMeasurements);
-  const materials = calculator.calculateMaterials(measurements, location);
-  
-  return {
-    raw: rawMeasurements,
-    measurements,
-    materials,
-    output: calculator.formatOutput(materials, {
-      address: rawMeasurements.address,
-      order: rawMeasurements.order_number
-    })
-  };
-}
-
-module.exports = {
-  parseRidgeTopPDF,
-  extractValue,
-  extractAddress,
-  extractOrderNumber,
-  extractCustomerName,
-  estimateRidgeCount,
-  extractPitchData,
-  parseAndCalculate
-};
+module.exports = { parseRidgeTopPDF };
