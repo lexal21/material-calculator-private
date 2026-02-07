@@ -1,4 +1,7 @@
-﻿const fileInput = document.getElementById('fileInput');
+﻿// Version: 2026-02-07-00:53 - Labor debug logging
+console.log('[APP.JS] Loaded version: 2026-02-07-00:53');
+
+const fileInput = document.getElementById('fileInput');
 const uploadBox = document.getElementById('uploadBox');
 const loading = document.getElementById('loading');
 const results = document.getElementById('results');
@@ -538,11 +541,19 @@ function displayResults(data) {
   populateMaterialTemplateSelector();
   
   // Store measurements globally for labor tab
+  console.log('[DISPLAY] Storing measurements for labor tab...');
   window.currentMeasurements = data.measurements;
   window.currentRawMeasurements = data.raw;
   
   // Populate labor tab
-  displayLaborResults(data);
+  console.log('[DISPLAY] About to call displayLaborResults with data:', data);
+  try {
+    displayLaborResults(data);
+    console.log('[DISPLAY] displayLaborResults call completed');
+  } catch (err) {
+    console.error('[DISPLAY] ERROR calling displayLaborResults:', err);
+    console.error('[DISPLAY] Stack trace:', err.stack);
+  }
   
   // Ensure all zero-quantity rows have the class applied (for print preview)
   setTimeout(() => {
