@@ -1379,14 +1379,36 @@ function calculateLaborFromData(data) {
   
   console.log('[LABOR CALC] Extracted values - squares:', squares, 'hipLength:', hipLength);
   
-  // Safely extract pitch data with defaults
-  const pitchData = {
-    tier_8_9: parseFloat(raw.pitch_data?.tier_8_9) || 0,
-    tier_10_11: parseFloat(raw.pitch_data?.tier_10_11) || 0,
-    tier_12_plus: parseFloat(raw.pitch_data?.tier_12_plus) || 0
-  };
+  // Calculate pitch tier totals from facet array
+  let pitchData = { tier_8_9: 0, tier_10_11: 0, tier_12_plus: 0 };
   
-  console.log('[LABOR CALC] Pitch data extracted:', pitchData);
+  if (Array.isArray(raw.pitch_data)) {
+    // New format: pitch_data is array of facets with individual pitches
+    console.log('[LABOR CALC] Calculating tiers from facet array...');
+    raw.pitch_data.forEach(facet => {
+      const rise = parseInt(facet.rise);
+      const facetSquares = parseFloat(facet.squares) || 0;
+      
+      if (rise >= 8 && rise <= 9) {
+        pitchData.tier_8_9 += facetSquares;
+      } else if (rise >= 10 && rise <= 11) {
+        pitchData.tier_10_11 += facetSquares;
+      } else if (rise >= 12) {
+        pitchData.tier_12_plus += facetSquares;
+      }
+    });
+    console.log('[LABOR CALC] Calculated tiers from facets:', pitchData);
+  } else if (raw.pitch_data && typeof raw.pitch_data === 'object') {
+    // Old format: pitch_data already has tier totals
+    pitchData = {
+      tier_8_9: parseFloat(raw.pitch_data.tier_8_9) || 0,
+      tier_10_11: parseFloat(raw.pitch_data.tier_10_11) || 0,
+      tier_12_plus: parseFloat(raw.pitch_data.tier_12_plus) || 0
+    };
+    console.log('[LABOR CALC] Using existing tier data:', pitchData);
+  }
+  
+  console.log('[LABOR CALC] Final pitch data:', pitchData);
   
   // Base rate
   const baseRate = location === 'Greater Charleston' ? 80 : 90;
