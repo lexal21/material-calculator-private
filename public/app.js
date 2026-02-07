@@ -405,7 +405,7 @@ function displayResults(data) {
       <td data-label="Total" class="row-total">$${item.total.toFixed(2)}</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMaterialRow(${index})" aria-label="Delete ${item.name}">
-          Ã—
+          ×
         </button>
       </td>
     </tr>
@@ -467,7 +467,7 @@ function displayResults(data) {
         <td data-label="Total" class="row-total" id="miscTotal${i}">$0.00</td>
         <td class="delete-cell no-print">
           <button class="delete-btn" onclick="deleteMiscRow(${i})" aria-label="Delete additional item ${i}">
-            Ã—
+            ×
           </button>
         </td>
       </tr>
@@ -833,7 +833,7 @@ function addMoreAdditionalItems() {
       <td data-label="Total" class="row-total" id="miscTotal${i}">$0.00</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMiscRow(${i})" aria-label="Delete additional item ${i}">
-          Ã—
+          ×
         </button>
       </td>
     `;
@@ -1968,12 +1968,15 @@ function applyTemplateToMaterials() {
     }
   });
   
+  // Rebuild global additional item options with new pricing
+  window.additionalItemOptions = buildAdditionalItemOptions();
+  
   // Refresh the materials table display
   const tableBody = document.getElementById('materialsTable');
   tableBody.innerHTML = window.materialsData.map((item, index) => createMaterialRow(item, index)).join('');
   
-  // Add misc items back
-  for (let i = 1; i <= 3; i++) {
+  // Add misc items back (will use updated additionalItemOptions)
+  for (let i = 1; i <= window.miscItemCount || 3; i++) {
     tableBody.innerHTML += createAdditionalItemRow(i);
   }
   
