@@ -1,4 +1,4 @@
-const fileInput = document.getElementById('fileInput');
+﻿const fileInput = document.getElementById('fileInput');
 const uploadBox = document.getElementById('uploadBox');
 const loading = document.getElementById('loading');
 const results = document.getElementById('results');
@@ -259,7 +259,7 @@ function createAdditionalItemRow(rowNumber) {
       <td data-label="Total" class="row-total" id="miscTotal${rowNumber}">$0.00</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMiscRow(${rowNumber})" aria-label="Delete additional item ${rowNumber}">
-          �
+          ×
         </button>
       </td>
     </tr>
@@ -338,7 +338,7 @@ function displayResults(data) {
         <div class="measurement-label">
           Ridge Count
           <span class="tooltip-icon" tabindex="0" style="margin-left: 6px;">?
-            <span class="tooltip-text">Number of separate roof peaks. Auto-estimated based on ridge length: &lt;50ft = 1, 50-80ft = length÷30, &gt;80ft = length÷25</span>
+            <span class="tooltip-text">Number of separate roof peaks. Auto-estimated based on ridge length: &lt;50ft = 1, 50-80ft = lengthÃ·30, &gt;80ft = lengthÃ·25</span>
           </span>
         </div>
         <div class="measurement-value">${data.measurements.ridgeCount} (est.)</div>
@@ -405,7 +405,7 @@ function displayResults(data) {
       <td data-label="Total" class="row-total">$${item.total.toFixed(2)}</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMaterialRow(${index})" aria-label="Delete ${item.name}">
-          �
+          ×
         </button>
       </td>
     </tr>
@@ -467,7 +467,7 @@ function displayResults(data) {
         <td data-label="Total" class="row-total" id="miscTotal${i}">$0.00</td>
         <td class="delete-cell no-print">
           <button class="delete-btn" onclick="deleteMiscRow(${i})" aria-label="Delete additional item ${i}">
-            �
+            ×
           </button>
         </td>
       </tr>
@@ -833,7 +833,7 @@ function addMoreAdditionalItems() {
       <td data-label="Total" class="row-total" id="miscTotal${i}">$0.00</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMiscRow(${i})" aria-label="Delete additional item ${i}">
-          �
+          ×
         </button>
       </td>
     `;
