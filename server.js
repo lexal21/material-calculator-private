@@ -47,8 +47,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 
 // Configure file upload (use /tmp for Railway)
@@ -62,7 +62,7 @@ const upload = multer({
     }
   },
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+    fileSize: 50 * 1024 * 1024 // 50MB limit (increased for new Ridge Top PDFs)
   }
 });
 
