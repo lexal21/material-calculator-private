@@ -1364,27 +1364,41 @@ function displayLaborResults(data) {
 
 
 function calculateLaborFromData(data) {
+  console.log('[LABOR CALC] Starting with data:', data);
+  
   const measurements = data.measurements;
   const raw = data.raw || {}; // Raw measurements from PDF parser
   const materials = data.materials;
   const location = document.getElementById('laborLocation')?.value || 'Out of Area';
   
+  console.log('[LABOR CALC] raw.pitch_data:', raw.pitch_data);
+  
   // Use measurements for calculated values, raw for PDF extracted values
   const squares = parseFloat(raw.roof_sq) || parseFloat(measurements.roofSquares) || 0;
   const hipLength = parseFloat(raw.hip_length) || parseFloat(measurements.hipLength) || 0;
-  const pitchData = raw.pitch_data || { tier_8_9: 0, tier_10_11: 0, tier_12_plus: 0 };
+  
+  console.log('[LABOR CALC] Extracted values - squares:', squares, 'hipLength:', hipLength);
+  
+  // Safely extract pitch data with defaults
+  const pitchData = {
+    tier_8_9: parseFloat(raw.pitch_data?.tier_8_9) || 0,
+    tier_10_11: parseFloat(raw.pitch_data?.tier_10_11) || 0,
+    tier_12_plus: parseFloat(raw.pitch_data?.tier_12_plus) || 0
+  };
+  
+  console.log('[LABOR CALC] Pitch data extracted:', pitchData);
   
   // Base rate
   const baseRate = location === 'Greater Charleston' ? 80 : 90;
   
   // Waste factor
   const wasteMultiplier = hipLength > 100 ? 1.15 : 1.10;
-  const squaresWithWaste = squares * wasteMultiplier;
+  const squaresWithWaste = (squares || 0) * wasteMultiplier;
   
-  // Find material quantities
-  const starterBundles = materials.find(m => m.name.includes('Starter'))?.quantity || 0;
-  const hipRidgeBundles = materials.find(m => m.name.includes('Hip'))?.quantity || 0;
-  const plywoodSheets = materials.find(m => m.name.includes('Plywood'))?.quantity || 0;
+  // Find material quantities (ensure they're numbers, not undefined)
+  const starterBundles = parseFloat(materials.find(m => m.name.includes('Starter'))?.quantity) || 0;
+  const hipRidgeBundles = parseFloat(materials.find(m => m.name.includes('Hip'))?.quantity) || 0;
+  const plywoodSheets = parseFloat(materials.find(m => m.name.includes('Plywood'))?.quantity) || 0;
   const flashingLength = parseFloat(raw.flashing_length) || 0;
   const stepFlashingLength = parseFloat(raw.step_flashing) || 0;
   
