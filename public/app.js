@@ -1,4 +1,4 @@
-﻿const fileInput = document.getElementById('fileInput');
+const fileInput = document.getElementById('fileInput');
 const uploadBox = document.getElementById('uploadBox');
 const loading = document.getElementById('loading');
 const results = document.getElementById('results');
@@ -259,7 +259,7 @@ function createAdditionalItemRow(rowNumber) {
       <td data-label="Total" class="row-total" id="miscTotal${rowNumber}">$0.00</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMiscRow(${rowNumber})" aria-label="Delete additional item ${rowNumber}">
-          ×
+          �
         </button>
       </td>
     </tr>
@@ -338,7 +338,7 @@ function displayResults(data) {
         <div class="measurement-label">
           Ridge Count
           <span class="tooltip-icon" tabindex="0" style="margin-left: 6px;">?
-            <span class="tooltip-text">Number of separate roof peaks. Auto-estimated based on ridge length: &lt;50ft = 1, 50-80ft = lengthÃ·30, &gt;80ft = lengthÃ·25</span>
+            <span class="tooltip-text">Number of separate roof peaks. Auto-estimated based on ridge length: &lt;50ft = 1, 50-80ft = length÷30, &gt;80ft = length÷25</span>
           </span>
         </div>
         <div class="measurement-value">${data.measurements.ridgeCount} (est.)</div>
@@ -405,7 +405,7 @@ function displayResults(data) {
       <td data-label="Total" class="row-total">$${item.total.toFixed(2)}</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMaterialRow(${index})" aria-label="Delete ${item.name}">
-          ×
+          �
         </button>
       </td>
     </tr>
@@ -467,7 +467,7 @@ function displayResults(data) {
         <td data-label="Total" class="row-total" id="miscTotal${i}">$0.00</td>
         <td class="delete-cell no-print">
           <button class="delete-btn" onclick="deleteMiscRow(${i})" aria-label="Delete additional item ${i}">
-            ×
+            �
           </button>
         </td>
       </tr>
@@ -833,7 +833,7 @@ function addMoreAdditionalItems() {
       <td data-label="Total" class="row-total" id="miscTotal${i}">$0.00</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMiscRow(${i})" aria-label="Delete additional item ${i}">
-          ×
+          �
         </button>
       </td>
     `;
@@ -873,19 +873,19 @@ function validateQuantity(input, value) {
   
   // Check for invalid values
   if (isNaN(qty)) {
-    showError(input, 'Please enter a valid number');
+    showFieldError(input, 'Please enter a valid number');
     return false;
   }
   
   if (qty < 0) {
-    showError(input, 'Quantity cannot be negative');
+    showFieldError(input, 'Quantity cannot be negative');
     return false;
   }
   
   // Allow 0 quantity (will hide item from print/PDF)
   
   if (qty > 10000) {
-    showError(input, 'Quantity seems unusually high - please verify');
+    showFieldError(input, 'Quantity seems unusually high - please verify');
     return false;
   }
   
@@ -904,22 +904,22 @@ function validatePrice(input, value) {
   
   // Check for invalid values
   if (isNaN(price)) {
-    showError(input, 'Please enter a valid price');
+    showFieldError(input, 'Please enter a valid price');
     return false;
   }
   
   if (price < 0) {
-    showError(input, 'Price cannot be negative');
+    showFieldError(input, 'Price cannot be negative');
     return false;
   }
   
   if (price === 0) {
-    showError(input, 'Price must be greater than $0');
+    showFieldError(input, 'Price must be greater than $0');
     return false;
   }
   
   if (price > 10000) {
-    showError(input, 'Price seems unusually high - please verify');
+    showFieldError(input, 'Price seems unusually high - please verify');
     return false;
   }
   
@@ -938,17 +938,17 @@ function validateTaxRate(input, value) {
   
   // Check for invalid values
   if (isNaN(rate)) {
-    showError(input, 'Please enter a valid tax rate');
+    showFieldError(input, 'Please enter a valid tax rate');
     return false;
   }
   
   if (rate < 0) {
-    showError(input, 'Tax rate cannot be negative');
+    showFieldError(input, 'Tax rate cannot be negative');
     return false;
   }
   
   if (rate > 100) {
-    showError(input, 'Tax rate cannot exceed 100%');
+    showFieldError(input, 'Tax rate cannot exceed 100%');
     return false;
   }
   
@@ -957,8 +957,8 @@ function validateTaxRate(input, value) {
   return true;
 }
 
-// Show error message
-function showError(input, message) {
+// Show field validation error message
+function showFieldError(input, message) {
   input.classList.add('error');
   
   // Create error message element
