@@ -210,12 +210,12 @@
     <div id="calculatorTab" class="tab-content">
     <div id="results" style="display: none;">
       <div class="section">
-        <h2>ðŸ“ Measurements</h2>
+        <h2>&#128207; Measurements</h2>
         <div class="measurements-grid" id="measurements"></div>
       </div>
 
       <div class="section">
-        <h2>ðŸ“¦ Material List</h2>
+        <h2>&#128203; Material List</h2>
         
         <div class="template-selector-materials no-print" style="margin-bottom: 16px; display: none;" id="materialTemplateSelector">
           <label for="materialTemplateSelect" style="font-weight: 600; margin-right: 8px;">Price List:</label>
@@ -231,9 +231,7 @@
           <button class="btn-danger btn-sm" onclick="deleteSelectedMaterials()" title="Delete selected items">
             Delete Selected
           </button>
-          <button class="btn-secondary btn-sm" onclick="undoLastAction()" title="Undo last action" style="font-size: 18px; padding: 4px 12px;">
-            â†º
-          </button>
+          <button class="btn-secondary btn-sm" onclick="undoLastAction()" title="Undo last action" style="font-size: 18px; padding: 4px 12px;">&#8634;</button>
         </div>
         <table class="materials-table">
           <thead>
@@ -274,11 +272,11 @@
 
     <div id="laborTab" class="tab-content">
       <div class="section">
-        <h2>ðŸ‘· Labor Invoice Generator</h2>
+        <h2>&#128176; Labor Invoice Generator</h2>
         <p class="pricing-note">Upload a Ridge Top PDF in the Calculator tab first, then view auto-calculated labor costs here.</p>
         
         <div id="laborNotReady" style="display: block; padding: 40px; text-align: center; color: #718096;">
-          <p>ðŸ“‹ Upload a PDF in the Calculator tab to generate labor invoice</p>
+          <p>&#128220; Upload a PDF in the Calculator tab to generate labor invoice</p>
         </div>
         
         <div id="laborResults" style="display: none;">
@@ -297,9 +295,7 @@
             <button class="btn-danger btn-sm" onclick="deleteSelectedLabor()" title="Delete selected items">
               Delete Selected
             </button>
-            <button class="btn-secondary btn-sm" onclick="undoLastLaborAction()" title="Undo last action" style="font-size: 18px; padding: 4px 12px;">
-              â†º
-            </button>
+            <button class="btn-secondary btn-sm" onclick="undoLastLaborAction()" title="Undo last action" style="font-size: 18px; padding: 4px 12px;">&#8634;</button>
           </div>
           
           <table class="materials-table">
@@ -350,7 +346,7 @@
 
     <div id="pricingTab" class="tab-content">
       <div class="section">
-        <h2>ðŸ’° Manage Pricing</h2>
+        <h2>&#128200; Manage Pricing</h2>
         <p class="pricing-note">Edit material prices below. Changes are saved automatically and will be used in all future calculations.</p>
         
         <div class="pricing-controls">
@@ -409,7 +405,7 @@
   <script src="all-materials.js"></script>
   <script src="templates.js"></script>
   <script src="pricing.js"></script>
-  <script src="project-manager.js"></script>
   <script src="app.js"></script>
+  <script src="project-manager.js"></script>
 </body>
 </html>
