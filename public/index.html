@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -45,6 +45,69 @@
     .btn-logout:hover {
       background: #dc2626;
     }
+    
+    /* Project Management Toolbar */
+    .project-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background: #f8fafc;
+      border-bottom: 2px solid #e2e8f0;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .project-controls-left,
+    .project-controls-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .btn-new-project,
+    .btn-save-project {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-new-project {
+      background: #2B7BA3;
+      color: white;
+    }
+    
+    .btn-new-project:hover {
+      background: #236489;
+    }
+    
+    .btn-save-project {
+      background: #10b981;
+      color: white;
+    }
+    
+    .btn-save-project:hover {
+      background: #059669;
+    }
+    
+    .project-dropdown {
+      padding: 8px 12px;
+      border: 2px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 14px;
+      min-width: 250px;
+      cursor: pointer;
+      background: white;
+    }
+    
+    .project-dropdown:focus {
+      outline: none;
+      border-color: #2B7BA3;
+    }
   </style>
 </head>
 <body>
@@ -67,6 +130,24 @@
       <button class="tab-btn" onclick="switchTab('calculator')">Materials</button>
       <button class="tab-btn" onclick="switchTab('labor')">Labor</button>
       <button class="tab-btn" onclick="switchTab('pricing')">Pricing</button>
+    </div>
+
+    <!-- Project Management Toolbar -->
+    <div class="project-toolbar">
+      <div class="project-controls-left">
+        <button class="btn-new-project" onclick="projectManager.startNewProject()" title="Start new project">
+          + New Project
+        </button>
+        <button class="btn-save-project" onclick="projectManager.showSaveProjectDialog()" title="Save current project">
+          💾 Save As...
+        </button>
+      </div>
+      <div class="project-controls-right">
+        <label for="projectDropdown" style="font-weight: 600; margin-right: 8px;">Projects:</label>
+        <select id="projectDropdown" onchange="projectManager.onProjectDropdownChange()" class="project-dropdown">
+          <option value="">Select Project...</option>
+        </select>
+      </div>
     </div>
 
     <div id="homeTab" class="tab-content active">
@@ -129,12 +210,12 @@
     <div id="calculatorTab" class="tab-content">
     <div id="results" style="display: none;">
       <div class="section">
-        <h2>📐 Measurements</h2>
+        <h2>ðŸ“ Measurements</h2>
         <div class="measurements-grid" id="measurements"></div>
       </div>
 
       <div class="section">
-        <h2>📦 Material List</h2>
+        <h2>ðŸ“¦ Material List</h2>
         
         <div class="template-selector-materials no-print" style="margin-bottom: 16px; display: none;" id="materialTemplateSelector">
           <label for="materialTemplateSelect" style="font-weight: 600; margin-right: 8px;">Price List:</label>
@@ -151,7 +232,7 @@
             Delete Selected
           </button>
           <button class="btn-secondary btn-sm" onclick="undoLastAction()" title="Undo last action" style="font-size: 18px; padding: 4px 12px;">
-            ↺
+            â†º
           </button>
         </div>
         <table class="materials-table">
@@ -193,11 +274,11 @@
 
     <div id="laborTab" class="tab-content">
       <div class="section">
-        <h2>👷 Labor Invoice Generator</h2>
+        <h2>ðŸ‘· Labor Invoice Generator</h2>
         <p class="pricing-note">Upload a Ridge Top PDF in the Calculator tab first, then view auto-calculated labor costs here.</p>
         
         <div id="laborNotReady" style="display: block; padding: 40px; text-align: center; color: #718096;">
-          <p>📋 Upload a PDF in the Calculator tab to generate labor invoice</p>
+          <p>ðŸ“‹ Upload a PDF in the Calculator tab to generate labor invoice</p>
         </div>
         
         <div id="laborResults" style="display: none;">
@@ -217,7 +298,7 @@
               Delete Selected
             </button>
             <button class="btn-secondary btn-sm" onclick="undoLastLaborAction()" title="Undo last action" style="font-size: 18px; padding: 4px 12px;">
-              ↺
+              â†º
             </button>
           </div>
           
@@ -269,7 +350,7 @@
 
     <div id="pricingTab" class="tab-content">
       <div class="section">
-        <h2>💰 Manage Pricing</h2>
+        <h2>ðŸ’° Manage Pricing</h2>
         <p class="pricing-note">Edit material prices below. Changes are saved automatically and will be used in all future calculations.</p>
         
         <div class="pricing-controls">
@@ -328,6 +409,7 @@
   <script src="all-materials.js"></script>
   <script src="templates.js"></script>
   <script src="pricing.js"></script>
+  <script src="project-manager.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
