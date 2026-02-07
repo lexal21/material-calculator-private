@@ -79,8 +79,19 @@ function getCurrentActiveTab() {
 function saveCurrentSession() {
   try {
     const data = getCurrentProjectData();
+    
+    // Only save if we have actual data
+    if (!data.pdfData && (!data.materialsData || data.materialsData.length === 0)) {
+      console.log('No data to save yet');
+      return;
+    }
+    
     localStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(data));
-    console.log('Session auto-saved');
+    console.log('✓ Session auto-saved:', {
+      materials: data.materialsData?.length || 0,
+      customer: data.customerName || 'None',
+      hasLabor: !!data.laborData
+    });
   } catch (e) {
     console.error('Failed to save session:', e);
   }
@@ -90,10 +101,20 @@ function saveCurrentSession() {
 function loadCurrentSession() {
   try {
     const stored = localStorage.getItem(CURRENT_SESSION_KEY);
-    if (!stored) return false;
+    if (!stored) {
+      console.log('No previous session to restore');
+      return false;
+    }
     
+    console.log('Found saved session, attempting to restore...');
     const data = JSON.parse(stored);
-    restoreProjectData(data);
+    
+    // Wait a moment for DOM to be fully ready
+    setTimeout(() => {
+      restoreProjectData(data);
+      console.log('Session restored successfully!');
+    }, 100);
+    
     return true;
   } catch (e) {
     console.error('Failed to load session:', e);
@@ -114,14 +135,22 @@ function restoreProjectData(data) {
   window.taxRate = data.taxRate || 9;
   window.currentJobNumber = data.jobNumber;
   
-  // Hide upload, show results
+  // Show results if we have data
   if (data.pdfData && data.materialsData.length > 0) {
-    document.getElementById('uploadSection').style.display = 'none';
-    document.getElementById('results').style.display = 'block';
-    
     // Restore materials tab
     if (typeof displayResults === 'function') {
       displayResults(data.pdfData);
+    }
+    
+    // Switch to calculator tab to show results
+    if (typeof switchTab === 'function') {
+      switchTab('calculator');
+    }
+    
+    // Make sure results are visible
+    const resultsDiv = document.getElementById('results');
+    if (resultsDiv) {
+      resultsDiv.style.display = 'block';
     }
     
     // Restore customer info
