@@ -264,37 +264,61 @@ function extractPitchData(text) {
       continue;
     }
     
-    // Try OLD format: "Main LevelF1869.48.6910" or "Upper LevelF2817.220.177.5"
-    const oldMatch = line.match(/^(Main Level|Upper Level|Lower Level)F(\d{1,2})([\d.]+)$/i);
+    // Try OLD format: "Main LevelF11165.9711.666" = F1, 1165.97 sqft, 11.66 squares, 6/12 pitch
+    const oldMatch = line.match(/^(Main Level|Upper Level|Lower Level)F(\d)([\d.]+)$/i);
     if (!oldMatch) continue;
     
-    const facetNum = oldMatch[2];
-    const numbersStr = oldMatch[3];
-    const decimals = (numbersStr.match(/\./g) || []).length;
+    const facetNum = oldMatch[2]; // Single digit facet (F1, F2, etc.)
+    const numbersStr = oldMatch[3]; // Everything after: "1165.9711.666"
     
-    let sqFt, squares, pitch, rise;
+    // Old format pattern: AREA.XXXXXXSQUARES.XXXXPITCH
+    // e.g., "1165.9711.666" = 1165.97 sqft, 11.66 squares, 6/12 pitch
+    // The trick: we know squares ≈ area / 100, so use that to split correctly
     
-    if (decimals === 2) {
-      // Format: XXX.XXYY.YYPITCH (e.g., "869.488.6910")
-      const lastDotIndex = numbersStr.lastIndexOf('.');
-      pitch = parseFloat(numbersStr.substring(lastDotIndex));
+    // Split by decimals
+    const parts = numbersStr.split('.');
+    if (parts.length < 3) continue; // Need at least 2 decimals
+    
+    // Try different split points
+    let sqFt, squares, rise;
+    let bestMatch = null;
+    
+    // Try area with 2 decimal places (most common)
+    // Pattern: XXX.XXYYY.ZZPITCH or XXXX.XXYY.ZZPITCH
+    for (let areaDecimals = 2; areaDecimals <= 2; areaDecimals++) {
+      if (parts[1].length < areaDecimals) continue;
       
-      const remaining = numbersStr.substring(0, lastDotIndex);
-      const secondLastDotIndex = remaining.lastIndexOf('.');
-      squares = parseFloat(remaining.substring(secondLastDotIndex));
-      sqFt = parseFloat(remaining.substring(0, secondLastDotIndex));
+      const areaInt = parts[0];
+      const areaDec = parts[1].substring(0, areaDecimals);
+      const testArea = parseFloat(areaInt + '.' + areaDec);
       
-    } else if (decimals === 3) {
-      // Format: XXX.XXYY.YYPITCH.ZZ (e.g., "17.220.177.5")
-      const parts = numbersStr.split('.');
-      sqFt = parseFloat(parts[0] + '.' + parts[1].substring(0, 2));
-      squares = parseFloat('0.' + parts[1].substring(2));
-      pitch = parseFloat(parts[2].substring(0, 1) + '.' + parts[3]);
+      // Remaining digits after area decimals
+      const remaining = parts[1].substring(areaDecimals);
+      
+      // Try squares with 2 decimal places
+      if (remaining.length >= 1 && parts.length >= 3 && parts[2].length >= 3) {
+        const squaresInt = remaining;
+        const squaresDec = parts[2].substring(0, 2);
+        const testSquares = parseFloat(squaresInt + '.' + squaresDec);
+        
+        // Rise is after squares decimals
+        const testRise = parseInt(parts[2].substring(2));
+        
+        // Validate: squares should be ≈ area / 100
+        const expectedSquares = testArea / 100;
+        const error = Math.abs(expectedSquares - testSquares);
+        const tolerance = Math.max(expectedSquares * 0.1, 0.5);
+        
+        if (error < tolerance && testRise >= 4 && testRise <= 16) {
+          sqFt = testArea;
+          squares = testSquares;
+          rise = testRise;
+          break;
+        }
+      }
     }
     
-    if (!isNaN(pitch) && !isNaN(squares) && !isNaN(sqFt)) {
-      rise = Math.floor(pitch); // e.g., 10 from 10/12 pitch
-      
+    if (sqFt && squares && rise) {
       pitchData.push({
         label: `F${facetNum}`,
         area: sqFt,
