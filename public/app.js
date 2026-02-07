@@ -1281,9 +1281,14 @@ function generatePDF() {
 window.laborData = null;
 
 function displayLaborResults(data) {
+  console.log('[LABOR] displayLaborResults called with data:', data);
+  
   if (!data || !data.materials) {
+    console.log('[LABOR] No data or materials, returning early');
     return;
   }
+  
+  console.log('[LABOR] Data validation passed, proceeding...');
   
   // Auto-detect labor location from address
   const address = data.raw?.address || '';
@@ -1312,22 +1317,38 @@ function displayLaborResults(data) {
   }
   
   // Calculate labor from measurements and materials
+  console.log('[LABOR] Calling calculateLaborFromData...');
   const laborCalc = calculateLaborFromData(data);
+  console.log('[LABOR] Labor calculation result:', laborCalc);
   window.laborData = laborCalc;
   
   // Show labor results section
-  document.getElementById('laborNotReady').style.display = 'none';
-  document.getElementById('laborResults').style.display = 'block';
+  console.log('[LABOR] Showing labor results section...');
+  const laborNotReady = document.getElementById('laborNotReady');
+  const laborResults = document.getElementById('laborResults');
+  console.log('[LABOR] laborNotReady element:', laborNotReady);
+  console.log('[LABOR] laborResults element:', laborResults);
+  
+  if (laborNotReady) laborNotReady.style.display = 'none';
+  if (laborResults) laborResults.style.display = 'block';
   
   // Initialize labor item selector dropdown
+  console.log('[LABOR] Initializing labor item selector...');
   initializeLaborItemSelector();
   
   // Populate labor table
+  console.log('[LABOR] Populating labor table...');
   const laborTable = document.getElementById('laborTable');
-  laborTable.innerHTML = laborCalc.items.map((item, index) => createLaborRow(item, index)).join('');
+  console.log('[LABOR] laborTable element:', laborTable);
+  if (laborTable) {
+    laborTable.innerHTML = laborCalc.items.map((item, index) => createLaborRow(item, index)).join('');
+    console.log('[LABOR] Labor table populated with', laborCalc.items.length, 'items');
+  }
   
   // Update totals
+  console.log('[LABOR] Updating labor totals...');
   updateLaborTotals();
+  console.log('[LABOR] displayLaborResults complete!');
 }
 
 
