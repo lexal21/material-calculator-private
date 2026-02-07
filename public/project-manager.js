@@ -337,11 +337,21 @@ function startNewProject() {
   window.taxRate = 9;
   window.currentJobNumber = '';
   
-  // Reset UI
-  document.getElementById('uploadSection').style.display = 'block';
-  document.getElementById('results').style.display = 'none';
-  document.getElementById('laborResults').style.display = 'none';
-  document.getElementById('laborNotReady').style.display = 'block';
+  // Hide results
+  const resultsDiv = document.getElementById('results');
+  if (resultsDiv) {
+    resultsDiv.style.display = 'none';
+  }
+  
+  const laborResultsDiv = document.getElementById('laborResults');
+  if (laborResultsDiv) {
+    laborResultsDiv.style.display = 'none';
+  }
+  
+  const laborNotReadyDiv = document.getElementById('laborNotReady');
+  if (laborNotReadyDiv) {
+    laborNotReadyDiv.style.display = 'block';
+  }
   
   // Clear file input
   const fileInput = document.getElementById('fileInput');
@@ -349,9 +359,22 @@ function startNewProject() {
     fileInput.value = '';
   }
   
-  // Switch to upload tab
+  // Clear form inputs
+  const customerNameInput = document.getElementById('customerName');
+  if (customerNameInput) customerNameInput.value = '';
+  
+  const shingleColorInput = document.getElementById('shingleColorInput');
+  if (shingleColorInput) shingleColorInput.value = '';
+  
+  const jobNumberInput = document.getElementById('jobNumber');
+  if (jobNumberInput) jobNumberInput.value = '';
+  
+  const taxRateInput = document.getElementById('taxRateInput');
+  if (taxRateInput) taxRateInput.value = '9';
+  
+  // Switch to home tab (upload screen)
   if (typeof switchTab === 'function') {
-    switchTab('upload');
+    switchTab('home');
   }
   
   // Update dropdown
@@ -359,6 +382,8 @@ function startNewProject() {
   if (dropdown) {
     dropdown.value = '';
   }
+  
+  console.log('✓ Started new project - ready for upload');
 }
 
 // ============================================
