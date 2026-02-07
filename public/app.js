@@ -173,6 +173,99 @@ function hideError() {
   error.style.display = 'none';
 }
 
+// Build additional item options from ALL_MATERIALS + current pricing
+function buildAdditionalItemOptions() {
+  const options = [
+    { name: 'Select Item...', price: 0 }
+  ];
+  
+  // Get current pricing
+  const currentPricing = window.getCurrentPricing ? window.getCurrentPricing() : {};
+  
+  // Add ALL_MATERIALS items (includes Custom Item...)
+  if (window.ALL_MATERIALS) {
+    window.ALL_MATERIALS.forEach(item => {
+      // Update price from current pricing if available
+      const price = currentPricing[item.name] ? currentPricing[item.name].price : item.price;
+      options.push({
+        name: item.name,
+        price: price
+      });
+    });
+  }
+  
+  // Add any custom items from pricing that aren't in ALL_MATERIALS
+  Object.keys(currentPricing).forEach(itemName => {
+    const existsInOptions = options.some(opt => opt.name === itemName);
+    if (!existsInOptions) {
+      options.push({
+        name: itemName,
+        price: currentPricing[itemName].price
+      });
+    }
+  });
+  
+  return options;
+}
+
+// Create HTML for an additional item row
+function createAdditionalItemRow(rowNumber) {
+  const additionalItemOptions = buildAdditionalItemOptions();
+  const optionsHTML = additionalItemOptions.map(item => 
+    `<option value="${item.name}" data-price="${item.price}">${item.name}</option>`
+  ).join('');
+  
+  return `
+    <tr class="misc-row no-print-repeat zero-quantity" data-misc="${rowNumber}">
+      <td class="checkbox-cell no-print">
+        <input type="checkbox" class="material-checkbox" data-misc="${rowNumber}" onchange="toggleMiscSelection(${rowNumber})">
+      </td>
+      <td data-label="Item">
+        <select 
+          class="editable-input misc-name-input" 
+          id="miscItem${rowNumber}"
+          onchange="updateMiscItemSelect(${rowNumber})"
+          style="width: 100%; max-width: 300px;"
+        >
+          ${optionsHTML}
+        </select>
+      </td>
+      <td data-label="Quantity" class="editable-cell">
+        <div class="quantity-cell">
+          <input 
+            type="number" 
+            class="editable-input quantity-input" 
+            id="miscQty${rowNumber}"
+            value="0"
+            min="0"
+            step="1"
+            onchange="updateMiscRow(${rowNumber})"
+            aria-label="Quantity for additional item ${rowNumber}"
+          />
+        </div>
+      </td>
+      <td data-label="Unit Price" class="editable-cell">
+        $<input 
+          type="number" 
+          step="0.01"
+          min="0"
+          class="editable-input price-input" 
+          id="miscPrice${rowNumber}"
+          value="0.00" 
+          onchange="updateMiscRow(${rowNumber})"
+          aria-label="Unit price for additional item ${rowNumber}"
+        />
+      </td>
+      <td data-label="Total" class="row-total" id="miscTotal${rowNumber}">$0.00</td>
+      <td class="delete-cell no-print">
+        <button class="delete-btn" onclick="deleteMiscRow(${rowNumber})" aria-label="Delete additional item ${rowNumber}">
+          ×
+        </button>
+      </td>
+    </tr>
+  `;
+}
+
 function displayResults(data) {
   // Store data for restoration after print
   window.currentPDFData = data;
@@ -319,20 +412,8 @@ function displayResults(data) {
   `;
   }).join('');
   
-  // Additional items dropdown options
-  const additionalItemOptions = [
-    { name: 'Select Item...', price: 0 },
-    { name: 'Custom Item...', price: 0 },
-    { name: 'NP1 Masterseal', price: 0 },
-    { name: 'Pipe Boot 1.5"', price: 0 },
-    { name: 'Pipe Boot 2"', price: 0 },
-    { name: 'Pipe Boot 3"', price: 0 },
-    { name: 'Pipe Boot 4"', price: 0 },
-    { name: 'Skylight', price: 0 },
-    { name: 'Skylight Flashing Kit', price: 0 },
-    { name: 'Trim Coil Flashing', price: 0 },
-    { name: 'Vinyl Siding', price: 0 }
-  ];
+  // Additional items dropdown options - dynamically built from ALL_MATERIALS + current pricing
+  const additionalItemOptions = buildAdditionalItemOptions();
   
   window.additionalItemOptions = additionalItemOptions;
   
@@ -699,7 +780,8 @@ function addMoreAdditionalItems() {
   const currentCount = window.miscItemCount || 10;
   const newCount = currentCount + 3; // Add 3 more items at a time
   
-  const additionalItemOptions = window.additionalItemOptions || [];
+  // Rebuild options to get latest pricing
+  const additionalItemOptions = buildAdditionalItemOptions();
   const optionsHTML = additionalItemOptions.map(item => 
     `<option value="${item.name}" data-price="${item.price}">${item.name}</option>`
   ).join('');
@@ -1511,15 +1593,40 @@ function addMoreLaborItems() {
   
   const selector = document.getElementById('laborItemSelector');
   const selectedOption = selector.options[selector.selectedIndex];
-  const itemName = selectedOption.value;
+  let itemName = selectedOption.value;
   
   if (itemName === 'Select Item...') {
     alert('Please select an item to add');
     return;
   }
   
-  const unit = selectedOption.getAttribute('data-unit');
-  const unitPrice = parseFloat(selectedOption.getAttribute('data-price'));
+  let unit = selectedOption.getAttribute('data-unit');
+  let unitPrice = parseFloat(selectedOption.getAttribute('data-price'));
+  
+  // Handle custom item
+  if (itemName === 'Custom Item...') {
+    const customName = prompt('Enter custom labor item name:');
+    if (!customName || !customName.trim()) {
+      return;
+    }
+    
+    const customUnit = prompt('Enter unit (e.g., EA, SQ, SF):', 'EA');
+    if (!customUnit || !customUnit.trim()) {
+      return;
+    }
+    
+    const customPriceStr = prompt('Enter unit price:', '0');
+    const customPrice = parseFloat(customPriceStr);
+    
+    if (isNaN(customPrice)) {
+      alert('Invalid price');
+      return;
+    }
+    
+    itemName = customName.trim();
+    unit = customUnit.trim();
+    unitPrice = customPrice;
+  }
   
   // Create new labor item
   const newItem = {
