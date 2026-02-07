@@ -405,7 +405,7 @@ function populateProjectDropdown() {
   if (currentSession) {
     const option = document.createElement('option');
     option.value = 'current';
-    option.textContent = 'â–º Current Session (auto-saved)';
+    option.textContent = '>> Current Session (auto-saved)';
     dropdown.appendChild(option);
   }
   
