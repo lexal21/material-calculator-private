@@ -223,21 +223,124 @@ function estimateRidgeCount(measurements) {
  */
 function extractPitchData(text) {
   const pitchData = [];
-  
-  // NEW format: "F1916.93 ft²9.17 sq6:12" is concatenated
-  // Strategy: Match the whole pattern, then parse backwards using squares as anchor
   const lines = text.split('\n');
   
   for (const line of lines) {
-    // Look for facet lines: starts with F followed by numbers
-    const match = line.match(/^F(\d+)([\d,.]+)\s*ft[²2]([\d,.]+)\s*sq(\d+):(\d+)/i);
-    if (!match) continue;
+    // Try NEW format first: "F1916.93 ft²9.17 sq6:12"
+    const newMatch = line.match(/^F(\d+)([\d,.]+)\s*ft[²2]([\d,.]+)\s*sq(\d+):(\d+)/i);
+    if (newMatch) {
+      const fullFacetNum = newMatch[1];
+      const areaStr = newMatch[2].replace(/,/g, '');
+      const squares = parseFloat(newMatch[3].replace(/,/g, ''));
+      const rise = parseInt(newMatch[4]);
+      const run = parseInt(newMatch[5]);
+      
+      // Parse concatenated facet number (see logic below)
+      const expectedArea = squares * 100;
+      let facetNum = fullFacetNum;
+      let area = parseFloat(areaStr);
+      
+      for (let facetLen = 1; facetLen <= 2 && facetLen < fullFacetNum.length; facetLen++) {
+        const testFacet = fullFacetNum.substring(0, facetLen);
+        const remainingDigits = fullFacetNum.substring(facetLen);
+        const testArea = parseFloat(remainingDigits + areaStr);
+        
+        const error = Math.abs(testArea - expectedArea);
+        if (error < expectedArea * 0.1) {
+          facetNum = testFacet;
+          area = testArea;
+          break;
+        }
+      }
+      
+      pitchData.push({
+        label: `F${facetNum}`,
+        area: area,
+        squares: squares,
+        pitch: `${rise}:${run}`,
+        rise: rise,
+        run: run
+      });
+      continue;
+    }
     
-    const fullFacetNum = match[1]; // This might be "1916" instead of "1"
-    const areaStr = match[2].replace(/,/g, '');
-    const squares = parseFloat(match[3].replace(/,/g, ''));
-    const rise = parseInt(match[4]);
-    const run = parseInt(match[5]);
+    // Try OLD format: "Main LevelF1869.48.6910" or "Upper LevelF2817.220.177.5"
+    const oldMatch = line.match(/^(Main Level|Upper Level|Lower Level)F(\d{1,2})([\d.]+)$/i);
+    if (!oldMatch) continue;
+    
+    const facetNum = oldMatch[2];
+    const numbersStr = oldMatch[3];
+    const decimals = (numbersStr.match(/\./g) || []).length;
+    
+    let sqFt, squares, pitch, rise;
+    
+    if (decimals === 2) {
+      // Format: XXX.XXYY.YYPITCH (e.g., "869.488.6910")
+      const lastDotIndex = numbersStr.lastIndexOf('.');
+      pitch = parseFloat(numbersStr.substring(lastDotIndex));
+      
+      const remaining = numbersStr.substring(0, lastDotIndex);
+      const secondLastDotIndex = remaining.lastIndexOf('.');
+      squares = parseFloat(remaining.substring(secondLastDotIndex));
+      sqFt = parseFloat(remaining.substring(0, secondLastDotIndex));
+      
+    } else if (decimals === 3) {
+      // Format: XXX.XXYY.YYPITCH.ZZ (e.g., "17.220.177.5")
+      const parts = numbersStr.split('.');
+      sqFt = parseFloat(parts[0] + '.' + parts[1].substring(0, 2));
+      squares = parseFloat('0.' + parts[1].substring(2));
+      pitch = parseFloat(parts[2].substring(0, 1) + '.' + parts[3]);
+    }
+    
+    if (!isNaN(pitch) && !isNaN(squares) && !isNaN(sqFt)) {
+      rise = Math.floor(pitch); // e.g., 10 from 10/12 pitch
+      
+      pitchData.push({
+        label: `F${facetNum}`,
+        area: sqFt,
+        squares: squares,
+        pitch: `${rise}:12`,
+        rise: rise,
+        run: 12
+      });
+    }
+  }
+  
+  console.log(`  ✓ Found ${pitchData.length} facets with pitch data`);
+  
+  // Calculate tier totals from facets (for labor calculator compatibility)
+  const tiers = {
+    tier_8_9: 0,
+    tier_10_11: 0,
+    tier_12_plus: 0
+  };
+  
+  pitchData.forEach(facet => {
+    const facetRise = facet.rise;
+    const facetSquares = facet.squares;
+    
+    if (facetRise >= 8 && facetRise <= 9) {
+      tiers.tier_8_9 += facetSquares;
+    } else if (facetRise >= 10 && facetRise <= 11) {
+      tiers.tier_10_11 += facetSquares;
+    } else if (facetRise >= 12) {
+      tiers.tier_12_plus += facetSquares;
+    }
+  });
+  
+  // Round to 2 decimals
+  tiers.tier_8_9 = Math.round(tiers.tier_8_9 * 100) / 100;
+  tiers.tier_10_11 = Math.round(tiers.tier_10_11 * 100) / 100;
+  tiers.tier_12_plus = Math.round(tiers.tier_12_plus * 100) / 100;
+  
+  console.log(`  ✓ Calculated tiers: 8-9=${tiers.tier_8_9}, 10-11=${tiers.tier_10_11}, 12+=${tiers.tier_12_plus}`);
+  
+  // Return object with both facet array AND tier totals
+  return {
+    facets: pitchData,
+    ...tiers
+  };
+}
     
     // Expected area from squares (squares ≈ area / 100)
     const expectedArea = squares * 100;
@@ -275,7 +378,39 @@ function extractPitchData(text) {
   }
   
   console.log(`  ✓ Found ${pitchData.length} facets with pitch data`);
-  return pitchData;
+  
+  // Calculate tier totals from facets (for labor calculator compatibility)
+  const tiers = {
+    tier_8_9: 0,
+    tier_10_11: 0,
+    tier_12_plus: 0
+  };
+  
+  pitchData.forEach(facet => {
+    const rise = facet.rise;
+    const squares = facet.squares;
+    
+    if (rise >= 8 && rise <= 9) {
+      tiers.tier_8_9 += squares;
+    } else if (rise >= 10 && rise <= 11) {
+      tiers.tier_10_11 += squares;
+    } else if (rise >= 12) {
+      tiers.tier_12_plus += squares;
+    }
+  });
+  
+  // Round to 2 decimals
+  tiers.tier_8_9 = Math.round(tiers.tier_8_9 * 100) / 100;
+  tiers.tier_10_11 = Math.round(tiers.tier_10_11 * 100) / 100;
+  tiers.tier_12_plus = Math.round(tiers.tier_12_plus * 100) / 100;
+  
+  console.log(`  ✓ Calculated tiers: 8-9=${tiers.tier_8_9}, 10-11=${tiers.tier_10_11}, 12+=${tiers.tier_12_plus}`);
+  
+  // Return object with both facet array AND tier totals
+  return {
+    facets: pitchData,
+    ...tiers
+  };
 }
 
 /**
