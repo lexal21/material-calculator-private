@@ -278,4 +278,31 @@ function extractPitchData(text) {
   return pitchData;
 }
 
-module.exports = { parseRidgeTopPDF };
+/**
+ * Parse PDF and calculate materials (wrapper for server.js compatibility)
+ * @param {string} pdfPath - Path to PDF file
+ * @param {string} location - Job location (inland/coastal)
+ * @returns {Promise<object>} Measurements and calculated materials
+ */
+async function parseAndCalculate(pdfPath, location = 'inland') {
+  const calculator = require('./calculator');
+  
+  const rawMeasurements = await parseRidgeTopPDF(pdfPath);
+  const measurements = calculator.parseMeasurements(rawMeasurements);
+  const materials = calculator.calculateMaterials(measurements, location);
+  
+  return {
+    raw: rawMeasurements,
+    measurements,
+    materials,
+    output: calculator.formatOutput(materials, {
+      address: rawMeasurements.address,
+      order: rawMeasurements.order_number
+    })
+  };
+}
+
+module.exports = { 
+  parseRidgeTopPDF,
+  parseAndCalculate
+};
