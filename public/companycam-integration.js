@@ -227,13 +227,20 @@ async function selectCompanyCamProject(projectId, projectName) {
 
 // Toggle photo selection
 function togglePhotoSelection(photoId) {
-  if (selectedPhotoIds.has(photoId)) {
-    selectedPhotoIds.delete(photoId);
-  } else {
-    selectedPhotoIds.add(photoId);
+  try {
+    if (selectedPhotoIds.has(photoId)) {
+      selectedPhotoIds.delete(photoId);
+      console.log('[CompanyCam] Deselected photo:', photoId);
+    } else {
+      selectedPhotoIds.add(photoId);
+      console.log('[CompanyCam] Selected photo:', photoId);
+    }
+    
+    updateImportButtonState();
+    console.log('[CompanyCam] Total selected:', selectedPhotoIds.size);
+  } catch (error) {
+    console.error('[CompanyCam] Error toggling selection:', error);
   }
-  
-  updateImportButtonState();
 }
 
 // Update import button state
@@ -246,6 +253,35 @@ function updateImportButtonState() {
     importBtn.disabled = count === 0;
     countEl.textContent = count;
   }
+}
+
+// Select all photos
+function selectAllCompanyCamPhotos() {
+  selectedPhotoIds.clear();
+  companyCamPhotos.forEach(photo => {
+    selectedPhotoIds.add(photo.id);
+  });
+  
+  // Update all checkboxes
+  document.querySelectorAll('.companycam-photo-checkbox').forEach(checkbox => {
+    checkbox.checked = true;
+  });
+  
+  updateImportButtonState();
+  console.log('[CompanyCam] Selected all photos:', selectedPhotoIds.size);
+}
+
+// Deselect all photos
+function deselectAllCompanyCamPhotos() {
+  selectedPhotoIds.clear();
+  
+  // Update all checkboxes
+  document.querySelectorAll('.companycam-photo-checkbox').forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  
+  updateImportButtonState();
+  console.log('[CompanyCam] Deselected all photos');
 }
 
 // Go back to projects list
@@ -267,15 +303,21 @@ async function importCompanyCamPhotos() {
   const importBtn = document.getElementById('companycam-import-btn');
   const originalText = importBtn.textContent;
   
-  if (selectedPhotoIds.size === 0) return;
+  if (selectedPhotoIds.size === 0) {
+    console.log('[CompanyCam] No photos selected');
+    return;
+  }
   
   try {
     importBtn.disabled = true;
-    importBtn.textContent = 'Importing...';
+    importBtn.textContent = `Importing ${selectedPhotoIds.size} photos...`;
     
     const selectedPhotos = companyCamPhotos.filter(p => selectedPhotoIds.has(p.id));
     
     console.log('[CompanyCam] Importing', selectedPhotos.length, 'photos to', tab);
+    
+    let successCount = 0;
+    let errorCount = 0;
     
     // Helper to get best quality image URL
     const getBestPhotoUrl = (uris) => {
@@ -322,10 +364,14 @@ async function importCompanyCamPhotos() {
         }
         
         console.log('[CompanyCam] Imported photo:', photoData.name);
+        successCount++;
       } catch (error) {
-        console.error('[CompanyCam] Error importing photo:', error);
+        console.error('[CompanyCam] Error importing photo:', photo.id, error);
+        errorCount++;
       }
     }
+    
+    console.log(`[CompanyCam] Import complete: ${successCount} success, ${errorCount} failed`);
     
     // Save project
     projectManager.saveCurrentProject();
@@ -370,4 +416,6 @@ if (typeof window !== 'undefined') {
   window.backToCompanyCamProjects = backToCompanyCamProjects;
   window.importCompanyCamPhotos = importCompanyCamPhotos;
   window.searchCompanyCamProjects = searchCompanyCamProjects;
+  window.selectAllCompanyCamPhotos = selectAllCompanyCamPhotos;
+  window.deselectAllCompanyCamPhotos = deselectAllCompanyCamPhotos;
 }

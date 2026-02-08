@@ -217,19 +217,40 @@ app.get('/api/companycam/projects', async (req, res) => {
       return res.status(500).json({ error: 'CompanyCam API token not configured' });
     }
 
-    const response = await fetch('https://api.companycam.com/v2/projects', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
+    // Fetch ALL projects with pagination
+    let allProjects = [];
+    let page = 1;
+    let hasMore = true;
+    
+    while (hasMore && page <= 100) { // Safety limit of 100 pages
+      const response = await fetch(`https://api.companycam.com/v2/projects?per_page=100&page=${page}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`CompanyCam API error: ${response.status}`);
       }
-    });
 
-    if (!response.ok) {
-      throw new Error(`CompanyCam API error: ${response.status}`);
+      const data = await response.json();
+      const projects = Array.isArray(data) ? data : (data.results || data.data || []);
+      
+      if (projects.length === 0) {
+        hasMore = false;
+      } else {
+        allProjects = allProjects.concat(projects);
+        page++;
+        // If we got less than 100, we're on the last page
+        if (projects.length < 100) {
+          hasMore = false;
+        }
+      }
     }
-
-    const data = await response.json();
-    res.json(data);
+    
+    console.log(`CompanyCam: Loaded ${allProjects.length} total projects`);
+    res.json(allProjects);
   } catch (error) {
     console.error('CompanyCam projects error:', error);
     res.status(500).json({ error: error.message });
@@ -244,19 +265,40 @@ app.get('/api/companycam/photos/:projectId', async (req, res) => {
     }
 
     const { projectId } = req.params;
-    const response = await fetch(`https://api.companycam.com/v2/projects/${projectId}/photos`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
+    
+    // Fetch ALL photos with pagination
+    let allPhotos = [];
+    let page = 1;
+    let hasMore = true;
+    
+    while (hasMore && page <= 100) { // Safety limit
+      const response = await fetch(`https://api.companycam.com/v2/projects/${projectId}/photos?per_page=100&page=${page}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`CompanyCam API error: ${response.status}`);
       }
-    });
 
-    if (!response.ok) {
-      throw new Error(`CompanyCam API error: ${response.status}`);
+      const data = await response.json();
+      const photos = Array.isArray(data) ? data : (data.results || data.data || []);
+      
+      if (photos.length === 0) {
+        hasMore = false;
+      } else {
+        allPhotos = allPhotos.concat(photos);
+        page++;
+        if (photos.length < 100) {
+          hasMore = false;
+        }
+      }
     }
-
-    const data = await response.json();
-    res.json(data);
+    
+    console.log(`CompanyCam: Loaded ${allPhotos.length} photos for project ${projectId}`);
+    res.json(allPhotos);
   } catch (error) {
     console.error('CompanyCam photos error:', error);
     res.status(500).json({ error: error.message });
