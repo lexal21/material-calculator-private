@@ -36,8 +36,8 @@ function getCurrentProjectData() {
     // Labor Location
     laborLocation: document.getElementById('laborLocation')?.value || 'Out of Area',
     
-    // Photos
-    photos: {
+    // Photos (store in window.currentPhotos)
+    photos: window.currentPhotos || {
       materials: [],
       labor: []
     }
@@ -140,6 +140,9 @@ function restoreProjectData(data) {
   window.miscItemCount = data.miscItemCount || 3;
   window.taxRate = data.taxRate || 9;
   window.currentJobNumber = data.jobNumber;
+  
+  // Restore photos
+  window.currentPhotos = data.photos || { materials: [], labor: [] };
   
   // Show results if we have data
   if (data.pdfData && data.materialsData.length > 0) {
@@ -552,18 +555,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Helper methods for photo functions
 function getCurrentProject() {
-  const sessionData = localStorage.getItem(CURRENT_SESSION_KEY);
-  if (sessionData) {
-    const session = JSON.parse(sessionData);
-    // Ensure photos structure exists
-    if (!session.photos) {
-      session.photos = { materials: [], labor: [] };
-    }
-    return session;
+  // Initialize window.currentPhotos if it doesn't exist
+  if (!window.currentPhotos) {
+    window.currentPhotos = { materials: [], labor: [] };
   }
-  // Return empty project structure
+  
+  // Return an object that references window.currentPhotos
+  // This way modifications to photos persist
   return {
-    photos: { materials: [], labor: [] }
+    photos: window.currentPhotos
   };
 }
 
