@@ -8,6 +8,7 @@ let projectSearchQuery = '';
 let currentPage = 1;
 let isLoadingProjects = false;
 let hasMoreProjects = true;
+let searchTimeout = null;
 
 // Initialize CompanyCam integration
 function initCompanyCam() {
@@ -186,8 +187,21 @@ function renderProjectsList(projects) {
   });
 }
 
-// Handle project search (server-side)
-async function searchCompanyCamProjects(query) {
+// Handle project search with debouncing
+function searchCompanyCamProjects(query) {
+  // Clear previous timeout
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  
+  // Wait 400ms after user stops typing
+  searchTimeout = setTimeout(() => {
+    executeCompanyCamSearch(query);
+  }, 400);
+}
+
+// Execute the actual search
+async function executeCompanyCamSearch(query) {
   projectSearchQuery = query;
   
   if (!query || query.trim() === '') {
@@ -210,7 +224,7 @@ async function searchCompanyCamProjects(query) {
     projectsList.innerHTML = '';
     
     console.log('[CompanyCam] Searching for:', query);
-    const response = await fetch(`/api/companycam/projects?search=${encodeURIComponent(query)}`);
+    const response = await fetch('/api/companycam/projects?search=' + encodeURIComponent(query));
     if (!response.ok) {
       throw new Error('Search failed');
     }
@@ -219,7 +233,7 @@ async function searchCompanyCamProjects(query) {
     companyCamProjects = data.projects || [];
     hasMoreProjects = false; // No pagination in search results
     
-    console.log(`[CompanyCam] Search found ${companyCamProjects.length} projects`);
+    console.log('[CompanyCam] Search found ' + companyCamProjects.length + ' projects');
     
     if (companyCamProjects.length === 0) {
       projectsList.innerHTML = '<div class="companycam-empty">No projects match your search</div>';

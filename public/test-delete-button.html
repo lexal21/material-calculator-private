@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Delete Button Test</title>
+  <style>
+    .btn-danger {
+      padding: 8px 16px;
+      background: #ef4444;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    .btn-danger:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>Delete Button Test</h1>
+  
+  <button id="testBtn" class="btn-danger" onclick="alert('Button clicked!')" disabled>
+    Delete Selected
+  </button>
+  
+  <br><br>
+  
+  <button onclick="document.getElementById('testBtn').disabled = false; console.log('Button enabled')">
+    Enable Button
+  </button>
+  
+  <button onclick="document.getElementById('testBtn').disabled = true; console.log('Button disabled')">
+    Disable Button
+  </button>
+  
+  <br><br>
+  
+  <p>Try clicking the red button above when it's enabled vs disabled</p>
+</body>
+</html>

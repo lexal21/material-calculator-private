@@ -221,7 +221,7 @@ app.get('/api/companycam/projects', async (req, res) => {
     const perPage = 50;
     const search = req.query.search?.trim() || '';
     
-    console.log(`CompanyCam: Fetching page ${page} (search: "${search}")...`);
+    console.log('CompanyCam: Fetching page ' + page + ' (search: "' + search + '")...');
     
     // If searching, fetch and filter
     if (search && search.length > 0) {
@@ -233,22 +233,22 @@ app.get('/api/companycam/projects', async (req, res) => {
       // Load all pages and filter (up to 500 projects)
       while (hasMore && currentPage <= 10) {
         try {
-          const response = await fetch(`https://api.companycam.com/v2/projects?per_page=50&page=${currentPage}`, {
+          const response = await fetch('https://api.companycam.com/v2/projects?per_page=50&page=' + currentPage, {
             headers: {
-              'Authorization': `Bearer ${token}`,
+              'Authorization': 'Bearer ' + token,
               'Accept': 'application/json'
             }
           });
 
           if (!response.ok) {
-            console.error(`CompanyCam search page ${currentPage} failed: ${response.status}`);
+            console.error('CompanyCam search page ' + currentPage + ' failed: ' + response.status);
             break;
           }
 
           const data = await response.json();
           const projects = Array.isArray(data) ? data : [];
           
-          console.log(`CompanyCam search: Page ${currentPage} loaded ${projects.length} projects`);
+          console.log('CompanyCam search: Page ' + currentPage + ' loaded ' + projects.length + ' projects');
           
           if (projects.length === 0) {
             hasMore = false;
@@ -258,7 +258,7 @@ app.get('/api/companycam/projects', async (req, res) => {
             else currentPage++;
           }
         } catch (err) {
-          console.error(`CompanyCam search page ${currentPage} error:`, err);
+          console.error('CompanyCam search page ' + currentPage + ' error:', err);
           break;
         }
       }
@@ -267,11 +267,11 @@ app.get('/api/companycam/projects', async (req, res) => {
       const filtered = allProjects.filter(project => {
         const name = (project.name || '').toLowerCase();
         const address = project.address ? 
-          `${project.address.street_address_1 || ''} ${project.address.city || ''} ${project.address.state || ''}`.toLowerCase() : '';
-        return name.includes(searchLower) || address.includes(searchLower);
+          (project.address.street_address_1 || '') + ' ' + (project.address.city || '') + ' ' + (project.address.state || '') : '';
+        return name.includes(searchLower) || address.toLowerCase().includes(searchLower);
       });
       
-      console.log(`CompanyCam: Search "${search}" found ${filtered.length} projects`);
+      console.log('CompanyCam: Search "' + search + '" found ' + filtered.length + ' projects');
       
       return res.json({
         projects: filtered,
@@ -283,22 +283,22 @@ app.get('/api/companycam/projects', async (req, res) => {
     }
     
     // Normal pagination (no search)
-    const response = await fetch(`https://api.companycam.com/v2/projects?per_page=${perPage}&page=${page}`, {
+    const response = await fetch('https://api.companycam.com/v2/projects?per_page=' + perPage + '&page=' + page, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': 'Bearer ' + token,
         'Accept': 'application/json'
       }
     });
 
     if (!response.ok) {
-      console.error(`CompanyCam API error on page ${page}: ${response.status}`);
-      throw new Error(`CompanyCam API error: ${response.status}`);
+      console.error('CompanyCam API error on page ' + page + ': ' + response.status);
+      throw new Error('CompanyCam API error: ' + response.status);
     }
 
     const data = await response.json();
     const projects = Array.isArray(data) ? data : (data.results || data.data || []);
     
-    console.log(`CompanyCam: Page ${page} returned ${projects.length} projects`);
+    console.log('CompanyCam: Page ' + page + ' returned ' + projects.length + ' projects');
     
     res.json({
       projects: projects,
@@ -327,15 +327,15 @@ app.get('/api/companycam/photos/:projectId', async (req, res) => {
     let hasMore = true;
     
     while (hasMore && page <= 100) { // Safety limit
-      const response = await fetch(`https://api.companycam.com/v2/projects/${projectId}/photos?per_page=100&page=${page}`, {
+      const response = await fetch('https://api.companycam.com/v2/projects/' + projectId + '/photos?per_page=100&page=' + page, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': 'Bearer ' + token,
           'Accept': 'application/json'
         }
       });
 
       if (!response.ok) {
-        throw new Error(`CompanyCam API error: ${response.status}`);
+        throw new Error('CompanyCam API error: ' + response.status);
       }
 
       const data = await response.json();
@@ -352,7 +352,7 @@ app.get('/api/companycam/photos/:projectId', async (req, res) => {
       }
     }
     
-    console.log(`CompanyCam: Loaded ${allPhotos.length} photos for project ${projectId}`);
+    console.log('CompanyCam: Loaded ' + allPhotos.length + ' photos for project ' + projectId);
     res.json(allPhotos);
   } catch (error) {
     console.error('CompanyCam photos error:', error);
