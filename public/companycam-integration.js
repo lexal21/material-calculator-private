@@ -68,8 +68,8 @@ async function loadCompanyCamProjects() {
     errorEl.style.display = 'none';
     projectsList.innerHTML = '';
     
-    console.log(`[CompanyCam] Fetching page ${currentPage} from API...`);
-    const response = await fetch(`/api/companycam/projects?page=${currentPage}`);
+    console.log('[CompanyCam] Fetching page ' + currentPage + ' from API...');
+    const response = await fetch('/api/companycam/projects?page=' + currentPage);
     if (!response.ok) {
       console.error('[CompanyCam] API returned error:', response.status);
       throw new Error('Failed to load projects');
@@ -79,7 +79,7 @@ async function loadCompanyCamProjects() {
     const newProjects = data.projects || [];
     hasMoreProjects = data.hasMore;
     
-    console.log(`[CompanyCam] ✅ Page ${currentPage}: Loaded ${newProjects.length} projects (hasMore: ${hasMoreProjects})`);
+    console.log('[CompanyCam] ✅ Page ' + currentPage + ': Loaded ' + newProjects.length + ' projects (hasMore: ' + hasMoreProjects + ')');
     
     companyCamProjects = newProjects; // First page only for now
     currentPage++;
@@ -120,8 +120,15 @@ async function loadMoreCompanyCamProjects() {
     loadingEl.style.display = 'block';
     errorEl.style.display = 'none';
     
-    console.log(`[CompanyCam] Loading more projects (page ${currentPage})...`);
-    const response = await fetch(`/api/companycam/projects?page=${currentPage}`);
+    console.log('[CompanyCam] Loading more projects (page ' + currentPage + ')...');
+    
+    // Include search query if active
+    let url = '/api/companycam/projects?page=' + currentPage;
+    if (projectSearchQuery) {
+      url += '&search=' + encodeURIComponent(projectSearchQuery);
+    }
+    
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error('Failed to load more projects');
     }
@@ -130,7 +137,7 @@ async function loadMoreCompanyCamProjects() {
     const newProjects = data.projects || [];
     hasMoreProjects = data.hasMore;
     
-    console.log(`[CompanyCam] ✅ Loaded ${newProjects.length} more projects (total: ${companyCamProjects.length + newProjects.length})`);
+    console.log('[CompanyCam] ✅ Loaded ' + newProjects.length + ' more projects (total: ' + (companyCamProjects.length + newProjects.length) + ')');
     
     companyCamProjects = companyCamProjects.concat(newProjects);
     currentPage++;
@@ -231,9 +238,10 @@ async function executeCompanyCamSearch(query) {
     
     const data = await response.json();
     companyCamProjects = data.projects || [];
-    hasMoreProjects = false; // No pagination in search results
+    hasMoreProjects = data.hasMore || false;
     
-    console.log('[CompanyCam] Search found ' + companyCamProjects.length + ' projects');
+    const totalText = data.total ? ' (total: ' + data.total + ')' : '';
+    console.log('[CompanyCam] Search found ' + companyCamProjects.length + ' projects' + totalText);
     
     if (companyCamProjects.length === 0) {
       projectsList.innerHTML = '<div class="companycam-empty">No projects match your search</div>';
@@ -241,10 +249,10 @@ async function executeCompanyCamSearch(query) {
       renderProjectsList(companyCamProjects);
     }
     
-    // Hide load more button during search
+    // Show/hide load more button based on hasMore
     const loadMoreBtn = document.getElementById('companycam-load-more-btn');
     if (loadMoreBtn) {
-      loadMoreBtn.style.display = 'none';
+      loadMoreBtn.style.display = hasMoreProjects ? 'block' : 'none';
     }
     
     loadingEl.style.display = 'none';

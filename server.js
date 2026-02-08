@@ -209,7 +209,7 @@ app.get('/api/users', requireAuth, (req, res) => {
 // Protected routes (require authentication)
 app.use(requireAuth);
 
-// CompanyCam API Proxy Endpoints - Paginated with search
+// CompanyCam API Proxy Endpoints - Uses native query parameter for search
 app.get('/api/companycam/projects', async (req, res) => {
   try {
     const token = process.env.COMPANYCAM_API_TOKEN;
@@ -223,67 +223,13 @@ app.get('/api/companycam/projects', async (req, res) => {
     
     console.log('CompanyCam: Fetching page ' + page + ' (search: "' + search + '")...');
     
-    // If searching, fetch and filter
-    if (search && search.length > 0) {
-      const searchLower = search.toLowerCase();
-      let allProjects = [];
-      let currentPage = 1;
-      let hasMore = true;
-      
-      // Load all pages and filter (up to 500 projects)
-      while (hasMore && currentPage <= 10) {
-        try {
-          const response = await fetch('https://api.companycam.com/v2/projects?per_page=50&page=' + currentPage, {
-            headers: {
-              'Authorization': 'Bearer ' + token,
-              'Accept': 'application/json'
-            }
-          });
-
-          if (!response.ok) {
-            console.error('CompanyCam search page ' + currentPage + ' failed: ' + response.status);
-            break;
-          }
-
-          const data = await response.json();
-          const projects = Array.isArray(data) ? data : [];
-          
-          console.log('CompanyCam search: Page ' + currentPage + ' loaded ' + projects.length + ' projects');
-          
-          if (projects.length === 0) {
-            hasMore = false;
-          } else {
-            allProjects = allProjects.concat(projects);
-            if (projects.length < 50) hasMore = false;
-            else currentPage++;
-          }
-        } catch (err) {
-          console.error('CompanyCam search page ' + currentPage + ' error:', err);
-          break;
-        }
-      }
-      
-      // Filter by search term
-      const filtered = allProjects.filter(project => {
-        const name = (project.name || '').toLowerCase();
-        const address = project.address ? 
-          (project.address.street_address_1 || '') + ' ' + (project.address.city || '') + ' ' + (project.address.state || '') : '';
-        return name.includes(searchLower) || address.toLowerCase().includes(searchLower);
-      });
-      
-      console.log('CompanyCam: Search "' + search + '" found ' + filtered.length + ' projects');
-      
-      return res.json({
-        projects: filtered,
-        page: 1,
-        perPage: filtered.length,
-        hasMore: false,
-        isSearch: true
-      });
+    // Build URL with native query parameter if searching
+    let url = 'https://api.companycam.com/v2/projects?per_page=' + perPage + '&page=' + page;
+    if (search) {
+      url += '&query=' + encodeURIComponent(search);
     }
     
-    // Normal pagination (no search)
-    const response = await fetch('https://api.companycam.com/v2/projects?per_page=' + perPage + '&page=' + page, {
+    const response = await fetch(url, {
       headers: {
         'Authorization': 'Bearer ' + token,
         'Accept': 'application/json'
@@ -295,16 +241,22 @@ app.get('/api/companycam/projects', async (req, res) => {
       throw new Error('CompanyCam API error: ' + response.status);
     }
 
-    const data = await response.json();
-    const projects = Array.isArray(data) ? data : (data.results || data.data || []);
+    const projects = await response.json();
     
-    console.log('CompanyCam: Page ' + page + ' returned ' + projects.length + ' projects');
+    // Check headers for pagination info
+    const totalCount = response.headers.get('x-total');
+    const totalPages = response.headers.get('x-total-pages');
     
-    res.json({
-      projects: projects,
+    console.log('CompanyCam: Got ' + projects.length + ' projects (total: ' + totalCount + ', pages: ' + totalPages + ')');
+    
+    return res.json({
+      projects: Array.isArray(projects) ? projects : [],
       page: page,
       perPage: perPage,
-      hasMore: projects.length === perPage
+      hasMore: projects.length === perPage,
+      total: totalCount ? parseInt(totalCount) : null,
+      totalPages: totalPages ? parseInt(totalPages) : null,
+      isSearch: !!search
     });
   } catch (error) {
     console.error('CompanyCam projects error:', error);
