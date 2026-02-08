@@ -4,6 +4,7 @@
 let companyCamProjects = [];
 let companyCamPhotos = [];
 let selectedPhotoIds = new Set();
+let projectSearchQuery = '';
 
 // Initialize CompanyCam integration
 function initCompanyCam() {
@@ -57,7 +58,8 @@ async function loadCompanyCamProjects() {
     if (!response.ok) throw new Error('Failed to load projects');
     
     const data = await response.json();
-    companyCamProjects = data.results || data || [];
+    // CompanyCam returns plain array
+    companyCamProjects = Array.isArray(data) ? data : (data.results || data.data || []);
     
     console.log('[CompanyCam] Loaded projects:', companyCamProjects.length);
     
@@ -67,21 +69,7 @@ async function loadCompanyCamProjects() {
       return;
     }
     
-    // Create project cards
-    companyCamProjects.forEach(project => {
-      const card = document.createElement('div');
-      card.className = 'companycam-project-card';
-      card.onclick = () => selectCompanyCamProject(project.id, project.name);
-      
-      card.innerHTML = `
-        <div class="companycam-project-name">${project.name || 'Unnamed Project'}</div>
-        <div class="companycam-project-meta">
-          <span>${project.photos_count || 0} photos</span>
-        </div>
-      `;
-      
-      projectsList.appendChild(card);
-    });
+    renderProjectsList(companyCamProjects);
     
     loadingEl.style.display = 'none';
   } catch (error) {
@@ -90,6 +78,55 @@ async function loadCompanyCamProjects() {
     errorEl.style.display = 'block';
     errorEl.textContent = 'Failed to load projects. Please try again.';
   }
+}
+
+// Render projects list with search
+function renderProjectsList(projects) {
+  const projectsList = document.getElementById('companycam-projects-list');
+  if (!projectsList) return;
+  
+  // Filter projects based on search
+  const filtered = projects.filter(project => {
+    if (!projectSearchQuery) return true;
+    const query = projectSearchQuery.toLowerCase();
+    const name = (project.name || '').toLowerCase();
+    const address = project.address ? 
+      `${project.address.street_address_1 || ''} ${project.address.city || ''} ${project.address.state || ''}`.toLowerCase() : '';
+    return name.includes(query) || address.includes(query);
+  });
+  
+  projectsList.innerHTML = '';
+  
+  if (filtered.length === 0) {
+    projectsList.innerHTML = '<div class="companycam-empty">No projects match your search</div>';
+    return;
+  }
+  
+  // Create project cards
+  filtered.forEach(project => {
+    const card = document.createElement('div');
+    card.className = 'companycam-project-card';
+    card.onclick = () => selectCompanyCamProject(project.id, project.name);
+    
+    const address = project.address ? 
+      `${project.address.street_address_1 || ''}, ${project.address.city || ''}, ${project.address.state || ''}` : '';
+    
+    card.innerHTML = `
+      <div class="companycam-project-name">${project.name || 'Unnamed Project'}</div>
+      ${address ? `<div class="companycam-project-address">${address}</div>` : ''}
+      <div class="companycam-project-meta">
+        <span>${project.photo_count || 0} photos</span>
+      </div>
+    `;
+    
+    projectsList.appendChild(card);
+  });
+}
+
+// Handle project search
+function searchCompanyCamProjects(query) {
+  projectSearchQuery = query;
+  renderProjectsList(companyCamProjects);
 }
 
 // Select a project and load its photos
@@ -120,7 +157,8 @@ async function selectCompanyCamProject(projectId, projectName) {
     if (!response.ok) throw new Error('Failed to load photos');
     
     const data = await response.json();
-    companyCamPhotos = data.results || data || [];
+    // CompanyCam returns plain array
+    companyCamPhotos = Array.isArray(data) ? data : (data.results || data.data || []);
     
     console.log('[CompanyCam] Loaded photos:', companyCamPhotos.length);
     
@@ -144,18 +182,29 @@ async function selectCompanyCamProject(projectId, projectName) {
         togglePhotoSelection(photo.id);
       };
       
+      // Find the best image URL from uris array
+      const getPhotoUrl = (uris, preferredType = 'web') => {
+        if (!Array.isArray(uris)) return '';
+        const preferred = uris.find(u => u.type === preferredType);
+        if (preferred) return preferred.uri || preferred.url || '';
+        // Fallback to thumbnail or first available
+        const thumbnail = uris.find(u => u.type === 'thumbnail');
+        if (thumbnail) return thumbnail.uri || thumbnail.url || '';
+        return uris[0]?.uri || uris[0]?.url || '';
+      };
+      
       const img = document.createElement('img');
-      img.src = photo.uris?.thumbnail || photo.uris?.small || photo.uris?.large || '';
-      img.alt = photo.caption || 'Photo';
+      img.src = getPhotoUrl(photo.uris, 'thumbnail');
+      img.alt = photo.description || 'Photo';
       img.loading = 'lazy';
       
       card.appendChild(checkbox);
       card.appendChild(img);
       
-      if (photo.caption) {
+      if (photo.description) {
         const caption = document.createElement('div');
         caption.className = 'companycam-photo-caption';
-        caption.textContent = photo.caption;
+        caption.textContent = photo.description;
         card.appendChild(caption);
       }
       
@@ -228,9 +277,19 @@ async function importCompanyCamPhotos() {
     
     console.log('[CompanyCam] Importing', selectedPhotos.length, 'photos to', tab);
     
+    // Helper to get best quality image URL
+    const getBestPhotoUrl = (uris) => {
+      if (!Array.isArray(uris)) return null;
+      const original = uris.find(u => u.type === 'original');
+      if (original) return original.uri || original.url;
+      const web = uris.find(u => u.type === 'web');
+      if (web) return web.uri || web.url;
+      return uris[0]?.uri || uris[0]?.url || null;
+    };
+    
     // Download and convert photos
     for (const photo of selectedPhotos) {
-      const imageUrl = photo.uris?.large || photo.uris?.original || photo.uris?.small;
+      const imageUrl = getBestPhotoUrl(photo.uris);
       if (!imageUrl) continue;
       
       try {
@@ -249,9 +308,9 @@ async function importCompanyCamPhotos() {
         
         const photoData = {
           data: base64,
-          name: photo.caption || `CompanyCam_${photo.id}.jpg`,
+          name: photo.description || `CompanyCam_${photo.id}.jpg`,
           timestamp: Date.now(),
-          label: photo.caption || '',
+          label: photo.description || '',
           source: 'companycam',
           companycamId: photo.id
         };
@@ -310,4 +369,5 @@ if (typeof window !== 'undefined') {
   window.closeCompanyCamModal = closeCompanyCamModal;
   window.backToCompanyCamProjects = backToCompanyCamProjects;
   window.importCompanyCamPhotos = importCompanyCamPhotos;
+  window.searchCompanyCamProjects = searchCompanyCamProjects;
 }

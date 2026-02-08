@@ -482,6 +482,16 @@
             <p>Choose a project to view its photos</p>
           </div>
           
+          <div class="companycam-search-box">
+            <input 
+              type="text" 
+              id="companycam-project-search" 
+              placeholder="Search projects by name or address..." 
+              oninput="searchCompanyCamProjects(this.value)"
+              class="companycam-search-input"
+            />
+          </div>
+          
           <div id="companycam-loading" class="companycam-loading" style="display: none;">
             Loading projects...
           </div>
