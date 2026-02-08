@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -207,6 +208,60 @@ app.get('/api/users', requireAuth, (req, res) => {
 
 // Protected routes (require authentication)
 app.use(requireAuth);
+
+// CompanyCam API Proxy Endpoints
+app.get('/api/companycam/projects', async (req, res) => {
+  try {
+    const token = process.env.COMPANYCAM_API_TOKEN;
+    if (!token) {
+      return res.status(500).json({ error: 'CompanyCam API token not configured' });
+    }
+
+    const response = await fetch('https://api.companycam.com/v2/projects', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`CompanyCam API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('CompanyCam projects error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/companycam/photos/:projectId', async (req, res) => {
+  try {
+    const token = process.env.COMPANYCAM_API_TOKEN;
+    if (!token) {
+      return res.status(500).json({ error: 'CompanyCam API token not configured' });
+    }
+
+    const { projectId } = req.params;
+    const response = await fetch(`https://api.companycam.com/v2/projects/${projectId}/photos`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`CompanyCam API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('CompanyCam photos error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Serve static files (protected)
 app.use(express.static('public'));
