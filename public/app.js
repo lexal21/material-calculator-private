@@ -1107,11 +1107,8 @@ function buildPDFDocDefinition() {
   const tax = subtotal * taxRate;
   const grandTotal = subtotal + tax;
   
-  // PDF document definition
+  // Build PDF document definition
   const docDefinition = {
-    pageSize: 'LETTER',
-    pageMargins: [72, 54, 72, 72], // 1in top (0.75in for first page), 0.75in sides, 1in bottom
-    
     content: [
       // Header with logo
       {
@@ -1216,65 +1213,17 @@ function buildPDFDocDefinition() {
             ]
           }
         ]
+      },
+      
+      // Footer note
+      {
+        text: `Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`,
+        style: 'footer',
+        margin: [0, 40, 0, 0]
       }
-    ];
-  
-  // Add photos section if there are materials photos
-  const materialsPhotos = window.currentPhotos?.materials || [];
-  if (materialsPhotos.length > 0) {
-    docDefinition.content.push({
-      text: 'PHOTOS',
-      style: 'sectionHeader',
-      margin: [0, 20, 0, 10],
-      pageBreak: 'before'
-    });
+    ],
     
-    // Add photos in rows of 2
-    for (let i = 0; i < materialsPhotos.length; i += 2) {
-      const photoRow = {
-        columns: [],
-        margin: [0, 0, 0, 10]
-      };
-      
-      // First photo
-      if (materialsPhotos[i]) {
-        photoRow.columns.push({
-          width: '48%',
-          stack: [
-            { image: materialsPhotos[i].data, width: 240, margin: [0, 0, 0, 5] },
-            { text: materialsPhotos[i].name, fontSize: 8, color: '#64748b' }
-          ]
-        });
-      }
-      
-      // Spacer
-      photoRow.columns.push({ width: '4%', text: '' });
-      
-      // Second photo (if exists)
-      if (materialsPhotos[i + 1]) {
-        photoRow.columns.push({
-          width: '48%',
-          stack: [
-            { image: materialsPhotos[i + 1].data, width: 240, margin: [0, 0, 0, 5] },
-            { text: materialsPhotos[i + 1].name, fontSize: 8, color: '#64748b' }
-          ]
-        });
-      } else {
-        photoRow.columns.push({ width: '48%', text: '' });
-      }
-      
-      docDefinition.content.push(photoRow);
-    }
-  }
-  
-  // Footer note
-  docDefinition.content.push({
-    text: `Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`,
-    style: 'footer',
-    margin: [0, 40, 0, 0]
-  });
-  
-  docDefinition.styles = {
+    styles: {
       header: {
         fontSize: 18,
         bold: true,
@@ -2239,65 +2188,17 @@ function buildLaborPDFDocDefinition() {
             ]
           }
         ]
+      },
+      
+      // Footer note
+      {
+        text: `Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`,
+        style: 'footer',
+        margin: [0, 40, 0, 0]
       }
-    ];
-  
-  // Add photos section if there are labor photos
-  const laborPhotos = window.currentPhotos?.labor || [];
-  if (laborPhotos.length > 0) {
-    docDefinition.content.push({
-      text: 'PHOTOS',
-      style: 'sectionHeader',
-      margin: [0, 20, 0, 10],
-      pageBreak: 'before'
-    });
+    ],
     
-    // Add photos in rows of 2
-    for (let i = 0; i < laborPhotos.length; i += 2) {
-      const photoRow = {
-        columns: [],
-        margin: [0, 0, 0, 10]
-      };
-      
-      // First photo
-      if (laborPhotos[i]) {
-        photoRow.columns.push({
-          width: '48%',
-          stack: [
-            { image: laborPhotos[i].data, width: 240, margin: [0, 0, 0, 5] },
-            { text: laborPhotos[i].name, fontSize: 8, color: '#64748b' }
-          ]
-        });
-      }
-      
-      // Spacer
-      photoRow.columns.push({ width: '4%', text: '' });
-      
-      // Second photo (if exists)
-      if (laborPhotos[i + 1]) {
-        photoRow.columns.push({
-          width: '48%',
-          stack: [
-            { image: laborPhotos[i + 1].data, width: 240, margin: [0, 0, 0, 5] },
-            { text: laborPhotos[i + 1].name, fontSize: 8, color: '#64748b' }
-          ]
-        });
-      } else {
-        photoRow.columns.push({ width: '48%', text: '' });
-      }
-      
-      docDefinition.content.push(photoRow);
-    }
-  }
-  
-  // Footer note
-  docDefinition.content.push({
-    text: `Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`,
-    style: 'footer',
-    margin: [0, 40, 0, 0]
-  });
-  
-  docDefinition.styles = {
+    styles: {
       header: {
         fontSize: 18,
         bold: true,
