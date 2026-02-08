@@ -209,7 +209,7 @@ app.get('/api/users', requireAuth, (req, res) => {
 // Protected routes (require authentication)
 app.use(requireAuth);
 
-// CompanyCam API Proxy Endpoints
+// CompanyCam API Proxy Endpoints - Paginated
 app.get('/api/companycam/projects', async (req, res) => {
   try {
     const token = process.env.COMPANYCAM_API_TOKEN;
@@ -217,48 +217,34 @@ app.get('/api/companycam/projects', async (req, res) => {
       return res.status(500).json({ error: 'CompanyCam API token not configured' });
     }
 
-    // Fetch ALL projects with pagination
-    let allProjects = [];
-    let page = 1;
-    const perPage = 50; // CompanyCam API limit
+    const page = parseInt(req.query.page) || 1;
+    const perPage = 50;
     
-    console.log('CompanyCam: Starting to load ALL projects...');
+    console.log(`CompanyCam: Fetching page ${page} (${perPage} per page)...`);
     
-    // Keep fetching until we get 0 results
-    while (page <= 200) { // Safety limit: 200 pages × 50 = 10,000 projects
-      console.log(`CompanyCam: Fetching page ${page}...`);
-      
-      const response = await fetch(`https://api.companycam.com/v2/projects?per_page=${perPage}&page=${page}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        console.error(`CompanyCam API error on page ${page}: ${response.status}`);
-        throw new Error(`CompanyCam API error: ${response.status}`);
+    const response = await fetch(`https://api.companycam.com/v2/projects?per_page=${perPage}&page=${page}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
       }
+    });
 
-      const data = await response.json();
-      const projects = Array.isArray(data) ? data : (data.results || data.data || []);
-      
-      console.log(`CompanyCam: Page ${page} returned ${projects.length} projects (total so far: ${allProjects.length + projects.length})`);
-      
-      if (projects.length === 0) {
-        console.log(`CompanyCam: ✅ Finished - No more projects on page ${page}`);
-        break;
-      }
-      
-      allProjects = allProjects.concat(projects);
-      page++;
-      
-      // Small delay to avoid rate limits (240 GET requests per minute = 1 every 250ms)
-      await new Promise(resolve => setTimeout(resolve, 300));
+    if (!response.ok) {
+      console.error(`CompanyCam API error on page ${page}: ${response.status}`);
+      throw new Error(`CompanyCam API error: ${response.status}`);
     }
+
+    const data = await response.json();
+    const projects = Array.isArray(data) ? data : (data.results || data.data || []);
     
-    console.log(`CompanyCam: ✅ Loaded ${allProjects.length} total projects across ${page - 1} page(s)`);
-    res.json(allProjects);
+    console.log(`CompanyCam: Page ${page} returned ${projects.length} projects`);
+    
+    res.json({
+      projects: projects,
+      page: page,
+      perPage: perPage,
+      hasMore: projects.length === perPage
+    });
   } catch (error) {
     console.error('CompanyCam projects error:', error);
     res.status(500).json({ error: error.message });
