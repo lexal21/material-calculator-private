@@ -153,30 +153,20 @@ async function loadMoreCompanyCamProjects() {
   }
 }
 
-// Render projects list with search
+// Render projects list (no filtering - server handles it)
 function renderProjectsList(projects) {
   const projectsList = document.getElementById('companycam-projects-list');
   if (!projectsList) return;
   
-  // Filter projects based on search
-  const filtered = projects.filter(project => {
-    if (!projectSearchQuery) return true;
-    const query = projectSearchQuery.toLowerCase();
-    const name = (project.name || '').toLowerCase();
-    const address = project.address ? 
-      `${project.address.street_address_1 || ''} ${project.address.city || ''} ${project.address.state || ''}`.toLowerCase() : '';
-    return name.includes(query) || address.includes(query);
-  });
-  
   projectsList.innerHTML = '';
   
-  if (filtered.length === 0) {
-    projectsList.innerHTML = '<div class="companycam-empty">No projects match your search</div>';
+  if (projects.length === 0) {
+    projectsList.innerHTML = '<div class="companycam-empty">No projects found</div>';
     return;
   }
   
   // Create project cards
-  filtered.forEach(project => {
+  projects.forEach(project => {
     const card = document.createElement('div');
     card.className = 'companycam-project-card';
     card.onclick = () => selectCompanyCamProject(project.id, project.name);
@@ -196,10 +186,60 @@ function renderProjectsList(projects) {
   });
 }
 
-// Handle project search
-function searchCompanyCamProjects(query) {
+// Handle project search (server-side)
+async function searchCompanyCamProjects(query) {
   projectSearchQuery = query;
-  renderProjectsList(companyCamProjects);
+  
+  if (!query || query.trim() === '') {
+    // No search - reload normal list
+    currentPage = 1;
+    companyCamProjects = [];
+    hasMoreProjects = true;
+    await loadCompanyCamProjects();
+    return;
+  }
+  
+  // Server-side search
+  const projectsList = document.getElementById('companycam-projects-list');
+  const loadingEl = document.getElementById('companycam-loading');
+  const errorEl = document.getElementById('companycam-error');
+  
+  try {
+    loadingEl.style.display = 'block';
+    errorEl.style.display = 'none';
+    projectsList.innerHTML = '';
+    
+    console.log('[CompanyCam] Searching for:', query);
+    const response = await fetch(`/api/companycam/projects?search=${encodeURIComponent(query)}`);
+    if (!response.ok) {
+      throw new Error('Search failed');
+    }
+    
+    const data = await response.json();
+    companyCamProjects = data.projects || [];
+    hasMoreProjects = false; // No pagination in search results
+    
+    console.log(`[CompanyCam] Search found ${companyCamProjects.length} projects`);
+    
+    if (companyCamProjects.length === 0) {
+      projectsList.innerHTML = '<div class="companycam-empty">No projects match your search</div>';
+    } else {
+      renderProjectsList(companyCamProjects);
+    }
+    
+    // Hide load more button during search
+    const loadMoreBtn = document.getElementById('companycam-load-more-btn');
+    if (loadMoreBtn) {
+      loadMoreBtn.style.display = 'none';
+    }
+    
+    loadingEl.style.display = 'none';
+  } catch (error) {
+    console.error('[CompanyCam] Search error:', error);
+    loadingEl.style.display = 'none';
+    errorEl.style.display = 'block';
+    errorEl.textContent = 'Search failed. Please try again.';
+  }
 }
 
 // Select a project and load its photos

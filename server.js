@@ -209,7 +209,7 @@ app.get('/api/users', requireAuth, (req, res) => {
 // Protected routes (require authentication)
 app.use(requireAuth);
 
-// CompanyCam API Proxy Endpoints - Paginated
+// CompanyCam API Proxy Endpoints - Paginated with search
 app.get('/api/companycam/projects', async (req, res) => {
   try {
     const token = process.env.COMPANYCAM_API_TOKEN;
@@ -219,9 +219,63 @@ app.get('/api/companycam/projects', async (req, res) => {
 
     const page = parseInt(req.query.page) || 1;
     const perPage = 50;
+    const search = req.query.search || '';
     
-    console.log(`CompanyCam: Fetching page ${page} (${perPage} per page)...`);
+    console.log(`CompanyCam: Fetching page ${page} (search: "${search}")...`);
     
+    // If searching, fetch and filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      let allProjects = [];
+      let currentPage = 1;
+      let hasMore = true;
+      
+      // Load all pages and filter
+      while (hasMore && currentPage <= 100) {
+        const response = await fetch(`https://api.companycam.com/v2/projects?per_page=50&page=${currentPage}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) break;
+
+        const data = await response.json();
+        const projects = Array.isArray(data) ? data : [];
+        
+        if (projects.length === 0) {
+          hasMore = false;
+        } else {
+          allProjects = allProjects.concat(projects);
+          if (projects.length < 50) hasMore = false;
+          else currentPage++;
+        }
+        
+        // Stop after loading 500 projects for search (balance between speed and coverage)
+        if (allProjects.length >= 500) break;
+      }
+      
+      // Filter by search term
+      const filtered = allProjects.filter(project => {
+        const name = (project.name || '').toLowerCase();
+        const address = project.address ? 
+          `${project.address.street_address_1 || ''} ${project.address.city || ''} ${project.address.state || ''}`.toLowerCase() : '';
+        return name.includes(searchLower) || address.includes(searchLower);
+      });
+      
+      console.log(`CompanyCam: Search "${search}" found ${filtered.length} projects`);
+      
+      return res.json({
+        projects: filtered,
+        page: 1,
+        perPage: filtered.length,
+        hasMore: false,
+        isSearch: true
+      });
+    }
+    
+    // Normal pagination (no search)
     const response = await fetch(`https://api.companycam.com/v2/projects?per_page=${perPage}&page=${page}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
