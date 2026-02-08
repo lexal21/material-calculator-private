@@ -219,41 +219,48 @@ app.get('/api/companycam/projects', async (req, res) => {
 
     const page = parseInt(req.query.page) || 1;
     const perPage = 50;
-    const search = req.query.search || '';
+    const search = req.query.search?.trim() || '';
     
     console.log(`CompanyCam: Fetching page ${page} (search: "${search}")...`);
     
     // If searching, fetch and filter
-    if (search) {
+    if (search && search.length > 0) {
       const searchLower = search.toLowerCase();
       let allProjects = [];
       let currentPage = 1;
       let hasMore = true;
       
-      // Load all pages and filter
-      while (hasMore && currentPage <= 100) {
-        const response = await fetch(`https://api.companycam.com/v2/projects?per_page=50&page=${currentPage}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
+      // Load all pages and filter (up to 500 projects)
+      while (hasMore && currentPage <= 10) {
+        try {
+          const response = await fetch(`https://api.companycam.com/v2/projects?per_page=50&page=${currentPage}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            console.error(`CompanyCam search page ${currentPage} failed: ${response.status}`);
+            break;
           }
-        });
 
-        if (!response.ok) break;
-
-        const data = await response.json();
-        const projects = Array.isArray(data) ? data : [];
-        
-        if (projects.length === 0) {
-          hasMore = false;
-        } else {
-          allProjects = allProjects.concat(projects);
-          if (projects.length < 50) hasMore = false;
-          else currentPage++;
+          const data = await response.json();
+          const projects = Array.isArray(data) ? data : [];
+          
+          console.log(`CompanyCam search: Page ${currentPage} loaded ${projects.length} projects`);
+          
+          if (projects.length === 0) {
+            hasMore = false;
+          } else {
+            allProjects = allProjects.concat(projects);
+            if (projects.length < 50) hasMore = false;
+            else currentPage++;
+          }
+        } catch (err) {
+          console.error(`CompanyCam search page ${currentPage} error:`, err);
+          break;
         }
-        
-        // Stop after loading 500 projects for search (balance between speed and coverage)
-        if (allProjects.length >= 500) break;
       }
       
       // Filter by search term
