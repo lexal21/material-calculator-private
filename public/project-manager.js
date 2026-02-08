@@ -358,6 +358,16 @@ function startNewProject() {
   window.taxRate = 9;
   window.currentJobNumber = '';
   
+  // Clear photos
+  window.currentPhotos = { materials: [], labor: [] };
+  if (typeof clearPhotosDisplay === 'function') {
+    clearPhotosDisplay('materials');
+    clearPhotosDisplay('labor');
+  }
+  
+  // Clear localStorage current session
+  localStorage.removeItem(CURRENT_SESSION_KEY);
+  
   // Hide results
   const resultsDiv = document.getElementById('results');
   if (resultsDiv) {

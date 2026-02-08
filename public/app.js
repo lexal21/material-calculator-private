@@ -1221,7 +1221,27 @@ function buildPDFDocDefinition() {
         style: 'footer',
         margin: [0, 40, 0, 0]
       }
-    ],
+    ].concat(
+      // Add materials photos if available
+      window.currentPhotos && window.currentPhotos.materials && window.currentPhotos.materials.length > 0
+        ? (() => {
+            const photoContent = [
+              { text: '', pageBreak: 'before' },
+              { text: 'MATERIAL PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] }
+            ];
+            // Add photos 2 per row
+            for (let i = 0; i < window.currentPhotos.materials.length; i += 2) {
+              const row = { columns: [], margin: [0, 0, 0, 10] };
+              row.columns.push({ image: window.currentPhotos.materials[i].data, width: 240 });
+              if (window.currentPhotos.materials[i + 1]) {
+                row.columns.push({ image: window.currentPhotos.materials[i + 1].data, width: 240 });
+              }
+              photoContent.push(row);
+            }
+            return photoContent;
+          })()
+        : []
+    ),
     
     styles: {
       header: {
@@ -2196,7 +2216,27 @@ function buildLaborPDFDocDefinition() {
         style: 'footer',
         margin: [0, 40, 0, 0]
       }
-    ],
+    ].concat(
+      // Add labor photos if available
+      window.currentPhotos && window.currentPhotos.labor && window.currentPhotos.labor.length > 0
+        ? (() => {
+            const photoContent = [
+              { text: '', pageBreak: 'before' },
+              { text: 'LABOR PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] }
+            ];
+            // Add photos 2 per row
+            for (let i = 0; i < window.currentPhotos.labor.length; i += 2) {
+              const row = { columns: [], margin: [0, 0, 0, 10] };
+              row.columns.push({ image: window.currentPhotos.labor[i].data, width: 240 });
+              if (window.currentPhotos.labor[i + 1]) {
+                row.columns.push({ image: window.currentPhotos.labor[i + 1].data, width: 240 });
+              }
+              photoContent.push(row);
+            }
+            return photoContent;
+          })()
+        : []
+    ),
     
     styles: {
       header: {
