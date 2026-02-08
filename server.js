@@ -220,14 +220,15 @@ app.get('/api/companycam/projects', async (req, res) => {
     // Fetch ALL projects with pagination
     let allProjects = [];
     let page = 1;
-    let hasMore = true;
+    const perPage = 50; // CompanyCam API limit
     
-    console.log('CompanyCam: Starting to load projects...');
+    console.log('CompanyCam: Starting to load ALL projects...');
     
-    while (hasMore && page <= 100) { // Safety limit of 100 pages
+    // Keep fetching until we get 0 results
+    while (page <= 200) { // Safety limit: 200 pages × 50 = 10,000 projects
       console.log(`CompanyCam: Fetching page ${page}...`);
       
-      const response = await fetch(`https://api.companycam.com/v2/projects?per_page=100&page=${page}`, {
+      const response = await fetch(`https://api.companycam.com/v2/projects?per_page=${perPage}&page=${page}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
@@ -242,25 +243,21 @@ app.get('/api/companycam/projects', async (req, res) => {
       const data = await response.json();
       const projects = Array.isArray(data) ? data : (data.results || data.data || []);
       
-      console.log(`CompanyCam: Page ${page} returned ${projects.length} projects`);
+      console.log(`CompanyCam: Page ${page} returned ${projects.length} projects (total so far: ${allProjects.length + projects.length})`);
       
       if (projects.length === 0) {
-        console.log(`CompanyCam: No more projects (empty response on page ${page})`);
-        hasMore = false;
-      } else {
-        allProjects = allProjects.concat(projects);
-        
-        // If we got less than 100, we're on the last page
-        if (projects.length < 100) {
-          console.log(`CompanyCam: Last page reached (got ${projects.length} < 100)`);
-          hasMore = false;
-        } else {
-          page++;
-        }
+        console.log(`CompanyCam: ✅ Finished - No more projects on page ${page}`);
+        break;
       }
+      
+      allProjects = allProjects.concat(projects);
+      page++;
+      
+      // Small delay to avoid rate limits (240 GET requests per minute = 1 every 250ms)
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
     
-    console.log(`CompanyCam: Loaded ${allProjects.length} total projects across ${page} page(s)`);
+    console.log(`CompanyCam: ✅ Loaded ${allProjects.length} total projects across ${page - 1} page(s)`);
     res.json(allProjects);
   } catch (error) {
     console.error('CompanyCam projects error:', error);

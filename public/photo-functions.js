@@ -306,9 +306,16 @@ function togglePhotoSelection(tab, idx, selected) {
 
 // Delete selected photos
 function deleteSelectedPhotos(tab) {
-  const set = tab === 'materials' ? selectedMaterialsPhotos : selectedLaborPhotos;
+  console.log('[DeletePhotos] DELETE BUTTON CLICKED for tab:', tab);
   
-  if (set.size === 0) return;
+  const set = tab === 'materials' ? selectedMaterialsPhotos : selectedLaborPhotos;
+  console.log('[DeletePhotos] Selected photos count:', set.size);
+  console.log('[DeletePhotos] Selected photo indices:', Array.from(set));
+  
+  if (set.size === 0) {
+    console.log('[DeletePhotos] No photos selected, aborting');
+    return;
+  }
   
   const confirm = window.confirm(
     `Delete ${set.size} selected photo${set.size > 1 ? 's' : ''}?`
