@@ -285,7 +285,7 @@ function displayLaborPhotos() {
 function togglePhotoSelection(tab, idx, selected) {
   const set = tab === 'materials' ? selectedMaterialsPhotos : selectedLaborPhotos;
   
-  console.log(`[PhotoSelection] ${tab} photo ${idx}: ${selected ? 'selected' : 'deselected'}`);
+  console.log('[PhotoSelection] ' + tab + ' photo ' + idx + ': ' + (selected ? 'selected' : 'deselected'));
   
   if (selected) {
     set.add(idx);
@@ -293,14 +293,14 @@ function togglePhotoSelection(tab, idx, selected) {
     set.delete(idx);
   }
   
-  console.log(`[PhotoSelection] ${tab} total selected:`, set.size);
+  console.log('[PhotoSelection] ' + tab + ' total selected:', set.size);
   
   // Update delete button
   const btnId = tab === 'materials' ? 'deleteMaterialsPhotosBtn' : 'deleteLaborPhotosBtn';
   const btn = document.getElementById(btnId);
   if (btn) {
     btn.disabled = set.size === 0;
-    console.log(`[PhotoSelection] Delete button "${btnId}" ${set.size === 0 ? 'disabled' : 'enabled'}`);
+    console.log('[PhotoSelection] Delete button "' + btnId + '" ' + (set.size === 0 ? 'disabled' : 'enabled'));
   }
 }
 
