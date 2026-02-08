@@ -290,10 +290,10 @@ async function selectCompanyCamProject(projectId, projectName) {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.className = 'companycam-photo-checkbox';
-      checkbox.id = `companycam-photo-${photo.id}`;
+      checkbox.id = 'companycam-photo-' + photo.id;
       checkbox.onchange = (e) => {
         e.stopPropagation();
-        togglePhotoSelection(photo.id);
+        toggleCompanyCamPhotoSelection(photo.id);
       };
       
       // Find the best image URL from uris array
@@ -327,7 +327,7 @@ async function selectCompanyCamProject(projectId, projectName) {
         if (e.target === checkbox) return;
         
         checkbox.checked = !checkbox.checked;
-        togglePhotoSelection(photo.id);
+        toggleCompanyCamPhotoSelection(photo.id);
       };
       
       photosList.appendChild(card);
@@ -342,10 +342,10 @@ async function selectCompanyCamProject(projectId, projectName) {
   }
 }
 
-// Toggle photo selection
-function togglePhotoSelection(photoId) {
+// Toggle CompanyCam photo selection (in modal before import)
+function toggleCompanyCamPhotoSelection(photoId) {
   try {
-    const checkbox = document.getElementById(`companycam-photo-${photoId}`);
+    const checkbox = document.getElementById('companycam-photo-' + photoId);
     
     if (selectedPhotoIds.has(photoId)) {
       selectedPhotoIds.delete(photoId);
