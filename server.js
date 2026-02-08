@@ -222,7 +222,11 @@ app.get('/api/companycam/projects', async (req, res) => {
     let page = 1;
     let hasMore = true;
     
+    console.log('CompanyCam: Starting to load projects...');
+    
     while (hasMore && page <= 100) { // Safety limit of 100 pages
+      console.log(`CompanyCam: Fetching page ${page}...`);
+      
       const response = await fetch(`https://api.companycam.com/v2/projects?per_page=100&page=${page}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -231,25 +235,32 @@ app.get('/api/companycam/projects', async (req, res) => {
       });
 
       if (!response.ok) {
+        console.error(`CompanyCam API error on page ${page}: ${response.status}`);
         throw new Error(`CompanyCam API error: ${response.status}`);
       }
 
       const data = await response.json();
       const projects = Array.isArray(data) ? data : (data.results || data.data || []);
       
+      console.log(`CompanyCam: Page ${page} returned ${projects.length} projects`);
+      
       if (projects.length === 0) {
+        console.log(`CompanyCam: No more projects (empty response on page ${page})`);
         hasMore = false;
       } else {
         allProjects = allProjects.concat(projects);
-        page++;
+        
         // If we got less than 100, we're on the last page
         if (projects.length < 100) {
+          console.log(`CompanyCam: Last page reached (got ${projects.length} < 100)`);
           hasMore = false;
+        } else {
+          page++;
         }
       }
     }
     
-    console.log(`CompanyCam: Loaded ${allProjects.length} total projects`);
+    console.log(`CompanyCam: Loaded ${allProjects.length} total projects across ${page} page(s)`);
     res.json(allProjects);
   } catch (error) {
     console.error('CompanyCam projects error:', error);

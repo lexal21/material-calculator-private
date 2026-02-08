@@ -177,6 +177,7 @@ async function selectCompanyCamProject(projectId, projectName) {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.className = 'companycam-photo-checkbox';
+      checkbox.id = `companycam-photo-${photo.id}`;
       checkbox.onchange = (e) => {
         e.stopPropagation();
         togglePhotoSelection(photo.id);
@@ -208,7 +209,10 @@ async function selectCompanyCamProject(projectId, projectName) {
         card.appendChild(caption);
       }
       
-      card.onclick = () => {
+      card.onclick = (e) => {
+        // Don't toggle if clicking the checkbox itself
+        if (e.target === checkbox) return;
+        
         checkbox.checked = !checkbox.checked;
         togglePhotoSelection(photo.id);
       };
@@ -228,11 +232,15 @@ async function selectCompanyCamProject(projectId, projectName) {
 // Toggle photo selection
 function togglePhotoSelection(photoId) {
   try {
+    const checkbox = document.getElementById(`companycam-photo-${photoId}`);
+    
     if (selectedPhotoIds.has(photoId)) {
       selectedPhotoIds.delete(photoId);
+      if (checkbox) checkbox.checked = false;
       console.log('[CompanyCam] Deselected photo:', photoId);
     } else {
       selectedPhotoIds.add(photoId);
+      if (checkbox) checkbox.checked = true;
       console.log('[CompanyCam] Selected photo:', photoId);
     }
     
@@ -376,15 +384,27 @@ async function importCompanyCamPhotos() {
     // Save project
     projectManager.saveCurrentProject();
     
-    // Refresh displays
+    // Clear any existing selections
     if (tab === 'materials') {
+      if (window.selectedMaterialsPhotos) {
+        window.selectedMaterialsPhotos.clear();
+      }
+      // Refresh display
       displayMaterialsPhotos();
     } else {
+      if (window.selectedLaborPhotos) {
+        window.selectedLaborPhotos.clear();
+      }
+      // Refresh display
       displayLaborPhotos();
     }
     
     // Close modal
     closeCompanyCamModal();
+    
+    if (errorCount > 0) {
+      alert(`Imported ${successCount} photos successfully. ${errorCount} failed.`);
+    }
     
     console.log('[CompanyCam] Import complete');
   } catch (error) {
