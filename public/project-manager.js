@@ -34,7 +34,13 @@ function getCurrentProjectData() {
     currentTab: getCurrentActiveTab(),
     
     // Labor Location
-    laborLocation: document.getElementById('laborLocation')?.value || 'Out of Area'
+    laborLocation: document.getElementById('laborLocation')?.value || 'Out of Area',
+    
+    // Photos
+    photos: {
+      materials: [],
+      labor: []
+    }
   };
 }
 
@@ -205,6 +211,16 @@ function restoreProjectData(data) {
     if (typeof recalculateTotals === 'function') {
       recalculateTotals();
     }
+    
+    // Display photos
+    setTimeout(() => {
+      if (typeof displayMaterialsPhotos === 'function') {
+        displayMaterialsPhotos();
+      }
+      if (typeof displayLaborPhotos === 'function') {
+        displayLaborPhotos();
+      }
+    }, 200);
   }
 }
 
@@ -534,6 +550,27 @@ window.addEventListener('DOMContentLoaded', () => {
   console.log('Project Manager initialized', restored ? '(session restored)' : '(no previous session)');
 });
 
+// Helper methods for photo functions
+function getCurrentProject() {
+  const sessionData = localStorage.getItem(CURRENT_SESSION_KEY);
+  if (sessionData) {
+    const session = JSON.parse(sessionData);
+    // Ensure photos structure exists
+    if (!session.photos) {
+      session.photos = { materials: [], labor: [] };
+    }
+    return session;
+  }
+  // Return empty project structure
+  return {
+    photos: { materials: [], labor: [] }
+  };
+}
+
+function saveCurrentProject() {
+  saveCurrentSession();
+}
+
 // Expose functions globally
 window.projectManager = {
   saveCurrentSession,
@@ -546,5 +583,7 @@ window.projectManager = {
   showDeleteProjectDialog,
   populateProjectDropdown,
   onProjectDropdownChange,
-  getSavedProjects
+  getSavedProjects,
+  getCurrentProject,
+  saveCurrentProject
 };
