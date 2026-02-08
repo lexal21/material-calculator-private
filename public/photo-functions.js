@@ -109,7 +109,9 @@ async function handleMaterialsPhotos(event) {
         timestamp: Date.now()
       });
       
+      console.log('Photo added. Total materials photos:', project.photos.materials.length);
       projectManager.saveCurrentProject();
+      console.log('Project saved');
     } catch (err) {
       console.error('Photo upload error:', err);
       alert(`Failed to upload ${file.name}`);
@@ -155,7 +157,9 @@ async function handleLaborPhotos(event) {
         timestamp: Date.now()
       });
       
+      console.log('Photo added. Total labor photos:', project.photos.labor.length);
       projectManager.saveCurrentProject();
+      console.log('Project saved');
     } catch (err) {
       console.error('Photo upload error:', err);
       alert(`Failed to upload ${file.name}`);
@@ -171,6 +175,7 @@ async function handleLaborPhotos(event) {
 function displayMaterialsPhotos() {
   const project = projectManager.getCurrentProject();
   const photos = project.photos?.materials || [];
+  console.log('displayMaterialsPhotos called. Photo count:', photos.length);
   const grid = document.getElementById('materialsPhotoGrid');
   const printGrid = document.getElementById('materialsPrintPhotos');
   const photoSection = document.getElementById('materialsPhotoSection');
@@ -304,4 +309,18 @@ function deleteSelectedPhotos(tab) {
   } else {
     displayLaborPhotos();
   }
+}
+
+// Initialize photo displays on page load
+if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      if (typeof displayMaterialsPhotos === 'function') {
+        displayMaterialsPhotos();
+      }
+      if (typeof displayLaborPhotos === 'function') {
+        displayLaborPhotos();
+      }
+    }, 500);
+  });
 }

@@ -10,6 +10,11 @@ const CURRENT_SESSION_KEY = 'calculator-current-session';
 
 // Get current calculator state
 function getCurrentProjectData() {
+  // Initialize window.currentPhotos if it doesn't exist
+  if (!window.currentPhotos) {
+    window.currentPhotos = { materials: [], labor: [] };
+  }
+  
   return {
     timestamp: Date.now(),
     // PDF Data
@@ -36,11 +41,8 @@ function getCurrentProjectData() {
     // Labor Location
     laborLocation: document.getElementById('laborLocation')?.value || 'Out of Area',
     
-    // Photos (store in window.currentPhotos)
-    photos: window.currentPhotos || {
-      materials: [],
-      labor: []
-    }
+    // Photos
+    photos: window.currentPhotos
   };
 }
 
