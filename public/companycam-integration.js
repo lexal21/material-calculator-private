@@ -54,14 +54,20 @@ async function loadCompanyCamProjects() {
     errorEl.style.display = 'none';
     projectsList.innerHTML = '';
     
+    console.log('[CompanyCam] Fetching projects from API...');
     const response = await fetch('/api/companycam/projects');
-    if (!response.ok) throw new Error('Failed to load projects');
+    if (!response.ok) {
+      console.error('[CompanyCam] API returned error:', response.status);
+      throw new Error('Failed to load projects');
+    }
     
     const data = await response.json();
     // CompanyCam returns plain array
     companyCamProjects = Array.isArray(data) ? data : (data.results || data.data || []);
     
-    console.log('[CompanyCam] Loaded projects:', companyCamProjects.length);
+    console.log('[CompanyCam] ✅ Loaded projects:', companyCamProjects.length);
+    console.log('[CompanyCam] First project:', companyCamProjects[0]?.name);
+    console.log('[CompanyCam] Last project:', companyCamProjects[companyCamProjects.length - 1]?.name);
     
     if (companyCamProjects.length === 0) {
       projectsList.innerHTML = '<div class="companycam-empty">No projects found</div>';

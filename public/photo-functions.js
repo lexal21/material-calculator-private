@@ -285,15 +285,23 @@ function displayLaborPhotos() {
 function togglePhotoSelection(tab, idx, selected) {
   const set = tab === 'materials' ? selectedMaterialsPhotos : selectedLaborPhotos;
   
+  console.log(`[PhotoSelection] ${tab} photo ${idx}: ${selected ? 'selected' : 'deselected'}`);
+  
   if (selected) {
     set.add(idx);
   } else {
     set.delete(idx);
   }
   
+  console.log(`[PhotoSelection] ${tab} total selected:`, set.size);
+  
   // Update delete button
   const btnId = tab === 'materials' ? 'deleteMaterialsPhotosBtn' : 'deleteLaborPhotosBtn';
-  document.getElementById(btnId).disabled = set.size === 0;
+  const btn = document.getElementById(btnId);
+  if (btn) {
+    btn.disabled = set.size === 0;
+    console.log(`[PhotoSelection] Delete button "${btnId}" ${set.size === 0 ? 'disabled' : 'enabled'}`);
+  }
 }
 
 // Delete selected photos
