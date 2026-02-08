@@ -175,7 +175,8 @@ async function handleLaborPhotos(event) {
 function displayMaterialsPhotos() {
   const project = projectManager.getCurrentProject();
   const photos = project.photos?.materials || [];
-  console.log('displayMaterialsPhotos called. Photo count:', photos.length);
+  console.log('displayMaterialsPhotos called. Materials photo count:', photos.length);
+  console.log('window.currentPhotos:', window.currentPhotos);
   const grid = document.getElementById('materialsPhotoGrid');
   const printGrid = document.getElementById('materialsPrintPhotos');
   const photoSection = document.getElementById('materialsPhotoSection');
