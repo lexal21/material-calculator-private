@@ -181,15 +181,16 @@ function displayMaterialsPhotos() {
   const photoSection = document.getElementById('materialsPhotoSection');
   const photoCount = document.getElementById('materialsPhotoCount');
   
+  // Always show photo section (don't hide it)
+  if (photoSection) {
+    photoSection.style.display = 'block';
+  }
+  
   if (photos.length === 0) {
     grid.innerHTML = '<p style="color: #718096; padding: 16px;">No photos uploaded yet.</p>';
     printGrid.innerHTML = '';
-    photoSection.style.display = 'none';
     return;
   }
-  
-  // Show photo section
-  photoSection.style.display = 'block';
   
   // Update photo count
   photoCount.textContent = `${photos.length} photo${photos.length !== 1 ? 's' : ''}`;
