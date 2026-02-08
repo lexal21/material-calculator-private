@@ -1229,13 +1229,28 @@ function buildPDFDocDefinition() {
               { text: '', pageBreak: 'before' },
               { text: 'MATERIAL PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] }
             ];
-            // Add photos 2 per row
+            // Add photos 2 per row with labels
             for (let i = 0; i < window.currentPhotos.materials.length; i += 2) {
               const row = { columns: [], margin: [0, 0, 0, 10] };
-              row.columns.push({ image: window.currentPhotos.materials[i].data, width: 240 });
-              if (window.currentPhotos.materials[i + 1]) {
-                row.columns.push({ image: window.currentPhotos.materials[i + 1].data, width: 240 });
+              const photo1 = window.currentPhotos.materials[i];
+              const photo2 = window.currentPhotos.materials[i + 1];
+              
+              // First photo column
+              const photo1Stack = [{ image: photo1.data, width: 240 }];
+              if (photo1.label) {
+                photo1Stack.push({ text: photo1.label, style: 'photoLabel', margin: [0, 5, 0, 0] });
               }
+              row.columns.push({ stack: photo1Stack });
+              
+              // Second photo column (if exists)
+              if (photo2) {
+                const photo2Stack = [{ image: photo2.data, width: 240 }];
+                if (photo2.label) {
+                  photo2Stack.push({ text: photo2.label, style: 'photoLabel', margin: [0, 5, 0, 0] });
+                }
+                row.columns.push({ stack: photo2Stack });
+              }
+              
               photoContent.push(row);
             }
             return photoContent;
@@ -2224,13 +2239,28 @@ function buildLaborPDFDocDefinition() {
               { text: '', pageBreak: 'before' },
               { text: 'LABOR PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] }
             ];
-            // Add photos 2 per row
+            // Add photos 2 per row with labels
             for (let i = 0; i < window.currentPhotos.labor.length; i += 2) {
               const row = { columns: [], margin: [0, 0, 0, 10] };
-              row.columns.push({ image: window.currentPhotos.labor[i].data, width: 240 });
-              if (window.currentPhotos.labor[i + 1]) {
-                row.columns.push({ image: window.currentPhotos.labor[i + 1].data, width: 240 });
+              const photo1 = window.currentPhotos.labor[i];
+              const photo2 = window.currentPhotos.labor[i + 1];
+              
+              // First photo column
+              const photo1Stack = [{ image: photo1.data, width: 240 }];
+              if (photo1.label) {
+                photo1Stack.push({ text: photo1.label, style: 'photoLabel', margin: [0, 5, 0, 0] });
               }
+              row.columns.push({ stack: photo1Stack });
+              
+              // Second photo column (if exists)
+              if (photo2) {
+                const photo2Stack = [{ image: photo2.data, width: 240 }];
+                if (photo2.label) {
+                  photo2Stack.push({ text: photo2.label, style: 'photoLabel', margin: [0, 5, 0, 0] });
+                }
+                row.columns.push({ stack: photo2Stack });
+              }
+              
               photoContent.push(row);
             }
             return photoContent;

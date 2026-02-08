@@ -106,7 +106,8 @@ async function handleMaterialsPhotos(event) {
       project.photos.materials.push({
         data: base64,
         name: file.name,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        label: ''
       });
       
       console.log('Photo added. Total materials photos:', project.photos.materials.length);
@@ -154,7 +155,8 @@ async function handleLaborPhotos(event) {
       project.photos.labor.push({
         data: base64,
         name: file.name,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        label: ''
       });
       
       console.log('Photo added. Total labor photos:', project.photos.labor.length);
@@ -207,6 +209,11 @@ function displayMaterialsPhotos() {
       <div class="photo-item-name" title="${photo.name}">
         ${photo.name}
       </div>
+      <input type="text" 
+             class="photo-label-input" 
+             placeholder="Add label..."
+             value="${photo.label || ''}"
+             onchange="updatePhotoLabel('materials', ${idx}, this.value)">
     </div>
   `).join('');
   
@@ -215,6 +222,7 @@ function displayMaterialsPhotos() {
     <div class="print-photo-item">
       <img src="${photo.data}" alt="${photo.name}">
       <div class="print-photo-name">${photo.name}</div>
+      ${photo.label ? `<div class="print-photo-label">${photo.label}</div>` : ''}
     </div>
   `).join('');
   
@@ -251,6 +259,11 @@ function displayLaborPhotos() {
       <div class="photo-item-name" title="${photo.name}">
         ${photo.name}
       </div>
+      <input type="text" 
+             class="photo-label-input" 
+             placeholder="Add label..."
+             value="${photo.label || ''}"
+             onchange="updatePhotoLabel('labor', ${idx}, this.value)">
     </div>
   `).join('');
   
@@ -259,6 +272,7 @@ function displayLaborPhotos() {
     <div class="print-photo-item">
       <img src="${photo.data}" alt="${photo.name}">
       <div class="print-photo-name">${photo.name}</div>
+      ${photo.label ? `<div class="print-photo-label">${photo.label}</div>` : ''}
     </div>
   `).join('');
   
@@ -311,6 +325,26 @@ function deleteSelectedPhotos(tab) {
   } else {
     displayLaborPhotos();
   }
+}
+
+// Update photo label
+function updatePhotoLabel(tab, idx, label) {
+  const project = projectManager.getCurrentProject();
+  if (!project.photos) return;
+  
+  if (tab === 'materials' && project.photos.materials && project.photos.materials[idx]) {
+    project.photos.materials[idx].label = label;
+  } else if (tab === 'labor' && project.photos.labor && project.photos.labor[idx]) {
+    project.photos.labor[idx].label = label;
+  }
+  
+  projectManager.saveCurrentProject();
+  console.log(`Updated ${tab} photo ${idx} label:`, label);
+}
+
+// Expose functions globally
+if (typeof window !== 'undefined') {
+  window.updatePhotoLabel = updatePhotoLabel;
 }
 
 // Initialize photo displays on page load
