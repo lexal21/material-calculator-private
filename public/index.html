@@ -286,6 +286,9 @@
             <button class="btn-secondary btn-sm" onclick="document.getElementById('materialsPhotoInput').click()">
               + Upload Photos
             </button>
+            <button class="btn-primary btn-sm" onclick="openCompanyCamModal('materials')" style="background: #0891b2;">
+              📷 Import from CompanyCam
+            </button>
             <button class="btn-danger btn-sm" id="deleteMaterialsPhotosBtn" onclick="deleteSelectedPhotos('materials')" disabled>
               Delete Selected
             </button>
@@ -384,6 +387,9 @@
               <button class="btn-secondary btn-sm" onclick="document.getElementById('laborPhotoInput').click()">
                 + Upload Photos
               </button>
+              <button class="btn-primary btn-sm" onclick="openCompanyCamModal('labor')" style="background: #0891b2;">
+                📷 Import from CompanyCam
+              </button>
               <button class="btn-danger btn-sm" id="deleteLaborPhotosBtn" onclick="deleteSelectedPhotos('labor')" disabled>
                 Delete Selected
               </button>
@@ -460,6 +466,65 @@
     </div>
   </div>
 
+  <!-- CompanyCam Import Modal -->
+  <div id="companycam-modal" class="companycam-modal" style="display: none;">
+    <div class="companycam-modal-content">
+      <div class="companycam-modal-header">
+        <h2>Import Photos from CompanyCam</h2>
+        <span class="companycam-close" onclick="closeCompanyCamModal()">&times;</span>
+      </div>
+      
+      <div class="companycam-modal-body">
+        <!-- Projects View -->
+        <div id="companycam-projects-view">
+          <div class="companycam-section-header">
+            <h3>Select a Project</h3>
+            <p>Choose a project to view its photos</p>
+          </div>
+          
+          <div id="companycam-loading" class="companycam-loading" style="display: none;">
+            Loading projects...
+          </div>
+          
+          <div id="companycam-error" class="companycam-error" style="display: none;"></div>
+          
+          <div id="companycam-projects-list" class="companycam-projects-grid"></div>
+        </div>
+        
+        <!-- Photos View -->
+        <div id="companycam-photos-view" style="display: none;">
+          <div class="companycam-section-header">
+            <button class="btn-secondary" onclick="backToCompanyCamProjects()" style="margin-bottom: 12px;">
+              ← Back to Projects
+            </button>
+            <h3 id="companycam-selected-project-name">Project Photos</h3>
+            <p>Select photos to import to <strong id="companycam-modal-tab">Materials</strong> tab</p>
+          </div>
+          
+          <div id="companycam-photos-loading" class="companycam-loading" style="display: none;">
+            Loading photos...
+          </div>
+          
+          <div id="companycam-photos-error" class="companycam-error" style="display: none;"></div>
+          
+          <div id="companycam-photos-list" class="companycam-photos-grid"></div>
+        </div>
+      </div>
+      
+      <div class="companycam-modal-footer">
+        <div class="companycam-selection-info">
+          <span id="companycam-selected-count">0</span> photos selected
+        </div>
+        <div class="companycam-modal-actions">
+          <button class="btn-secondary" onclick="closeCompanyCamModal()">Cancel</button>
+          <button id="companycam-import-btn" class="btn-primary" onclick="importCompanyCamPhotos()" disabled>
+            Import Selected Photos
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
   <script src="locations.js"></script>
@@ -469,5 +534,6 @@
   <script src="app.js"></script>
   <script src="project-manager.js"></script>
   <script src="photo-functions.js"></script>
+  <script src="companycam-integration.js"></script>
 </body>
 </html>
