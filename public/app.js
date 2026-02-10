@@ -993,14 +993,14 @@ function removeErrorMessage(input) {
   }
 }
 
-function printResults() {
+async function printResults() {
   if (!window.materialsData || window.materialsData.length === 0) {
     alert('No materials data to print. Please upload a PDF first.');
     return;
   }
   
   // Generate PDF definition
-  const docDefinition = buildPDFDocDefinition();
+  const docDefinition = await buildPDFDocDefinition();
   
   // Open PDF in new window for printing
   try {
@@ -1224,12 +1224,18 @@ function buildCoverContent(logoData, coverPhoto, customerName, jobNumber, jobAdd
 }
 
 // Build PDF document definition (shared by print and save)
-function buildPDFDocDefinition() {
+async function buildPDFDocDefinition() {
+  // Load logo and cover page data
+  const logoData = await loadQuikBitzLogo();
+  const coverPhoto = window.currentPhotos?.materials?.find(p => p.isCover);
+  const customerName = document.getElementById('customerName')?.value || '';
+  const jobNumber = document.getElementById('jobNumber')?.value || '';
+  const jobAddress = window.currentRawMeasurements?.address || '';
+  const dateIssued = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  
   // Get customer info
-  const customerName = document.getElementById('customerName')?.value || 'Customer';
   const shingleColor = document.getElementById('shingleColorInput')?.value || '';
-  const address = window.currentRawMeasurements?.address || '';
-  const orderNum = document.getElementById('jobNumber')?.value || window.currentJobNumber || window.currentRawMeasurements?.order_number || '';
+  const orderNum = jobNumber || window.currentJobNumber || window.currentRawMeasurements?.order_number || '';
   
   // Build materials table body
   const materialsTableBody = [
@@ -1283,15 +1289,7 @@ function buildPDFDocDefinition() {
   const docDefinition = {
     content: [
       // Cover page with QuikBitz branding
-      buildCoverContent(
-        QB_LOGO_DATA,
-        window.currentPhotos?.materials?.find(p => p.isCover),
-        document.getElementById('customerName')?.value || '',
-        document.getElementById('jobNumber')?.value || '',
-        window.currentRawMeasurements?.address || '',
-        new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-        'MATERIAL ORDER'
-      ),
+      buildCoverContent(logoData, coverPhoto, customerName, jobNumber, jobAddress, dateIssued, 'MATERIAL ORDER'),
       
       // Header with logo
       {
@@ -1483,10 +1481,7 @@ function buildPDFDocDefinition() {
 
 // Generate and download PDF
 async function generatePDF() {
-  // Load QuikBitz logo if not already loaded
-  await loadQuikBitzLogo();
-  
-  const docDefinition = buildPDFDocDefinition();
+  const docDefinition = await buildPDFDocDefinition();
   
   // Generate filename
   const customerName = document.getElementById('customerName')?.value || 'Customer';
