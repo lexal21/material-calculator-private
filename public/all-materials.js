@@ -30,6 +30,7 @@ window.ALL_MATERIALS = ALL_MATERIALS;
 // Shingle colors (alphabetized)
 const SHINGLE_COLORS = [
   'Burnt Sienna',
+  'Charcoal Black',
   'Coastal Blue',
   'Cobblestone Gray',
   'Colonial Slate',

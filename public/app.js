@@ -317,8 +317,15 @@ function displayResults(data) {
         </div>
       </div>
       <div class="info-item">
-        <div class="info-label">Address</div>
-        <div class="info-value">${(data.raw.address || '').replace(/\n/g, ' ')}</div>
+        <div class="info-label">Job Address</div>
+        <div class="info-value">
+          <input 
+            type="text" 
+            id="jobAddress"
+            value="${(data.raw.address || '').replace(/\n/g, ' ')}" 
+            placeholder="Enter job address"
+          />
+        </div>
       </div>
       <div class="info-item">
         <div class="info-label">Job Number</div>
@@ -1065,7 +1072,7 @@ function buildPDFDocDefinition() {
   // Get customer info
   const customerName = document.getElementById('customerName')?.value || 'Customer';
   const shingleColor = document.getElementById('shingleColorInput')?.value || '';
-  const jobAddress = window.currentRawMeasurements?.address || '';
+  const jobAddress = document.getElementById('jobAddress')?.value || '';
   const orderNum = document.getElementById('jobNumber')?.value || window.currentJobNumber || window.currentRawMeasurements?.order_number || '';
   
   // Build materials table body
@@ -2148,7 +2155,7 @@ function buildLaborPDFDocDefinition() {
   // Get customer info (same as materials)
   const customerName = document.getElementById('customerName')?.value || 'Customer';
   const shingleColor = document.getElementById('shingleColorInput')?.value || '';
-  const address = window.currentRawMeasurements?.address || '';
+  const address = document.getElementById('jobAddress')?.value || '';
   const orderNum = document.getElementById('jobNumber')?.value || window.currentJobNumber || window.currentRawMeasurements?.order_number || '';
   const laborLocation = document.getElementById('laborLocation')?.value || 'Charleston Area';
   
