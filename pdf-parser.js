@@ -205,6 +205,12 @@ function extractAddress(text) {
     }
   }
   
+  // Fallback for old Ridge Top format: "3100 HERBAL WAY, SUMTER, SC, USA"
+  const oldFormatMatch = cleanedText.match(/(\d+\s+[A-Za-z\s]+(?:Lane|Street|Road|Drive|Avenue|Court|Circle|Way|Blvd|Boulevard|WAY|STREET|ROAD|DRIVE|AVENUE|COURT|CIRCLE|LANE|BLVD|BOULEVARD)[,\s]+[A-Za-z]+[,\s]+(?:[A-Z]{2}))(?:[,\s]+USA)?/i);
+  if (oldFormatMatch) {
+    return oldFormatMatch[1].replace(/,\s*USA$/i, '').trim();
+  }
+  
   return '';
 }
 
