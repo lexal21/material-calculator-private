@@ -993,14 +993,14 @@ function removeErrorMessage(input) {
   }
 }
 
-async function printResults() {
+function printResults() {
   if (!window.materialsData || window.materialsData.length === 0) {
     alert('No materials data to print. Please upload a PDF first.');
     return;
   }
   
   // Generate PDF definition
-  const docDefinition = await buildPDFDocDefinition();
+  const docDefinition = buildPDFDocDefinition();
   
   // Open PDF in new window for printing
   try {
@@ -1051,191 +1051,13 @@ async function saveResults() {
   await generatePDF();
 }
 
-function getCoverRightPanel(coverPhoto) {
-  if (coverPhoto?.data) {
-    return {
-      image: coverPhoto.data,
-      width: QB.layout.rightW,
-      height: QB.layout.pageH,
-      fit: [QB.layout.rightW, QB.layout.pageH],
-      alignment: 'center',
-      margin: [0, 0, 0, 0]
-    };
-  }
-  
-  // Fallback branded panel if no cover photo
-  return {
-    stack: [
-      {
-        canvas: [
-          { type: 'rect', x: 0, y: 0, w: QB.layout.rightW, h: QB.layout.pageH, color: QB.colors.navy2 },
-          { type: 'rect', x: 250, y: -50, w: 140, h: 900, color: QB.colors.blue1 },
-          { type: 'rect', x: 280, y: -50, w: 120, h: 900, color: QB.colors.blue2 },
-          { type: 'rect', x: 315, y: -50, w: 90, h: 900, color: QB.colors.orange }
-        ]
-      },
-      {
-        text: 'FAST. AUTOMATED. ACCURATE.',
-        fontSize: 22,
-        bold: true,
-        color: QB.colors.textOnDark,
-        alignment: 'left',
-        margin: [24, 520, 24, 0]
-      }
-    ],
-    width: QB.layout.rightW,
-    alignment: 'center',
-    margin: [0, 0, 0, 0]
-  };
-}
-
-function buildCoverContent(logoData, coverPhoto, customerName, jobNumber, jobAddress, dateIssued, docTypeText) {
-  if (!logoData) return null;
-  
-  return {
-    table: {
-      widths: [QB.layout.leftW, QB.layout.rightW],
-      body: [
-        [
-          {
-            stack: [
-              // Navy background using canvas
-              {
-                canvas: [
-                  { type: 'rect', x: -28, y: -28, w: QB.layout.leftW + 28, h: QB.layout.pageH + 52, color: QB.colors.navy }
-                ],
-                absolutePosition: { x: 0, y: 0 }
-              },
-              // Logo + brand name
-              {
-                columns: [
-                  { image: logoData, width: QB.logo.coverWidth, alignment: 'left', margin: [0, 0, 10, 0] },
-                  { text: 'QUIKBITZ', fontSize: QB.type.brandName, bold: true, color: QB.colors.textOnDark, alignment: 'left', margin: [0, 12, 0, 0] }
-                ],
-                columnGap: 0,
-                margin: [0, 0, 0, 10]
-              },
-              // Accent lines
-              {
-                canvas: [
-                  { type: 'line', x1: 0, y1: 0, x2: 150, y2: 0, lineWidth: 4, lineColor: QB.colors.blue1 },
-                  { type: 'line', x1: 0, y1: 10, x2: 120, y2: 10, lineWidth: 4, lineColor: QB.colors.blue2 },
-                  { type: 'line', x1: 0, y1: 20, x2: 92, y2: 20, lineWidth: 4, lineColor: QB.colors.orange }
-                ],
-                margin: [0, 0, 0, 28]
-              },
-              // Document type
-              {
-                text: docTypeText,
-                fontSize: QB.type.docType,
-                bold: true,
-                lineHeight: 1.0,
-                color: QB.colors.textOnDark,
-                alignment: 'left',
-                margin: [0, 0, 0, 12]
-              },
-              // Job number
-              {
-                text: [
-                  { text: 'QB-', fontSize: QB.type.jobNumber, color: QB.colors.textMutedOnDark },
-                  { text: String(jobNumber || ''), fontSize: QB.type.jobNumber, color: QB.colors.orange, bold: true }
-                ],
-                alignment: 'left',
-                margin: [0, 0, 0, 26]
-              },
-              // Divider
-              {
-                canvas: [{ type: 'line', x1: 0, y1: 0, x2: 190, y2: 0, lineWidth: 1, lineColor: QB.colors.ruleOnDark }],
-                margin: [0, 0, 0, 18]
-              },
-              // Customer
-              {
-                text: 'Customer:',
-                fontSize: QB.type.label,
-                bold: true,
-                color: QB.colors.textMutedOnDark,
-                alignment: 'left',
-                margin: [0, 0, 0, 4]
-              },
-              {
-                text: String(customerName || ''),
-                fontSize: QB.type.valueLg,
-                color: QB.colors.textOnDark,
-                alignment: 'left',
-                margin: [0, 0, 0, 18]
-              },
-              // Address
-              {
-                text: 'Job Address:',
-                fontSize: QB.type.label,
-                bold: true,
-                color: QB.colors.textMutedOnDark,
-                alignment: 'left',
-                margin: [0, 0, 0, 4]
-              },
-              {
-                text: String(jobAddress || '—'),
-                fontSize: QB.type.value,
-                color: QB.colors.textOnDark,
-                alignment: 'left',
-                margin: [0, 0, 0, 18]
-              },
-              // Date
-              {
-                text: 'Date Issued:',
-                fontSize: QB.type.label,
-                bold: true,
-                color: QB.colors.textMutedOnDark,
-                alignment: 'left',
-                margin: [0, 0, 0, 4]
-              },
-              {
-                text: String(dateIssued || ''),
-                fontSize: QB.type.value,
-                color: QB.colors.textOnDark,
-                alignment: 'left',
-                margin: [0, 0, 0, 0]
-              },
-              // Spacer
-              {
-                text: '',
-                margin: [0, 180, 0, 0]
-              },
-              // Footer
-              {
-                text: 'Generated by QuikBitz',
-                fontSize: QB.type.footer,
-                italics: true,
-                color: QB.colors.textFooterOnDark,
-                alignment: 'left',
-                margin: [0, 0, 0, 0]
-              }
-            ],
-            margin: QB.spacing.coverPanel
-          },
-          getCoverRightPanel(coverPhoto)
-        ]
-      ]
-    },
-    layout: 'noBorders',
-    margin: [0, 0, 0, 0],
-    pageBreak: 'after'
-  };
-}
-
 // Build PDF document definition (shared by print and save)
-async function buildPDFDocDefinition() {
-  // Load logo and cover page data
-  const logoData = await loadQuikBitzLogo();
-  const coverPhoto = window.currentPhotos?.materials?.find(p => p.isCover);
-  const customerName = document.getElementById('customerName')?.value || '';
-  const jobNumber = document.getElementById('jobNumber')?.value || '';
-  const jobAddress = window.currentRawMeasurements?.address || '';
-  const dateIssued = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  
+function buildPDFDocDefinition() {
   // Get customer info
+  const customerName = document.getElementById('customerName')?.value || 'Customer';
   const shingleColor = document.getElementById('shingleColorInput')?.value || '';
-  const orderNum = jobNumber || window.currentJobNumber || window.currentRawMeasurements?.order_number || '';
+  const jobAddress = window.currentRawMeasurements?.address || '';
+  const orderNum = document.getElementById('jobNumber')?.value || window.currentJobNumber || window.currentRawMeasurements?.order_number || '';
   
   // Build materials table body
   const materialsTableBody = [
@@ -1288,8 +1110,23 @@ async function buildPDFDocDefinition() {
   // Build PDF document definition
   const docDefinition = {
     content: [
-      // Cover page with QuikBitz branding
-      buildCoverContent(logoData, coverPhoto, customerName, jobNumber, jobAddress, dateIssued, 'MATERIAL ORDER'),
+      // Cover page (if cover photo designated)
+      (function() {
+        const coverPhoto = window.currentPhotos?.materials?.find(p => p.isCover);
+        if (!coverPhoto) return null;
+        
+        const customerName = document.getElementById('customerName')?.value || '';
+        const jobNumber = document.getElementById('jobNumber')?.value || '';
+        
+        return {
+          stack: [
+            { image: coverPhoto.data, width: 350, alignment: 'center', margin: [0, 60, 0, 40] },
+            { text: customerName, fontSize: 28, bold: true, color: '#1e293b', alignment: 'center', margin: [0, 20, 0, 12] },
+            { text: 'Job #: ' + jobNumber, fontSize: 16, color: '#475569', alignment: 'center', margin: [0, 0, 0, 8] }
+          ],
+          pageBreak: 'after'
+        };
+      })(),
       
       // Header with logo
       {
@@ -1480,8 +1317,8 @@ async function buildPDFDocDefinition() {
 }
 
 // Generate and download PDF
-async function generatePDF() {
-  const docDefinition = await buildPDFDocDefinition();
+function generatePDF() {
+  const docDefinition = buildPDFDocDefinition();
   
   // Generate filename
   const customerName = document.getElementById('customerName')?.value || 'Customer';
