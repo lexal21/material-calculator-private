@@ -318,7 +318,7 @@ function displayResults(data) {
       </div>
       <div class="info-item">
         <div class="info-label">Address</div>
-        <div class="info-value">${data.raw.address.replace(/\n/g, ' ')}</div>
+        <div class="info-value">${(data.raw.address || '').replace(/\n/g, ' ')}</div>
       </div>
       <div class="info-item">
         <div class="info-label">Job Number</div>
