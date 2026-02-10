@@ -127,6 +127,15 @@ async function handleFile(file) {
   hideError();
   showLoading();
   
+  // Clear photos when uploading new PDF
+  window.currentPhotos = { materials: [], labor: [] };
+  if (typeof displayMaterialsPhotos === 'function') {
+    displayMaterialsPhotos();
+  }
+  if (typeof displayLaborPhotos === 'function') {
+    displayLaborPhotos();
+  }
+  
   const locationName = document.getElementById('location').value;
   const locationType = window.getLocationType(locationName);
   const customPricing = getCurrentPricing();

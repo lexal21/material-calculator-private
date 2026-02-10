@@ -360,9 +360,11 @@ function startNewProject() {
   
   // Clear photos
   window.currentPhotos = { materials: [], labor: [] };
-  if (typeof clearPhotosDisplay === 'function') {
-    clearPhotosDisplay('materials');
-    clearPhotosDisplay('labor');
+  if (typeof displayMaterialsPhotos === 'function') {
+    displayMaterialsPhotos();
+  }
+  if (typeof displayLaborPhotos === 'function') {
+    displayLaborPhotos();
   }
   
   // Clear localStorage current session
