@@ -1872,7 +1872,10 @@ function deleteLaborItem(index) {
   selectedLabor.delete(index);
   
   // Re-render table
-  displayLaborItems();
+  const laborTable = document.getElementById('laborTable');
+  laborTable.innerHTML = window.laborData.items.map((item, index) => createLaborRow(item, index)).join('');
+  
+  updateLaborTotals();
 }
 
 function undoLastLaborAction() {
