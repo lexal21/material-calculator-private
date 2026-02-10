@@ -175,12 +175,11 @@ function extractAddress(text) {
   
   // Look for pattern: "122 LAKE LINDEN DRIVE, BLUFFTON, SC 29910"
   // OR: "801 BENT GREEN COURT, SUMMERVILLE, SOUTH CAROLINA 29485"
-  // OR: "3100 HERBAL WAY, SUMTER, SC, USA" (older format without zip)
   // Supports: Lane, Street, Road, Drive, Avenue, Court, Circle, Way, Boulevard
-  const addressMatch = cleanedText.match(/(\d+\s+[A-Za-z\s]+(?:Lane|Street|Road|Drive|Avenue|Court|Circle|Way|Blvd|Boulevard)[,\s]+[A-Za-z\s]+,?\s*(?:[A-Z]{2}|[A-Z][a-z]+\s+[A-Z][a-z]+)(?:\s*\d{5})?)/i);
+  const addressMatch = cleanedText.match(/(\d+\s+[A-Za-z\s]+(?:Lane|Street|Road|Drive|Avenue|Court|Circle|Way|Blvd|Boulevard)[,\s]+[A-Za-z\s]+,?\s*(?:[A-Z]{2}|[A-Z][a-z]+\s+[A-Z][a-z]+)\s*\d{5})/i);
   if (addressMatch) {
-    // Clean up the match (remove extra spaces, ", UNITED STATES", and ", USA")
-    return addressMatch[1].replace(/\s+/g, ' ').replace(/, UNITED STATES$/, '').replace(/, USA$/, '').trim();
+    // Clean up the match (remove extra spaces and ", UNITED STATES")
+    return addressMatch[1].replace(/\s+/g, ' ').replace(/, UNITED STATES$/, '').trim();
   }
   
   // Fallback: look for address pattern in first 500 chars
@@ -196,13 +195,12 @@ function extractAddress(text) {
         const nextLine = lines[j].trim();
         if (nextLine && !/^(Order|Insured|This report)/i.test(nextLine)) {
           address += ' ' + nextLine;
-          // Stop if we found zip code or state abbreviation
-          if (/\d{5}/.test(nextLine) || /\b[A-Z]{2}\b/.test(nextLine)) break;
+          // Stop if we found zip code
+          if (/\d{5}/.test(nextLine)) break;
         }
       }
-      // Accept if has state (2-letter) or zip code
-      if (/\b[A-Z]{2}\b/.test(address) || /\d{5}/.test(address)) {
-        return address.replace(/\s+/g, ' ').replace(/, USA$/, '').replace(/, UNITED STATES$/, '').trim();
+      if (/\d{5}/.test(address)) {
+        return address.replace(/\s+/g, ' ').replace(/, USA$/, '').trim();
       }
     }
   }
