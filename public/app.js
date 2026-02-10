@@ -1249,7 +1249,7 @@ function buildPDFDocDefinition() {
         
         const photoContent = [
           { text: '', pageBreak: 'before' },
-          { text: 'ADDITIONAL SITE PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] }
+          { text: 'PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] }
         ];
         
         for (let i = 0; i < otherPhotos.length; i += 2) {
