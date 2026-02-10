@@ -1397,6 +1397,29 @@ input[type="file"] {
   z-index: 10;
 }
 
+.btn-cover-photo {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-cover-photo:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.btn-cover-photo.is-cover {
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+}
+
 /* Print photo grid */
 .print-photo-grid {
   display: grid;
