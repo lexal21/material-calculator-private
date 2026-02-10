@@ -1120,7 +1120,7 @@ function buildPDFDocDefinition() {
         
         return {
           stack: [
-            { image: coverPhoto.data, width: 450, alignment: 'center', margin: [0, 60, 0, 40] },
+            { image: coverPhoto.data, width: 350, alignment: 'center', margin: [0, 60, 0, 40] },
             { text: customerName, fontSize: 28, bold: true, color: '#1e293b', alignment: 'center', margin: [0, 20, 0, 12] },
             { text: 'Job #: ' + jobNumber, fontSize: 16, color: '#475569', alignment: 'center', margin: [0, 0, 0, 8] }
           ],
@@ -1249,7 +1249,7 @@ function buildPDFDocDefinition() {
         
         const photoContent = [
           { text: '', pageBreak: 'before' },
-          { text: 'MATERIAL PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] }
+          { text: 'ADDITIONAL SITE PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] }
         ];
         
         for (let i = 0; i < otherPhotos.length; i += 2) {
