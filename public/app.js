@@ -1222,40 +1222,58 @@ function buildPDFDocDefinition() {
         margin: [0, 40, 0, 0]
       }
     ].concat(
-      // Add materials photos if available
-      window.currentPhotos && window.currentPhotos.materials && window.currentPhotos.materials.length > 0
-        ? (() => {
-            const photoContent = [
-              { text: '', pageBreak: 'before' },
-              { text: 'MATERIAL PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] }
-            ];
-            // Add photos 2 per row with labels
-            for (let i = 0; i < window.currentPhotos.materials.length; i += 2) {
-              const row = { columns: [], margin: [0, 0, 0, 10] };
-              const photo1 = window.currentPhotos.materials[i];
-              const photo2 = window.currentPhotos.materials[i + 1];
-              
-              // First photo column
-              const photo1Stack = [{ image: photo1.data, width: 240 }];
-              if (photo1.label) {
-                photo1Stack.push({ text: photo1.label, style: 'photoLabel', margin: [0, 5, 0, 0] });
-              }
-              row.columns.push({ stack: photo1Stack });
-              
-              // Second photo column (if exists)
-              if (photo2) {
-                const photo2Stack = [{ image: photo2.data, width: 240 }];
-                if (photo2.label) {
-                  photo2Stack.push({ text: photo2.label, style: 'photoLabel', margin: [0, 5, 0, 0] });
-                }
-                row.columns.push({ stack: photo2Stack });
-              }
-              
-              photoContent.push(row);
+      // Materials photos section
+      (function() {
+        if (!window.currentPhotos?.materials?.length) return [];
+        
+        const project = projectManager.getCurrentProject();
+        const coverPhoto = window.currentPhotos.materials.find(p => p.isCover);
+        const otherPhotos = window.currentPhotos.materials.filter(p => !p.isCover);
+        const photoContent = [];
+        
+        // Cover page (if cover photo designated)
+        if (coverPhoto) {
+          photoContent.push({
+            stack: [
+              { image: coverPhoto.data, width: 450, alignment: 'center', margin: [0, 60, 0, 40] },
+              { text: project.customerName || '', fontSize: 28, bold: true, color: '#1e293b', alignment: 'center', margin: [0, 20, 0, 12] },
+              { text: 'Job #: ' + (project.jobNumber || ''), fontSize: 16, color: '#475569', alignment: 'center', margin: [0, 0, 0, 8] },
+              { text: project.address || '', fontSize: 14, color: '#64748b', alignment: 'center', margin: [0, 0, 0, 0] }
+            ],
+            pageBreak: 'before'
+          });
+        }
+        
+        // Other photos (2 per row) on next page
+        if (otherPhotos.length > 0) {
+          photoContent.push({ text: '', pageBreak: 'before' });
+          photoContent.push({ text: 'MATERIAL PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] });
+          
+          for (let i = 0; i < otherPhotos.length; i += 2) {
+            const photo1 = otherPhotos[i];
+            const photo2 = otherPhotos[i + 1];
+            const row = { columns: [], margin: [0, 0, 0, 15] };
+            
+            const photo1Stack = [{ image: photo1.data, width: 240 }];
+            if (photo1.label) {
+              photo1Stack.push({ text: photo1.label, fontSize: 11, color: '#475569', alignment: 'center', margin: [0, 5, 0, 0] });
             }
-            return photoContent;
-          })()
-        : []
+            row.columns.push({ stack: photo1Stack, width: 250 });
+            
+            if (photo2) {
+              const photo2Stack = [{ image: photo2.data, width: 240 }];
+              if (photo2.label) {
+                photo2Stack.push({ text: photo2.label, fontSize: 11, color: '#475569', alignment: 'center', margin: [0, 5, 0, 0] });
+              }
+              row.columns.push({ stack: photo2Stack, width: 250 });
+            }
+            
+            photoContent.push(row);
+          }
+        }
+        
+        return photoContent;
+      })()
     ),
     
     styles: {
@@ -2232,40 +2250,58 @@ function buildLaborPDFDocDefinition() {
         margin: [0, 40, 0, 0]
       }
     ].concat(
-      // Add labor photos if available
-      window.currentPhotos && window.currentPhotos.labor && window.currentPhotos.labor.length > 0
-        ? (() => {
-            const photoContent = [
-              { text: '', pageBreak: 'before' },
-              { text: 'LABOR PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] }
-            ];
-            // Add photos 2 per row with labels
-            for (let i = 0; i < window.currentPhotos.labor.length; i += 2) {
-              const row = { columns: [], margin: [0, 0, 0, 10] };
-              const photo1 = window.currentPhotos.labor[i];
-              const photo2 = window.currentPhotos.labor[i + 1];
-              
-              // First photo column
-              const photo1Stack = [{ image: photo1.data, width: 240 }];
-              if (photo1.label) {
-                photo1Stack.push({ text: photo1.label, style: 'photoLabel', margin: [0, 5, 0, 0] });
-              }
-              row.columns.push({ stack: photo1Stack });
-              
-              // Second photo column (if exists)
-              if (photo2) {
-                const photo2Stack = [{ image: photo2.data, width: 240 }];
-                if (photo2.label) {
-                  photo2Stack.push({ text: photo2.label, style: 'photoLabel', margin: [0, 5, 0, 0] });
-                }
-                row.columns.push({ stack: photo2Stack });
-              }
-              
-              photoContent.push(row);
+      // Labor photos section
+      (function() {
+        if (!window.currentPhotos?.labor?.length) return [];
+        
+        const project = projectManager.getCurrentProject();
+        const coverPhoto = window.currentPhotos.labor.find(p => p.isCover);
+        const otherPhotos = window.currentPhotos.labor.filter(p => !p.isCover);
+        const photoContent = [];
+        
+        // Cover page (if cover photo designated)
+        if (coverPhoto) {
+          photoContent.push({
+            stack: [
+              { image: coverPhoto.data, width: 450, alignment: 'center', margin: [0, 60, 0, 40] },
+              { text: project.customerName || '', fontSize: 28, bold: true, color: '#1e293b', alignment: 'center', margin: [0, 20, 0, 12] },
+              { text: 'Job #: ' + (project.jobNumber || ''), fontSize: 16, color: '#475569', alignment: 'center', margin: [0, 0, 0, 8] },
+              { text: project.address || '', fontSize: 14, color: '#64748b', alignment: 'center', margin: [0, 0, 0, 0] }
+            ],
+            pageBreak: 'before'
+          });
+        }
+        
+        // Other photos (2 per row) on next page
+        if (otherPhotos.length > 0) {
+          photoContent.push({ text: '', pageBreak: 'before' });
+          photoContent.push({ text: 'LABOR PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] });
+          
+          for (let i = 0; i < otherPhotos.length; i += 2) {
+            const photo1 = otherPhotos[i];
+            const photo2 = otherPhotos[i + 1];
+            const row = { columns: [], margin: [0, 0, 0, 15] };
+            
+            const photo1Stack = [{ image: photo1.data, width: 240 }];
+            if (photo1.label) {
+              photo1Stack.push({ text: photo1.label, fontSize: 11, color: '#475569', alignment: 'center', margin: [0, 5, 0, 0] });
             }
-            return photoContent;
-          })()
-        : []
+            row.columns.push({ stack: photo1Stack, width: 250 });
+            
+            if (photo2) {
+              const photo2Stack = [{ image: photo2.data, width: 240 }];
+              if (photo2.label) {
+                photo2Stack.push({ text: photo2.label, fontSize: 11, color: '#475569', alignment: 'center', margin: [0, 5, 0, 0] });
+              }
+              row.columns.push({ stack: photo2Stack, width: 250 });
+            }
+            
+            photoContent.push(row);
+          }
+        }
+        
+        return photoContent;
+      })()
     ),
     
     styles: {

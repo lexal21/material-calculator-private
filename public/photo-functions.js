@@ -200,10 +200,10 @@ function displayMaterialsPhotos() {
   
   // Web view (with controls)
   grid.innerHTML = photos.map((photo, idx) => `
-    <div class="photo-item" data-photo-idx="${idx}">
+    <div class="photo-item">
       <input type="checkbox" 
              class="photo-checkbox" 
-             data-photo-idx="${idx}"
+             id="materials-photo-${idx}"
              onchange="togglePhotoSelection('materials', ${idx}, this.checked)">
       <img src="${photo.data}" alt="${photo.name}">
       <div class="photo-item-name" title="${photo.name}">
@@ -214,6 +214,10 @@ function displayMaterialsPhotos() {
              placeholder="Add label..."
              value="${photo.label || ''}"
              onchange="updatePhotoLabel('materials', ${idx}, this.value)">
+      <button class="btn-cover-photo ${photo.isCover ? 'is-cover' : ''}" 
+              onclick="setCoverPhoto('materials', ${idx})">
+        ${photo.isCover ? '★ Cover Photo' : 'Set as Cover'}
+      </button>
     </div>
   `).join('');
   
@@ -250,10 +254,10 @@ function displayLaborPhotos() {
   
   // Web view (with controls)
   grid.innerHTML = photos.map((photo, idx) => `
-    <div class="photo-item" data-photo-idx="${idx}">
+    <div class="photo-item">
       <input type="checkbox" 
              class="photo-checkbox" 
-             data-photo-idx="${idx}"
+             id="labor-photo-${idx}"
              onchange="togglePhotoSelection('labor', ${idx}, this.checked)">
       <img src="${photo.data}" alt="${photo.name}">
       <div class="photo-item-name" title="${photo.name}">
@@ -264,6 +268,10 @@ function displayLaborPhotos() {
              placeholder="Add label..."
              value="${photo.label || ''}"
              onchange="updatePhotoLabel('labor', ${idx}, this.value)">
+      <button class="btn-cover-photo ${photo.isCover ? 'is-cover' : ''}" 
+              onclick="setCoverPhoto('labor', ${idx})">
+        ${photo.isCover ? '★ Cover Photo' : 'Set as Cover'}
+      </button>
     </div>
   `).join('');
   
