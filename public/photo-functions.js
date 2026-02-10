@@ -357,9 +357,32 @@ function updatePhotoLabel(tab, idx, label) {
   console.log(`Updated ${tab} photo ${idx} label:`, label);
 }
 
+// Set cover photo
+function setCoverPhoto(tab, idx) {
+  const project = projectManager.getCurrentProject();
+  if (!project.photos || !project.photos[tab]) return;
+  
+  // Clear existing cover for this tab
+  project.photos[tab].forEach(p => p.isCover = false);
+  
+  // Set new cover
+  project.photos[tab][idx].isCover = true;
+  projectManager.saveCurrentProject();
+  
+  // Refresh display
+  if (tab === 'materials') {
+    displayMaterialsPhotos();
+  } else {
+    displayLaborPhotos();
+  }
+  
+  console.log('Set cover photo:', tab, idx);
+}
+
 // Expose functions globally
 if (typeof window !== 'undefined') {
   window.updatePhotoLabel = updatePhotoLabel;
+  window.setCoverPhoto = setCoverPhoto;
 }
 
 // Initialize photo displays on page load
