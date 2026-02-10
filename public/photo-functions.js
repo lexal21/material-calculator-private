@@ -367,20 +367,18 @@ function updatePhotoLabel(tab, idx, label) {
 
 // Set cover photo
 function setCoverPhoto(tab, idx) {
-  const project = projectManager.getCurrentProject();
-  if (!project.photos || !project.photos[tab]) return;
+  if (!window.currentPhotos || !window.currentPhotos[tab]) return;
   
   // Check if clicking the current cover (toggle off)
-  const isCurrentCover = project.photos[tab][idx].isCover;
+  const isCurrentCover = window.currentPhotos[tab][idx]?.isCover;
   
   // Clear existing cover for this tab
-  project.photos[tab].forEach(p => p.isCover = false);
+  window.currentPhotos[tab].forEach(p => p.isCover = false);
   
   // Set new cover only if it wasn't already the cover
   if (!isCurrentCover) {
-    project.photos[tab][idx].isCover = true;
+    window.currentPhotos[tab][idx].isCover = true;
   }
-  projectManager.saveCurrentProject();
   
   // Refresh display
   if (tab === 'materials') {
@@ -389,7 +387,7 @@ function setCoverPhoto(tab, idx) {
     displayLaborPhotos();
   }
   
-  console.log('Set cover photo:', tab, idx);
+  console.log('Set cover photo:', tab, idx, window.currentPhotos[tab][idx]?.isCover);
 }
 
 // Expose functions globally
