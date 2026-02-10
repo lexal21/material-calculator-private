@@ -1110,6 +1110,24 @@ function buildPDFDocDefinition() {
   // Build PDF document definition
   const docDefinition = {
     content: [
+      // Cover photo page (first page if designated)
+      (function() {
+        const coverPhoto = window.currentPhotos?.materials?.find(p => p.isCover);
+        if (!coverPhoto) return null;
+        
+        const customerName = document.getElementById('customerName')?.value || '';
+        const jobNumber = document.getElementById('jobNumber')?.value || '';
+        
+        return {
+          stack: [
+            { image: coverPhoto.data, width: 450, alignment: 'center', margin: [0, 60, 0, 40] },
+            { text: customerName, fontSize: 28, bold: true, color: '#1e293b', alignment: 'center', margin: [0, 20, 0, 12] },
+            { text: 'Job #: ' + jobNumber, fontSize: 16, color: '#475569', alignment: 'center', margin: [0, 0, 0, 8] }
+          ],
+          pageBreak: 'after'
+        };
+      })(),
+      
       // Header with logo
       {
         columns: [
@@ -1222,55 +1240,38 @@ function buildPDFDocDefinition() {
         margin: [0, 40, 0, 0]
       }
     ].concat(
-      // Materials photos section
+      // Materials photos section (non-cover photos only)
       (function() {
         if (!window.currentPhotos?.materials?.length) return [];
         
-        const project = projectManager.getCurrentProject();
-        const coverPhoto = window.currentPhotos.materials.find(p => p.isCover);
         const otherPhotos = window.currentPhotos.materials.filter(p => !p.isCover);
-        const photoContent = [];
+        if (otherPhotos.length === 0) return [];
         
-        // Cover page (if cover photo designated)
-        if (coverPhoto) {
-          const customerName = document.getElementById('customerName')?.value || '';
-          const jobNumber = document.getElementById('jobNumber')?.value || '';
-          photoContent.push({
-            stack: [
-              { image: coverPhoto.data, width: 450, alignment: 'center', margin: [0, 60, 0, 40] },
-              { text: customerName, fontSize: 28, bold: true, color: '#1e293b', alignment: 'center', margin: [0, 20, 0, 12] },
-              { text: 'Job #: ' + jobNumber, fontSize: 16, color: '#475569', alignment: 'center', margin: [0, 0, 0, 8] }
-            ],
-            pageBreak: 'before'
-          });
-        }
+        const photoContent = [
+          { text: '', pageBreak: 'before' },
+          { text: 'MATERIAL PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] }
+        ];
         
-        // Other photos (2 per row) on next page
-        if (otherPhotos.length > 0) {
-          photoContent.push({ text: '', pageBreak: 'before' });
-          photoContent.push({ text: 'MATERIAL PHOTOS', style: 'sectionHeader', margin: [0, 0, 0, 20] });
+        for (let i = 0; i < otherPhotos.length; i += 2) {
+          const photo1 = otherPhotos[i];
+          const photo2 = otherPhotos[i + 1];
+          const row = { columns: [], margin: [0, 0, 0, 15] };
           
-          for (let i = 0; i < otherPhotos.length; i += 2) {
-            const photo1 = otherPhotos[i];
-            const photo2 = otherPhotos[i + 1];
-            const row = { columns: [], margin: [0, 0, 0, 15] };
-            
-            const photo1Stack = [{ image: photo1.data, width: 240 }];
-            if (photo1.label) {
-              photo1Stack.push({ text: photo1.label, fontSize: 11, color: '#475569', alignment: 'center', margin: [0, 5, 0, 0] });
-            }
-            row.columns.push({ stack: photo1Stack, width: 250 });
-            
-            if (photo2) {
-              const photo2Stack = [{ image: photo2.data, width: 240 }];
-              if (photo2.label) {
-                photo2Stack.push({ text: photo2.label, fontSize: 11, color: '#475569', alignment: 'center', margin: [0, 5, 0, 0] });
-              }
-              row.columns.push({ stack: photo2Stack, width: 250 });
-            }
-            
-            photoContent.push(row);
+          const photo1Stack = [{ image: photo1.data, width: 240 }];
+          if (photo1.label) {
+            photo1Stack.push({ text: photo1.label, fontSize: 11, color: '#475569', alignment: 'center', margin: [0, 5, 0, 0] });
           }
+          row.columns.push({ stack: photo1Stack, width: 250 });
+          
+          if (photo2) {
+            const photo2Stack = [{ image: photo2.data, width: 240 }];
+            if (photo2.label) {
+              photo2Stack.push({ text: photo2.label, fontSize: 11, color: '#475569', alignment: 'center', margin: [0, 5, 0, 0] });
+            }
+            row.columns.push({ stack: photo2Stack, width: 250 });
+          }
+          
+          photoContent.push(row);
         }
         
         return photoContent;
