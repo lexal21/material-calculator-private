@@ -173,16 +173,18 @@ function extractAddress(text) {
   // Remove extra line breaks to join multi-line addresses
   const cleanedText = text.replace(/\n+/g, ' ').replace(/\s+/g, ' ');
   
+  console.log('===== ADDRESS EXTRACTION DEBUG =====');
+  console.log('First 500 chars of cleanedText:');
+  console.log(cleanedText.substring(0, 500));
+  console.log('=====================================');
+  
   // Look for pattern: "122 LAKE LINDEN DRIVE, BLUFFTON, SC 29910"
   // OR: "801 BENT GREEN COURT, SUMMERVILLE, SOUTH CAROLINA 29485"
   // Supports: Lane, Street, Road, Drive, Avenue, Court, Circle, Way, Boulevard
   const addressMatch = cleanedText.match(/(\d+\s+[A-Za-z\s]+(?:Lane|Street|Road|Drive|Avenue|Court|Circle|Way|Blvd|Boulevard)[,\s]+[A-Za-z\s]+,?\s*(?:[A-Z]{2}|[A-Z][a-z]+\s+[A-Z][a-z]+)\s*\d{5})/i);
-  if (addressMatch) {
-    // Clean up the match (remove extra spaces and ", UNITED STATES")
-    return addressMatch[1].replace(/\s+/g, ' ').replace(/, UNITED STATES$/, '').trim();
-  }
   
   // Fallback: look for address pattern in first 500 chars
+  let fallbackMatch = null;
   const firstPart = text.substring(0, 500);
   const lines = firstPart.split('\n');
   for (let i = 0; i < lines.length; i++) {
@@ -200,18 +202,31 @@ function extractAddress(text) {
         }
       }
       if (/\d{5}/.test(address)) {
-        return address.replace(/\s+/g, ' ').replace(/, USA$/, '').trim();
+        fallbackMatch = address.replace(/\s+/g, ' ').replace(/, USA$/, '').trim();
+        break;
       }
     }
   }
   
   // Fallback for old Ridge Top format: "3100 HERBAL WAY, SUMTER, SC, USA"
   const oldFormatMatch = cleanedText.match(/(\d+\s+[A-Za-z\s]+(?:Lane|Street|Road|Drive|Avenue|Court|Circle|Way|Blvd|Boulevard|WAY|STREET|ROAD|DRIVE|AVENUE|COURT|CIRCLE|LANE|BLVD|BOULEVARD)[,\s]+[A-Za-z]+[,\s]+(?:[A-Z]{2}))(?:[,\s]+USA)?/i);
-  if (oldFormatMatch) {
-    return oldFormatMatch[1].replace(/,\s*USA$/i, '').trim();
+  
+  let finalAddress = '';
+  if (addressMatch) {
+    finalAddress = addressMatch[1].replace(/\s+/g, ' ').replace(/, UNITED STATES$/, '').trim();
+  } else if (fallbackMatch) {
+    finalAddress = fallbackMatch;
+  } else if (oldFormatMatch) {
+    finalAddress = oldFormatMatch[1].replace(/,\s*USA$/i, '').trim();
   }
   
-  return '';
+  console.log('Address extraction debug:');
+  console.log('Primary match:', addressMatch);
+  console.log('Fallback match:', fallbackMatch);
+  console.log('Old format match:', oldFormatMatch);
+  console.log('Final address:', finalAddress);
+  
+  return finalAddress;
 }
 
 /**
