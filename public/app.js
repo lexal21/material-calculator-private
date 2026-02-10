@@ -1098,9 +1098,14 @@ function buildCoverContent(logoData, coverPhoto, customerName, jobNumber, jobAdd
       body: [
         [
           {
-            fillColor: QB.colors.navy,
-            margin: QB.spacing.coverPanel,
             stack: [
+              // Navy background using canvas
+              {
+                canvas: [
+                  { type: 'rect', x: -28, y: -28, w: QB.layout.leftW + 28, h: QB.layout.pageH + 52, color: QB.colors.navy }
+                ],
+                absolutePosition: { x: 0, y: 0 }
+              },
               // Logo + brand name
               {
                 columns: [
@@ -1194,7 +1199,7 @@ function buildCoverContent(logoData, coverPhoto, customerName, jobNumber, jobAdd
               // Spacer
               {
                 text: '',
-                margin: [0, 220, 0, 0]
+                margin: [0, 180, 0, 0]
               },
               // Footer
               {
@@ -1205,7 +1210,8 @@ function buildCoverContent(logoData, coverPhoto, customerName, jobNumber, jobAdd
                 alignment: 'left',
                 margin: [0, 0, 0, 0]
               }
-            ]
+            ],
+            margin: QB.spacing.coverPanel
           },
           getCoverRightPanel(coverPhoto)
         ]
