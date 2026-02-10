@@ -1280,11 +1280,11 @@ function buildPDFDocDefinition() {
       buildCoverContent(
         QB_LOGO_DATA,
         window.currentPhotos?.materials?.find(p => p.isCover),
-        customerName,
-        orderNum,
-        address,
-        new Date().toLocaleDateString(),
-        'MATERIAL\nORDER'
+        document.getElementById('customerName')?.value || '',
+        document.getElementById('jobNumber')?.value || '',
+        window.currentRawMeasurements?.address || '',
+        new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        'MATERIAL ORDER'
       ),
       
       // Header with logo
