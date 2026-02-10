@@ -1070,16 +1070,15 @@ function buildPDFDocDefinition() {
   ];
   
   // Add materials (skip zero-quantity items)
-  window.materialsData.forEach(item => {
-    if (item.quantity > 0) {
-      const pluralUnit = pluralizeUnit(item.quantity, item.unit);
-      materialsTableBody.push([
-        item.name,
-        { text: `${item.quantity} ${pluralUnit}`, alignment: 'right' },
-        { text: `$${item.unitPrice.toFixed(2)}`, alignment: 'right' },
-        { text: `$${item.total.toFixed(2)}`, alignment: 'right' }
-      ]);
-    }
+  const filteredMaterials = window.materialsData.filter(item => item.quantity > 0);
+  filteredMaterials.forEach(item => {
+    const pluralUnit = pluralizeUnit(item.quantity, item.unit);
+    materialsTableBody.push([
+      item.name,
+      { text: `${item.quantity} ${pluralUnit}`, alignment: 'right' },
+      { text: `$${item.unitPrice.toFixed(2)}`, alignment: 'right' },
+      { text: `$${item.total.toFixed(2)}`, alignment: 'right' }
+    ]);
   });
   
   // Add additional items if they have values
@@ -2156,16 +2155,15 @@ function buildLaborPDFDocDefinition() {
   
   // Add labor items from table (only non-zero quantities)
   if (window.laborData && window.laborData.items) {
-    window.laborData.items.forEach(item => {
-      if (item.quantity > 0 && item.total > 0) {
-        const pluralUnit = pluralizeUnit(item.quantity, item.unit);
-        laborTableBody.push([
-          item.name,
-          { text: `${item.quantity} ${pluralUnit}`, alignment: 'right' },
-          { text: `$${item.unitPrice.toFixed(2)}`, alignment: 'right' },
-          { text: `$${item.total.toFixed(2)}`, alignment: 'right' }
-        ]);
-      }
+    const filteredLabor = window.laborData.items.filter(item => item.quantity > 0);
+    filteredLabor.forEach(item => {
+      const pluralUnit = pluralizeUnit(item.quantity, item.unit);
+      laborTableBody.push([
+        item.name,
+        { text: `${item.quantity} ${pluralUnit}`, alignment: 'right' },
+        { text: `$${item.unitPrice.toFixed(2)}`, alignment: 'right' },
+        { text: `$${item.total.toFixed(2)}`, alignment: 'right' }
+      ]);
     });
   }
   
