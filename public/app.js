@@ -1233,12 +1233,13 @@ function buildPDFDocDefinition() {
         
         // Cover page (if cover photo designated)
         if (coverPhoto) {
+          const customerName = document.getElementById('customerName')?.value || '';
+          const jobNumber = document.getElementById('jobNumber')?.value || '';
           photoContent.push({
             stack: [
               { image: coverPhoto.data, width: 450, alignment: 'center', margin: [0, 60, 0, 40] },
-              { text: project.customerName || '', fontSize: 28, bold: true, color: '#1e293b', alignment: 'center', margin: [0, 20, 0, 12] },
-              { text: 'Job #: ' + (project.jobNumber || ''), fontSize: 16, color: '#475569', alignment: 'center', margin: [0, 0, 0, 8] },
-              { text: project.address || '', fontSize: 14, color: '#64748b', alignment: 'center', margin: [0, 0, 0, 0] }
+              { text: customerName, fontSize: 28, bold: true, color: '#1e293b', alignment: 'center', margin: [0, 20, 0, 12] },
+              { text: 'Job #: ' + jobNumber, fontSize: 16, color: '#475569', alignment: 'center', margin: [0, 0, 0, 8] }
             ],
             pageBreak: 'before'
           });
