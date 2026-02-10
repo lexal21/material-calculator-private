@@ -1542,6 +1542,11 @@ onchange="toggleLaborSelection(${index})">
         />
       </td>
       <td data-label="Total" class="row-total">$${total.toFixed(2)}</td>
+      <td class="delete-cell no-print">
+        <button class="delete-btn" onclick="deleteLaborItem(${index})" aria-label="Delete ${item.name}">
+          x
+        </button>
+      </td>
     </tr>
   `;
 }
@@ -1831,6 +1836,28 @@ function deleteSelectedLabor() {
   laborTable.innerHTML = window.laborData.items.map((item, index) => createLaborRow(item, index)).join('');
   
   updateLaborTotals();
+}
+
+function deleteLaborItem(index) {
+  if (!window.laborData || index < 0 || index >= window.laborData.items.length) {
+    return;
+  }
+  
+  if (!confirm('Delete this labor item?')) {
+    return;
+  }
+  
+  // Save current state to undo stack
+  laborUndoStack.push(JSON.parse(JSON.stringify(window.laborData.items)));
+  
+  // Remove the item
+  window.laborData.items.splice(index, 1);
+  
+  // Clear from selection if it was selected
+  selectedLabor.delete(index);
+  
+  // Re-render table
+  displayLaborItems();
 }
 
 function undoLastLaborAction() {
