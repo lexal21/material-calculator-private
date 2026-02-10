@@ -1051,6 +1051,44 @@ function saveResults() {
   generatePDF();
 }
 
+function getCoverRightPanel(coverPhoto) {
+  if (coverPhoto?.data) {
+    return {
+      image: coverPhoto.data,
+      width: QB.layout.rightW,
+      height: QB.layout.pageH,
+      fit: [QB.layout.rightW, QB.layout.pageH],
+      alignment: 'center',
+      margin: [0, 0, 0, 0]
+    };
+  }
+  
+  // Fallback branded panel if no cover photo
+  return {
+    stack: [
+      {
+        canvas: [
+          { type: 'rect', x: 0, y: 0, w: QB.layout.rightW, h: QB.layout.pageH, color: QB.colors.navy2 },
+          { type: 'rect', x: 250, y: -50, w: 140, h: 900, color: QB.colors.blue1 },
+          { type: 'rect', x: 280, y: -50, w: 120, h: 900, color: QB.colors.blue2 },
+          { type: 'rect', x: 315, y: -50, w: 90, h: 900, color: QB.colors.orange }
+        ]
+      },
+      {
+        text: 'FAST. AUTOMATED. ACCURATE.',
+        fontSize: 22,
+        bold: true,
+        color: QB.colors.textOnDark,
+        alignment: 'left',
+        margin: [24, 520, 24, 0]
+      }
+    ],
+    width: QB.layout.rightW,
+    alignment: 'center',
+    margin: [0, 0, 0, 0]
+  };
+}
+
 // Build PDF document definition (shared by print and save)
 function buildPDFDocDefinition() {
   // Get customer info
