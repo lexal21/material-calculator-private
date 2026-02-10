@@ -1320,7 +1320,7 @@ async function buildPDFDocDefinition() {
             stack: [
               { text: 'CUSTOMER INFORMATION', style: 'sectionHeader', margin: [0, 0, 0, 10] },
               { text: `Customer: ${customerName}`, margin: [0, 0, 0, 5] },
-              { text: `Address: ${address}`, margin: [0, 0, 0, 5] },
+              { text: `Address: ${jobAddress}`, margin: [0, 0, 0, 5] },
               { text: `Job Number: ${orderNum}`, margin: [0, 0, 0, 5] },
               { text: `Shingle Color: ${shingleColor || 'Not specified'}`, margin: [0, 0, 0, 5] }
             ]
