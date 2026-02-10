@@ -370,11 +370,16 @@ function setCoverPhoto(tab, idx) {
   const project = projectManager.getCurrentProject();
   if (!project.photos || !project.photos[tab]) return;
   
+  // Check if clicking the current cover (toggle off)
+  const isCurrentCover = project.photos[tab][idx].isCover;
+  
   // Clear existing cover for this tab
   project.photos[tab].forEach(p => p.isCover = false);
   
-  // Set new cover
-  project.photos[tab][idx].isCover = true;
+  // Set new cover only if it wasn't already the cover
+  if (!isCurrentCover) {
+    project.photos[tab][idx].isCover = true;
+  }
   projectManager.saveCurrentProject();
   
   // Refresh display
