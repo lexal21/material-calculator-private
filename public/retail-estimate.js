@@ -205,10 +205,19 @@ function displayRetailEstimate() {
       </tr>`).join('');
   }
 
-  if (el('retailSubtotal')) el('retailSubtotal').innerHTML = '<strong>$' + totals.subtotal.toFixed(2) + '</strong>';
-  if (el('retailFeesTotal')) el('retailFeesTotal').textContent = '$' + totals.feesTotal.toFixed(2);
-  if (el('retailTaxAmount')) el('retailTaxAmount').textContent = '$' + totals.taxAmount.toFixed(2);
-  if (el('retailGrandTotal')) el('retailGrandTotal').innerHTML = '<strong>$' + totals.grandTotal.toFixed(2) + '</strong>';
+  if (isCustomer) {
+    // Customer view: fees rolled into subtotal
+    const customerSubtotal = totals.subtotal + totals.feesTotal;
+    if (el('retailSubtotal')) el('retailSubtotal').innerHTML = '<strong>$' + customerSubtotal.toFixed(2) + '</strong>';
+    if (el('retailTaxAmount')) el('retailTaxAmount').textContent = '$' + totals.taxAmount.toFixed(2);
+    if (el('retailGrandTotal')) el('retailGrandTotal').innerHTML = '<strong>$' + totals.grandTotal.toFixed(2) + '</strong>';
+  } else {
+    // Internal view: show fees separately
+    if (el('retailSubtotal')) el('retailSubtotal').innerHTML = '<strong>$' + totals.subtotal.toFixed(2) + '</strong>';
+    if (el('retailFeesTotal')) el('retailFeesTotal').textContent = '$' + totals.feesTotal.toFixed(2);
+    if (el('retailTaxAmount')) el('retailTaxAmount').textContent = '$' + totals.taxAmount.toFixed(2);
+    if (el('retailGrandTotal')) el('retailGrandTotal').innerHTML = '<strong>$' + totals.grandTotal.toFixed(2) + '</strong>';
+  }
 
   if (el('retailTaxRate')) el('retailTaxRate').value = est.tax.rate;
   if (el('retailTaxApplyTo')) el('retailTaxApplyTo').value = est.tax.applyTo;
@@ -323,16 +332,15 @@ function buildRetailPDF() {
     });
   }
 
+  const customerSubtotal = totals.subtotal + totals.feesTotal;
   const totalsStack = [
-    { columns: [{ text: 'Subtotal:', width: '*', alignment: 'right' }, { text: '$' + totals.subtotal.toFixed(2), width: 100, alignment: 'right' }], margin: [0, 4, 0, 4] }
+    { columns: [{ text: 'Subtotal:', width: '*', alignment: 'right' }, { text: '$' + (isCustomer ? customerSubtotal : totals.subtotal).toFixed(2), width: 100, alignment: 'right' }], margin: [0, 4, 0, 4] }
   ];
 
   if (!isCustomer) {
     est.fees.filter(f => f.enabled).forEach(fee => {
       totalsStack.push({ columns: [{ text: fee.description + (fee.type === 'percent' ? ' (' + fee.value + '%)' : '') + ':', width: '*', alignment: 'right' }, { text: '$' + fee.calculated.toFixed(2), width: 100, alignment: 'right' }], margin: [0, 2, 0, 2] });
     });
-  } else if (totals.feesTotal > 0) {
-    totalsStack.push({ columns: [{ text: 'Fees:', width: '*', alignment: 'right' }, { text: '$' + totals.feesTotal.toFixed(2), width: 100, alignment: 'right' }], margin: [0, 2, 0, 2] });
   }
 
   totalsStack.push({ columns: [{ text: 'Tax (' + est.tax.rate + '%):', width: '*', alignment: 'right' }, { text: '$' + totals.taxAmount.toFixed(2), width: 100, alignment: 'right' }], margin: [0, 4, 0, 4] });
