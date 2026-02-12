@@ -257,15 +257,159 @@ function updateRetailItem(idx, field, value) {
 
 function addRetailLineItem() {
   if (!window.retailData) return;
-  window.retailData.lineItems.push({
-    id: 'custom-' + Date.now(),
-    category: 'Other',
-    description: 'New Item',
-    quantity: 1,
-    unit: 'EA',
-    unitCost: 0,
-    markup: 0
+
+  // Check if pricing data exists
+  const pricingItems = window.allMaterials || [];
+  
+  if (pricingItems.length === 0) {
+    // No pricing data, just add blank item
+    window.retailData.lineItems.push({
+      id: 'custom-' + Date.now(),
+      category: 'Other',
+      description: 'New Item',
+      quantity: 1,
+      unit: 'EA',
+      unitCost: 0,
+      markup: 0
+    });
+    displayRetailEstimate();
+    return;
+  }
+
+  // Show modal with dropdown
+  showAddItemModal(pricingItems);
+}
+
+function showAddItemModal(pricingItems) {
+  // Remove existing modal if any
+  const existingModal = document.getElementById('addItemModal');
+  if (existingModal) existingModal.remove();
+
+  // Build options HTML
+  const optionsHtml = pricingItems.map((item, idx) =>
+    `<option value="${idx}">${item.name} - $${(item.price || item.unitPrice || 0).toFixed(2)}/${item.unit || 'EA'}</option>`
+  ).join('');
+
+  const modalHtml = `
+    <div id="addItemModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
+      <div style="background:white;padding:24px;border-radius:8px;width:400px;max-width:90%;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+        <h3 style="margin:0 0 16px 0;color:#1a1a1a;">Add Line Item</h3>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px;">Select from Pricing List</label>
+          <select id="addItemSelect" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:4px;font-size:14px;">
+            <option value="">-- Select an item --</option>
+            ${optionsHtml}
+            <option value="custom">+ Add Custom Item</option>
+          </select>
+        </div>
+        <div id="customItemFields" style="display:none;">
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px;">Description</label>
+            <input type="text" id="customItemName" placeholder="Item name" style="width:100%;padding:8px;border:1px solid #cbd5e0;border-radius:4px;box-sizing:border-box;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px;">Unit Cost</label>
+              <input type="number" id="customItemPrice" value="0" step="0.01" style="width:100%;padding:8px;border:1px solid #cbd5e0;border-radius:4px;box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px;">Unit</label>
+              <select id="customItemUnit" style="width:100%;padding:8px;border:1px solid #cbd5e0;border-radius:4px;">
+                <option value="EA">EA</option>
+                <option value="Bundle">Bundle</option>
+                <option value="Box">Box</option>
+                <option value="Roll">Roll</option>
+                <option value="Sheet">Sheet</option>
+                <option value="Piece">Piece</option>
+                <option value="Tube">Tube</option>
+                <option value="SQ">SQ</option>
+                <option value="LF">LF</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div style="margin-bottom:16px;margin-top:16px;">
+          <label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px;">Category</label>
+          <select id="addItemCategory" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:4px;font-size:14px;">
+            <option value="Materials">Materials</option>
+            <option value="Labor">Labor</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:12px;color:#64748b;margin-bottom:4px;">Quantity</label>
+          <input type="number" id="addItemQty" value="1" step="0.01" min="0" style="width:100%;padding:10px;border:1px solid #cbd5e0;border-radius:4px;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div style="display:flex;gap:12px;justify-content:flex-end;">
+          <button onclick="closeAddItemModal()" style="padding:10px 20px;border:1px solid #cbd5e0;background:white;border-radius:4px;cursor:pointer;">Cancel</button>
+          <button onclick="confirmAddItem()" style="padding:10px 20px;border:none;background:#0891b2;color:white;border-radius:4px;cursor:pointer;">Add Item</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  // Add event listener for dropdown change
+  document.getElementById('addItemSelect').addEventListener('change', function() {
+    const customFields = document.getElementById('customItemFields');
+    if (this.value === 'custom') {
+      customFields.style.display = 'block';
+    } else {
+      customFields.style.display = 'none';
+    }
   });
+}
+
+function closeAddItemModal() {
+  const modal = document.getElementById('addItemModal');
+  if (modal) modal.remove();
+}
+
+function confirmAddItem() {
+  const select = document.getElementById('addItemSelect');
+  const category = document.getElementById('addItemCategory').value;
+  const quantity = parseFloat(document.getElementById('addItemQty').value) || 1;
+  const pricingItems = window.allMaterials || [];
+
+  let newItem;
+
+  if (select.value === 'custom') {
+    // Custom item
+    const name = document.getElementById('customItemName').value || 'Custom Item';
+    const price = parseFloat(document.getElementById('customItemPrice').value) || 0;
+    const unit = document.getElementById('customItemUnit').value;
+
+    newItem = {
+      id: 'custom-' + Date.now(),
+      category: category,
+      description: name,
+      quantity: quantity,
+      unit: unit,
+      unitCost: price,
+      markup: 0
+    };
+  } else if (select.value !== '') {
+    // Selected from pricing list
+    const idx = parseInt(select.value);
+    const item = pricingItems[idx];
+
+    newItem = {
+      id: 'pricing-' + Date.now(),
+      category: category,
+      description: item.name,
+      quantity: quantity,
+      unit: item.unit || 'EA',
+      unitCost: item.price || item.unitPrice || 0,
+      markup: 0
+    };
+  } else {
+    alert('Please select an item or choose "Add Custom Item"');
+    return;
+  }
+
+  window.retailData.lineItems.push(newItem);
+  closeAddItemModal();
   displayRetailEstimate();
 }
 
