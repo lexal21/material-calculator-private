@@ -367,6 +367,11 @@ function startNewProject() {
     displayLaborPhotos();
   }
   
+  // Clear retail estimate
+  if (typeof resetRetailEstimate === 'function') {
+    resetRetailEstimate();
+  }
+  
   // Clear localStorage current session
   localStorage.removeItem(CURRENT_SESSION_KEY);
   

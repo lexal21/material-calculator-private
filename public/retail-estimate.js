@@ -414,3 +414,16 @@ function refreshRetailFromSource() {
   initializeRetailEstimate();
   displayRetailEstimate();
 }
+
+function resetRetailEstimate() {
+  window.retailData = null;
+  window.retailViewMode = 'internal';
+  const toggle = document.getElementById('retailViewToggle');
+  if (toggle) toggle.checked = false;
+  const toggleBtn = document.getElementById('retailToggleBtn');
+  if (toggleBtn) toggleBtn.textContent = 'Switch to Customer View';
+  const notReady = document.getElementById('retailNotReady');
+  const results = document.getElementById('retailResults');
+  if (notReady) notReady.style.display = 'block';
+  if (results) results.style.display = 'none';
+}
