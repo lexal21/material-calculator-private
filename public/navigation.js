@@ -760,47 +760,15 @@ function initializeRetailFromParsedData(data) {
   // Add materials from parsed data
   if (data.materials && Array.isArray(data.materials)) {
     data.materials.forEach((mat, idx) => {
-      if (mat.quantity > 0) {
+      const qty = mat.quantity || 0;
+      if (qty > 0) {
         lineItems.push({
           id: 'mat-' + idx,
           category: 'Materials',
-          description: mat.name || mat.description || mat.item,
-          quantity: mat.quantity,
-          unit: mat.unit || 'EA',
-          unitCost: mat.unitPrice || mat.price || mat.cost || 0,
-          markup: 0
-        });
-      }
-    });
-  }
-
-  // Add labor from parsed data (handle both formats)
-  if (data.labor && data.labor.items && Array.isArray(data.labor.items)) {
-    // Format 1: labor.items array
-    data.labor.items.forEach((lab, idx) => {
-      if (lab.quantity > 0) {
-        lineItems.push({
-          id: 'labor-' + idx,
-          category: 'Labor',
-          description: lab.name || lab.description || lab.item,
-          quantity: lab.quantity,
-          unit: lab.unit || 'SQ',
-          unitCost: lab.unitPrice || lab.price || lab.cost || 0,
-          markup: 0
-        });
-      }
-    });
-  } else if (data.labor && Array.isArray(data.labor)) {
-    // Format 2: labor as direct array
-    data.labor.forEach((lab, idx) => {
-      if (lab.quantity > 0) {
-        lineItems.push({
-          id: 'labor-' + idx,
-          category: 'Labor',
-          description: lab.name || lab.description || lab.item,
-          quantity: lab.quantity,
-          unit: lab.unit || 'SQ',
-          unitCost: lab.unitPrice || lab.price || lab.cost || 0,
+          description: mat.name,
+          quantity: qty,
+          unit: mat.unit,
+          unitCost: mat.unitPrice,
           markup: 0
         });
       }
@@ -808,16 +776,17 @@ function initializeRetailFromParsedData(data) {
   }
 
   // Get measurements
-  const measurements = data.measurements || data.rawMeasurements || {};
-  const squares = parseFloat(measurements.roof_sq || measurements.squares || measurements.roofSquares || measurements.totalArea) || 0;
+  const measurements = data.measurements || {};
+  const raw = data.raw || {};
+  const squares = parseFloat(raw.roof_sq) || parseFloat(measurements.roofSquares) || 0;
 
-  // Get customer info (handle multiple formats)
-  const customerName = data.customerName || data.customer_name || data.customerInfo?.name || '';
-  const jobAddress = data.jobAddress || data.job_address || data.customerInfo?.address || '';
-  const jobNumber = data.jobNumber || data.job_number || data.customerInfo?.jobNumber || '';
-  const shingleColor = data.shingleColor || data.shingle_color || data.customerInfo?.shingleColor || 'TBD';
+  // Extract customer info from raw
+  const customerName = raw.customer_name || '';
+  const jobAddress = raw.job_address || '';
+  const jobNumber = raw.job_number || '';
+  const shingleColor = raw.shingle_color || 'TBD';
 
-  // Create retail data object (separate from materials/labor module)
+  // Create retail data object
   window.retailData = {
     customerName: customerName,
     jobAddress: jobAddress,
@@ -835,15 +804,17 @@ function initializeRetailFromParsedData(data) {
     createdAt: new Date().toISOString()
   };
 
-  // Reset view mode
   window.retailViewMode = 'internal';
+
+  console.log('[RETAIL] Created', lineItems.length, 'line items');
+  console.log('[RETAIL] retailData:', window.retailData);
 
   // Display the estimate
   if (typeof displayRetailEstimate === 'function') {
     displayRetailEstimate();
+  } else {
+    console.error('[RETAIL] displayRetailEstimate function not found!');
   }
-
-  console.log('[RETAIL] Initialized with', lineItems.length, 'line items');
 }
 
 function clearRetailProject() {
