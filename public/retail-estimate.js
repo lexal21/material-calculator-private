@@ -200,8 +200,8 @@ function displayRetailEstimate() {
             <option value="Other" ${item.category==='Other'?'selected':''}>Other</option>
           </select></td>
           <td><input type="text" value="${item.description}" onchange="updateRetailItem(${idx},'description',this.value)" class="editable-input" style="width:100%;"></td>
-          <td style="text-align:right;white-space:nowrap;"><input type="number" value="${item.quantity}" step="0.01" onchange="updateRetailItem(${idx},'quantity',this.value)" class="editable-input" style="width:65px;text-align:right;"> ${pluralizeUnit(item.unit, item.quantity)}</td>
-          <td style="text-align:right;white-space:nowrap;"><input type="number" value="${item.unitCost.toFixed(2)}" step="0.01" onchange="updateRetailItem(${idx},'unitCost',this.value)" class="editable-input" style="width:70px;text-align:right;padding-left:15px;"></td>
+          <td style="text-align:right;white-space:nowrap;"><input type="number" value="${item.quantity}" step="0.01" onchange="updateRetailItem(${idx},'quantity',this.value)" class="editable-input" style="width:55px;text-align:right;"><span style="display:inline-block;width:55px;text-align:left;padding-left:5px;">${pluralizeUnit(item.unit, item.quantity)}</span></td>
+          <td style="text-align:right;white-space:nowrap;">$<input type="number" value="${item.unitCost.toFixed(2)}" step="0.01" onchange="updateRetailItem(${idx},'unitCost',this.value)" class="editable-input" style="width:70px;text-align:right;"></td>
           <td style="text-align:right;white-space:nowrap;"><input type="number" value="${item.markup}" step="1" onchange="updateRetailItem(${idx},'markup',this.value)" class="editable-input" style="width:55px;text-align:right;">%</td>
           <td style="text-align:right;font-weight:600;">$${itemTotal.toFixed(2)}</td>
           <td class="delete-cell"><button class="delete-btn" onclick="deleteRetailItem(${idx})">×</button></td>
