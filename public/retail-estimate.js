@@ -177,7 +177,9 @@ function displayRetailEstimate() {
 
   if (el('retailCustomerName')) el('retailCustomerName').textContent = est.customerName || 'Customer';
   if (el('retailJobAddress')) el('retailJobAddress').textContent = est.jobAddress || '';
+  if (el('retailJobNumber')) el('retailJobNumber').textContent = est.jobNumber || '-';
   if (el('retailSquares')) el('retailSquares').textContent = est.measurements.squares.toFixed(1) + ' sq';
+  if (el('retailShingleColor')) el('retailShingleColor').textContent = est.shingleColor || 'TBD';
 
   document.querySelectorAll('.retail-internal-only').forEach(e => e.style.display = isCustomer ? 'none' : '');
 
