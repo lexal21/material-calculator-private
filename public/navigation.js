@@ -775,30 +775,36 @@ function initializeRetailFromParsedData(data) {
     });
   }
 
-  // Add labor items - calculate based on measurements like the Labor tab does
+  // Get measurements
   const measurements = data.measurements || {};
   const raw = data.raw || {};
   const squares = parseFloat(raw.roof_sq) || parseFloat(measurements.roofSquares) || 0;
-  const pitch = parseFloat(raw.pitch) || parseFloat(measurements.pitch) || 4;
-  const stories = parseFloat(raw.stories) || 1;
-  const plywoodSheets = data.materials?.find(m => m.name?.includes('Plywood'))?.quantity || 0;
+
+  // Get pitch data for steep charges
+  const pitchData = raw.pitch_data || {};
+  const tier_8_9 = parseFloat(pitchData.tier_8_9) || 0;
+  const tier_10_11 = parseFloat(pitchData.tier_10_11) || 0;
+  const tier_12_plus = parseFloat(pitchData.tier_12_plus) || 0;
+
+  // Get material quantities for labor calculations
+  const starterBundles = data.materials?.find(m => m.name?.toLowerCase().includes('starter'))?.quantity || 0;
+  const hipRidgeBundles = data.materials?.find(m => m.name?.toLowerCase().includes('hip') || m.name?.toLowerCase().includes('ridge cap'))?.quantity || 0;
+  const plywoodSheets = data.materials?.find(m => m.name?.toLowerCase().includes('plywood'))?.quantity || 0;
 
   // Labor - Squares (base labor rate)
   if (squares > 0) {
-    const baseRate = 90; // Base labor rate per square
     lineItems.push({
       id: 'labor-squares',
       category: 'Labor',
       description: 'Labor - Squares',
-      quantity: squares,
+      quantity: parseFloat(squares.toFixed(2)),
       unit: 'SQ',
-      unitCost: baseRate,
+      unitCost: 90,
       markup: 0
     });
   }
 
   // Labor - Starter per Bundle
-  const starterBundles = data.materials?.find(m => m.name?.toLowerCase().includes('starter'))?.quantity || 0;
   if (starterBundles > 0) {
     lineItems.push({
       id: 'labor-starter',
@@ -812,7 +818,6 @@ function initializeRetailFromParsedData(data) {
   }
 
   // Labor - Hip and Ridge Cap per Bundle
-  const hipRidgeBundles = data.materials?.find(m => m.name?.toLowerCase().includes('hip') || m.name?.toLowerCase().includes('ridge cap'))?.quantity || 0;
   if (hipRidgeBundles > 0) {
     lineItems.push({
       id: 'labor-hipridge',
@@ -825,29 +830,46 @@ function initializeRetailFromParsedData(data) {
     });
   }
 
-  // Labor - Steep Charge (if pitch >= 8)
-  if (pitch >= 8 && squares > 0) {
-    let steepRate = 0;
-    if (pitch >= 8 && pitch <= 9) steepRate = 5;
-    else if (pitch >= 10 && pitch <= 11) steepRate = 10;
-    else if (pitch >= 12) steepRate = 20;
+  // Labor - Steep Charges by tier
+  if (tier_8_9 > 0) {
+    lineItems.push({
+      id: 'labor-steep-8-9',
+      category: 'Labor',
+      description: 'Steep Charge for 8-9/12 pitch',
+      quantity: parseFloat(tier_8_9.toFixed(2)),
+      unit: 'SQ',
+      unitCost: 5,
+      markup: 0
+    });
+  }
 
-    if (steepRate > 0) {
-      lineItems.push({
-        id: 'labor-steep',
-        category: 'Labor',
-        description: `Steep Charge for ${pitch}/12 pitch`,
-        quantity: squares,
-        unit: 'SQ',
-        unitCost: steepRate,
-        markup: 0
-      });
-    }
+  if (tier_10_11 > 0) {
+    lineItems.push({
+      id: 'labor-steep-10-11',
+      category: 'Labor',
+      description: 'Steep Charge for 10-11/12 pitch',
+      quantity: parseFloat(tier_10_11.toFixed(2)),
+      unit: 'SQ',
+      unitCost: 10,
+      markup: 0
+    });
+  }
+
+  if (tier_12_plus > 0) {
+    lineItems.push({
+      id: 'labor-steep-12',
+      category: 'Labor',
+      description: 'Steep Charge for 12+/12 pitch',
+      quantity: parseFloat(tier_12_plus.toFixed(2)),
+      unit: 'SQ',
+      unitCost: 20,
+      markup: 0
+    });
   }
 
   // Labor - Plywood Replacement
   if (plywoodSheets > 0) {
-    const plywoodRate = plywoodSheets > 10 ? 10 : 30; // $10 if >10 sheets, $30 otherwise
+    const plywoodRate = plywoodSheets > 10 ? 10 : 30;
     lineItems.push({
       id: 'labor-plywood',
       category: 'Labor',
@@ -859,11 +881,11 @@ function initializeRetailFromParsedData(data) {
     });
   }
 
-  // Extract customer info from raw
-  const customerName = raw.customer_name || '';
-  const jobAddress = raw.job_address || '';
-  const jobNumber = raw.job_number || '';
-  const shingleColor = raw.shingle_color || 'TBD';
+  // Extract customer info from raw - check multiple possible field names
+  const customerName = raw.customer_name || raw.customerName || raw.name || '';
+  const jobAddress = raw.job_address || raw.jobAddress || raw.address || raw.property_address || '';
+  const jobNumber = raw.job_number || raw.jobNumber || raw.claim_number || '';
+  const shingleColor = raw.shingle_color || raw.shingleColor || raw.shingle || 'TBD';
 
   // Create retail data object
   window.retailData = {
@@ -871,7 +893,7 @@ function initializeRetailFromParsedData(data) {
     jobAddress: jobAddress,
     jobNumber: jobNumber,
     shingleColor: shingleColor,
-    measurements: { squares: squares, pitch: pitch },
+    measurements: { squares: squares },
     lineItems: lineItems,
     fees: [
       { id: 'overhead', description: 'Overhead', type: 'percent', value: 10, enabled: true, calculated: 0 },
@@ -886,8 +908,8 @@ function initializeRetailFromParsedData(data) {
   window.retailViewMode = 'internal';
 
   console.log('[RETAIL] Created', lineItems.length, 'line items');
+  console.log('[RETAIL] Pitch tiers - 8-9:', tier_8_9, '10-11:', tier_10_11, '12+:', tier_12_plus);
 
-  // Display the estimate
   if (typeof displayRetailEstimate === 'function') {
     displayRetailEstimate();
   }
