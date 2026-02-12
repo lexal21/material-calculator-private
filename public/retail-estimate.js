@@ -168,7 +168,7 @@ function displayRetailEstimate() {
       const itemTotal = item.quantity * item.unitCost * (1 + item.markup / 100);
 
       if (isCustomer) {
-        return `<tr><td>${item.description}</td></tr>`;
+        return `<tr><td>${item.description}</td><td style="text-align:center;">${item.quantity} ${item.unit}</td></tr>`;
       }
 
       return `
@@ -312,23 +312,36 @@ function buildRetailPDF() {
   const tableBody = [];
 
   if (isCustomer) {
-    tableBody.push([{ text: 'Materials & Labor Included', style: 'tableHeader' }]);
+    tableBody.push([
+      { text: 'Description', style: 'tableHeader' },
+      { text: 'Quantity', style: 'tableHeader', alignment: 'right' }
+    ]);
     est.lineItems.forEach(item => {
-      tableBody.push([item.description]);
+      tableBody.push([
+        item.description,
+        { text: item.quantity + ' ' + item.unit, alignment: 'right' }
+      ]);
     });
   } else {
     tableBody.push([
-      { text: 'Category', style: 'tableHeader' },
       { text: 'Description', style: 'tableHeader' },
-      { text: 'Qty', style: 'tableHeader', alignment: 'right' },
-      { text: 'Unit Cost', style: 'tableHeader', alignment: 'right' },
-      { text: 'Markup', style: 'tableHeader', alignment: 'right' },
+      { text: 'Qty', style: 'tableHeader', alignment: 'center' },
+      { text: 'Unit', style: 'tableHeader', alignment: 'center' },
+      { text: 'Cost', style: 'tableHeader', alignment: 'right' },
+      { text: 'Markup', style: 'tableHeader', alignment: 'center' },
       { text: 'Total', style: 'tableHeader', alignment: 'right' }
     ]);
 
     est.lineItems.forEach(item => {
       const t = item.quantity * item.unitCost * (1 + item.markup / 100);
-      tableBody.push([item.category, item.description, { text: item.quantity + ' ' + item.unit, alignment: 'right' }, { text: '$' + item.unitCost.toFixed(2), alignment: 'right' }, { text: item.markup + '%', alignment: 'right' }, { text: '$' + t.toFixed(2), alignment: 'right' }]);
+      tableBody.push([
+        item.description,
+        { text: String(item.quantity), alignment: 'center' },
+        { text: item.unit, alignment: 'center' },
+        { text: '$' + item.unitCost.toFixed(2), alignment: 'right' },
+        { text: item.markup + '%', alignment: 'center' },
+        { text: '$' + t.toFixed(2), alignment: 'right' }
+      ]);
     });
   }
 
@@ -360,7 +373,7 @@ function buildRetailPDF() {
         { width: '50%', stack: [{ text: 'PROJECT DETAILS:', style: 'label' }, { text: 'Roof Size: ' + est.measurements.squares.toFixed(1) + ' squares', margin: [0, 4, 0, 0] }, { text: 'Shingle: ' + (est.shingleColor || 'TBD'), margin: [0, 4, 0, 0] }] }
       ], margin: [0, 0, 0, 30] },
       { text: 'SCOPE OF WORK', style: 'sectionHeader', margin: [0, 0, 0, 12] },
-      { table: { headerRows: 1, widths: isCustomer ? ['*'] : ['auto', '*', 'auto', 'auto', 'auto', 'auto'], body: tableBody }, layout: { hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0.5, vLineWidth: () => 0, hLineColor: () => '#E5E7EB', paddingLeft: () => 8, paddingRight: () => 8, paddingTop: () => 6, paddingBottom: () => 6 }, margin: [0, 0, 0, 20] },
+      { table: { headerRows: 1, widths: isCustomer ? ['*', 70] : ['*', 35, 40, 55, 45, 60], body: tableBody }, layout: { hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0.5, vLineWidth: () => 0, hLineColor: () => '#E5E7EB', paddingLeft: () => 8, paddingRight: () => 8, paddingTop: () => 6, paddingBottom: () => 6 }, margin: [0, 0, 0, 20] },
       { columns: [{ width: '*', text: '' }, { width: 250, stack: totalsStack }] },
       { text: ' This estimate is valid for 30 days.', style: 'terms' },
       { columns: [{ width: '45%', stack: [{ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1 }], margin: [0, 50, 0, 4] }, { text: 'Customer Signature / Date', fontSize: 9, color: '#64748b' }] }, { width: '10%', text: '' }, { width: '45%', stack: [{ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1 }], margin: [0, 50, 0, 4] }, { text: 'Contractor Signature / Date', fontSize: 9, color: '#64748b' }] }] }
