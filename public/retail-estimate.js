@@ -217,11 +217,11 @@ function displayRetailEstimate() {
           <input type="checkbox" ${fee.enabled?'checked':''} onchange="toggleRetailFee(${idx},this.checked)">
           <input type="text" value="${fee.description}" onchange="updateRetailFee(${idx},'description',this.value)" class="editable-input" style="width:150px;">
         </label></td>
-        <td><select onchange="updateRetailFee(${idx},'type',this.value)" class="editable-input">
+        <td><select onchange="updateRetailFee(${idx},'type',this.value)" class="editable-input" style="width:90px;">
           <option value="percent" ${fee.type==='percent'?'selected':''}>Percent</option>
           <option value="flat" ${fee.type==='flat'?'selected':''}>Flat $</option>
         </select></td>
-        <td><input type="number" value="${fee.value}" step="0.01" onchange="updateRetailFee(${idx},'value',this.value)" class="editable-input" style="width:80px;">${fee.type==='percent'?'%':''}</td>
+        <td style="white-space:nowrap;"><input type="number" value="${fee.value}" step="0.01" onchange="updateRetailFee(${idx},'value',this.value)" class="editable-input" style="width:70px;text-align:right;">${fee.type==='percent'?' %':''}</td>
         <td style="text-align:right;font-weight:600;">${fee.enabled?'$'+fee.calculated.toFixed(2):'-'}</td>
       </tr>`).join('');
   }
