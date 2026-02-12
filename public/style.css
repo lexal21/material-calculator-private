@@ -1732,3 +1732,8 @@ input[type="file"] {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Retail Estimate Toggle */
+#retailViewToggle:checked + div + #retailToggleKnob {
+  transform: translateX(24px);
+}

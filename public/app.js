@@ -571,6 +571,11 @@ function displayResults(data) {
     console.error('[DISPLAY] Stack trace:', err.stack);
   }
   
+  // Initialize retail estimate
+  if (typeof displayRetailEstimate === 'function') {
+    displayRetailEstimate();
+  }
+  
   // Ensure all zero-quantity rows have the class applied (for print preview)
   setTimeout(() => {
     applyZeroQuantityClasses();
