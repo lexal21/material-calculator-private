@@ -679,39 +679,6 @@ function setupRetailDropZone() {
   });
 }
 
-// Load PDF.js library dynamically
-function loadPdfJs() {
-  return new Promise((resolve, reject) => {
-    // Check if already loaded
-    if (typeof pdfjsLib !== 'undefined') {
-      resolve();
-      return;
-    }
-
-    // Check if script tag already exists
-    if (document.querySelector('script[src*="pdf.min.js"]')) {
-      // Wait for it to load
-      const checkLoaded = setInterval(() => {
-        if (typeof pdfjsLib !== 'undefined') {
-          clearInterval(checkLoaded);
-          resolve();
-        }
-      }, 100);
-      return;
-    }
-
-    // Load the script
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-    script.onload = () => {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      resolve();
-    };
-    script.onerror = () => reject(new Error('Failed to load PDF.js'));
-    document.head.appendChild(script);
-  });
-}
-
 function handleRetailPdfUpload(event) {
   const file = event.target.files[0];
   if (file && file.type === 'application/pdf') {
@@ -785,79 +752,6 @@ async function processRetailPdf(file) {
   }
 }
 
-// Fallback parser for retail PDF if parseRoofData is not available
-function parseRetailPdfText(text) {
-  const result = {
-    measurements: {},
-    materials: [],
-    labor: [],
-    customerInfo: {},
-    rawMeasurements: {}
-  };
-
-  // Extract customer/address info
-  const addressMatch = text.match(/(\d+\s+[A-Za-z0-9\s]+(?:St|Street|Ave|Avenue|Rd|Road|Dr|Drive|Ln|Lane|Ct|Court|Way|Blvd|Circle|Cir)[^,]*,?\s*[A-Za-z\s]+,?\s*[A-Z]{2}\s*\d{5})/i);
-  if (addressMatch) {
-    result.customerInfo.address = addressMatch[1].trim();
-    result.job_address = addressMatch[1].trim();
-  }
-
-  // Extract roof squares - look for common patterns
-  const sqPatterns = [
-    /Total\s*(?:Roof)?\s*Area[:\s]+(\d+\.?\d*)\s*sq/i,
-    /Roof\s*Squares?[:\s]+(\d+\.?\d*)/i,
-    /(\d+\.?\d*)\s*squares?\s*(?:total|roof)/i,
-    /Total[:\s]+(\d+\.?\d*)\s*sq/i
-  ];
-
-  for (const pattern of sqPatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      result.measurements.squares = parseFloat(match[1]);
-      result.rawMeasurements.roof_sq = parseFloat(match[1]);
-      break;
-    }
-  }
-
-  // Extract pitch
-  const pitchMatch = text.match(/(?:Pitch|Slope)[:\s]+(\d+)\/12/i);
-  if (pitchMatch) {
-    result.measurements.pitch = pitchMatch[1] + '/12';
-    result.rawMeasurements.pitch = pitchMatch[1];
-  }
-
-  // Extract ridges
-  const ridgeMatch = text.match(/Ridge[s]?[:\s]+(\d+\.?\d*)\s*(?:ft|feet|LF)?/i);
-  if (ridgeMatch) {
-    result.measurements.ridgeLength = parseFloat(ridgeMatch[1]);
-    result.rawMeasurements.ridge_length = parseFloat(ridgeMatch[1]);
-  }
-
-  // Extract hips
-  const hipMatch = text.match(/Hip[s]?[:\s]+(\d+\.?\d*)\s*(?:ft|feet|LF)?/i);
-  if (hipMatch) {
-    result.measurements.hipLength = parseFloat(hipMatch[1]);
-    result.rawMeasurements.hip_length = parseFloat(hipMatch[1]);
-  }
-
-  // Extract valleys
-  const valleyMatch = text.match(/Valley[s]?[:\s]+(\d+\.?\d*)\s*(?:ft|feet|LF)?/i);
-  if (valleyMatch) {
-    result.measurements.valleyLength = parseFloat(valleyMatch[1]);
-    result.rawMeasurements.valley_length = parseFloat(valleyMatch[1]);
-  }
-
-  // Extract eaves/drip edge
-  const eavesMatch = text.match(/(?:Eaves?|Drip\s*Edge)[:\s]+(\d+\.?\d*)\s*(?:ft|feet|LF)?/i);
-  if (eavesMatch) {
-    result.measurements.eavesLength = parseFloat(eavesMatch[1]);
-    result.rawMeasurements.eaves_length = parseFloat(eavesMatch[1]);
-  }
-
-  console.log('[RETAIL] Parsed measurements:', result.measurements);
-  return result;
-}
-
 function initializeRetailFromParsedData(data) {
   console.log('[RETAIL] Initializing from data:', data);
 
@@ -880,9 +774,25 @@ function initializeRetailFromParsedData(data) {
     });
   }
 
-  // Add labor from parsed data (server returns labor.items array)
+  // Add labor from parsed data (handle both formats)
   if (data.labor && data.labor.items && Array.isArray(data.labor.items)) {
+    // Format 1: labor.items array
     data.labor.items.forEach((lab, idx) => {
+      if (lab.quantity > 0) {
+        lineItems.push({
+          id: 'labor-' + idx,
+          category: 'Labor',
+          description: lab.name || lab.description || lab.item,
+          quantity: lab.quantity,
+          unit: lab.unit || 'SQ',
+          unitCost: lab.unitPrice || lab.price || lab.cost || 0,
+          markup: 0
+        });
+      }
+    });
+  } else if (data.labor && Array.isArray(data.labor)) {
+    // Format 2: labor as direct array
+    data.labor.forEach((lab, idx) => {
       if (lab.quantity > 0) {
         lineItems.push({
           id: 'labor-' + idx,
@@ -899,14 +809,20 @@ function initializeRetailFromParsedData(data) {
 
   // Get measurements
   const measurements = data.measurements || data.rawMeasurements || {};
-  const squares = parseFloat(measurements.roof_sq || measurements.squares || measurements.roofSquares) || 0;
+  const squares = parseFloat(measurements.roof_sq || measurements.squares || measurements.roofSquares || measurements.totalArea) || 0;
+
+  // Get customer info (handle multiple formats)
+  const customerName = data.customerName || data.customer_name || data.customerInfo?.name || '';
+  const jobAddress = data.jobAddress || data.job_address || data.customerInfo?.address || '';
+  const jobNumber = data.jobNumber || data.job_number || data.customerInfo?.jobNumber || '';
+  const shingleColor = data.shingleColor || data.shingle_color || data.customerInfo?.shingleColor || 'TBD';
 
   // Create retail data object (separate from materials/labor module)
   window.retailData = {
-    customerName: data.customerName || data.customer_name || '',
-    jobAddress: data.jobAddress || data.job_address || '',
-    jobNumber: data.jobNumber || data.job_number || '',
-    shingleColor: data.shingleColor || data.shingle_color || 'TBD',
+    customerName: customerName,
+    jobAddress: jobAddress,
+    jobNumber: jobNumber,
+    shingleColor: shingleColor,
     measurements: { squares: squares },
     lineItems: lineItems,
     fees: [
@@ -926,6 +842,8 @@ function initializeRetailFromParsedData(data) {
   if (typeof displayRetailEstimate === 'function') {
     displayRetailEstimate();
   }
+
+  console.log('[RETAIL] Initialized with', lineItems.length, 'line items');
 }
 
 function clearRetailProject() {
