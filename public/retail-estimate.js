@@ -6,6 +6,23 @@
 
 console.log('[RETAIL] Module loaded v2');
 
+function pluralizeUnit(unit, quantity) {
+  if (quantity <= 1) return unit;
+  const plurals = {
+    'Bundle': 'Bundles',
+    'Piece': 'Pieces',
+    'Roll': 'Rolls',
+    'Sheet': 'Sheets',
+    'Box': 'Boxes',
+    'Tube': 'Tubes',
+    'SQ': 'SQ',
+    'EA': 'EA',
+    'LF': 'LF',
+    'BD': 'BD'
+  };
+  return plurals[unit] || unit;
+}
+
 window.retailData = null;
 window.retailViewMode = 'internal'; // 'internal' or 'customer'
 
@@ -133,6 +150,8 @@ function toggleRetailView(mode) {
   window.retailViewMode = mode || (window.retailViewMode === 'internal' ? 'customer' : 'internal');
   const toggle = document.getElementById('retailViewToggle');
   if (toggle) toggle.checked = window.retailViewMode === 'customer';
+  const toggleBtn = document.getElementById('retailToggleBtn');
+  if (toggleBtn) toggleBtn.textContent = window.retailViewMode === 'customer' ? 'Switch to Internal View' : 'Switch to Customer View';
   displayRetailEstimate();
 }
 
@@ -168,7 +187,7 @@ function displayRetailEstimate() {
       const itemTotal = item.quantity * item.unitCost * (1 + item.markup / 100);
 
       if (isCustomer) {
-        return `<tr><td>${item.description}</td><td style="text-align:center;">${item.quantity} ${item.unit}</td></tr>`;
+        return `<tr><td>${item.description}</td><td style="text-align:center;">${item.quantity} ${pluralizeUnit(item.unit, item.quantity)}</td></tr>`;
       }
 
       return `
@@ -179,7 +198,7 @@ function displayRetailEstimate() {
             <option value="Other" ${item.category==='Other'?'selected':''}>Other</option>
           </select></td>
           <td><input type="text" value="${item.description}" onchange="updateRetailItem(${idx},'description',this.value)" class="editable-input" style="width:100%;"></td>
-          <td style="text-align:right;"><input type="number" value="${item.quantity}" step="0.01" onchange="updateRetailItem(${idx},'quantity',this.value)" class="editable-input" style="width:70px;text-align:right;"> <span style="display:inline-block;width:45px;text-align:left;">${item.unit}</span></td>
+          <td style="text-align:right;"><input type="number" value="${item.quantity}" step="0.01" onchange="updateRetailItem(${idx},'quantity',this.value)" class="editable-input" style="width:70px;text-align:right;"> <span style="display:inline-block;width:50px;text-align:left;">${pluralizeUnit(item.unit, item.quantity)}</span></td>
           <td style="text-align:right;">$<input type="number" value="${item.unitCost.toFixed(2)}" step="0.01" onchange="updateRetailItem(${idx},'unitCost',this.value)" class="editable-input" style="width:80px;"></td>
           <td style="text-align:right;"><input type="number" value="${item.markup}" step="1" onchange="updateRetailItem(${idx},'markup',this.value)" class="editable-input" style="width:65px;text-align:right;">%</td>
           <td style="text-align:right;font-weight:600;">$${itemTotal.toFixed(2)}</td>
@@ -319,7 +338,7 @@ function buildRetailPDF() {
     est.lineItems.forEach(item => {
       tableBody.push([
         item.description,
-        { text: item.quantity + ' ' + item.unit, alignment: 'right' }
+        { text: item.quantity + ' ' + pluralizeUnit(item.unit, item.quantity), alignment: 'right' }
       ]);
     });
   } else {
