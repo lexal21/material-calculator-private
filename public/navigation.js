@@ -679,6 +679,26 @@ function setupRetailDropZone() {
   });
 }
 
+// Dynamic PDF.js loader
+async function loadPdfJs() {
+  return new Promise((resolve, reject) => {
+    if (typeof pdfjsLib !== 'undefined') {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload = () => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      console.log('[RETAIL] PDF.js loaded dynamically');
+      resolve();
+    };
+    script.onerror = () => reject(new Error('Failed to load PDF.js'));
+    document.head.appendChild(script);
+  });
+}
+
 function handleRetailPdfUpload(event) {
   const file = event.target.files[0];
   if (file && file.type === 'application/pdf') {
@@ -702,7 +722,13 @@ async function processRetailPdf(file) {
   `;
 
   try {
-    // Use client-side PDF parsing (same as Materials/Labor)
+    // Check if pdfjsLib is available
+    if (typeof pdfjsLib === 'undefined') {
+      // Load PDF.js dynamically if not available
+      await loadPdfJs();
+    }
+
+    // Use client-side PDF parsing
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
