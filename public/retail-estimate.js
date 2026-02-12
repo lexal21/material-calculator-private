@@ -328,39 +328,103 @@ function buildRetailPDF() {
   const totals = calculateRetailTotals();
   const isCustomer = window.retailViewMode === 'customer';
 
-  const tableBody = [];
+  // Separate items by category
+  const materialItems = est.lineItems.filter(item => item.category === 'Materials');
+  const laborItems = est.lineItems.filter(item => item.category === 'Labor');
+  const otherItems = est.lineItems.filter(item => item.category !== 'Materials' && item.category !== 'Labor');
 
-  if (isCustomer) {
-    tableBody.push([
-      { text: 'Description', style: 'tableHeader' },
-      { text: 'Quantity', style: 'tableHeader', alignment: 'right' }
-    ]);
-    est.lineItems.forEach(item => {
-      tableBody.push([
-        item.description,
-        { text: item.quantity + ' ' + pluralizeUnit(item.unit, item.quantity), alignment: 'right' }
+  // Build tables for each section
+  function buildSectionTable(items, isCustomerView) {
+    const body = [];
+    if (isCustomerView) {
+      body.push([
+        { text: 'Description', style: 'tableHeader' },
+        { text: 'Quantity', style: 'tableHeader', alignment: 'right' }
       ]);
+      items.forEach(item => {
+        body.push([
+          item.description,
+          { text: item.quantity + ' ' + pluralizeUnit(item.unit, item.quantity), alignment: 'right' }
+        ]);
+      });
+    } else {
+      body.push([
+        { text: 'Description', style: 'tableHeader' },
+        { text: 'Qty', style: 'tableHeader', alignment: 'center' },
+        { text: 'Unit', style: 'tableHeader', alignment: 'center' },
+        { text: 'Cost', style: 'tableHeader', alignment: 'right' },
+        { text: 'Markup', style: 'tableHeader', alignment: 'center' },
+        { text: 'Total', style: 'tableHeader', alignment: 'right' }
+      ]);
+      items.forEach(item => {
+        const t = item.quantity * item.unitCost * (1 + item.markup / 100);
+        body.push([
+          item.description,
+          { text: String(item.quantity), alignment: 'center' },
+          { text: pluralizeUnit(item.unit, item.quantity), alignment: 'center' },
+          { text: '$' + item.unitCost.toFixed(2), alignment: 'right' },
+          { text: item.markup + '%', alignment: 'center' },
+          { text: '$' + t.toFixed(2), alignment: 'right' }
+        ]);
+      });
+    }
+    return body;
+  }
+
+  const tableLayout = {
+    hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0.5,
+    vLineWidth: () => 0,
+    hLineColor: () => '#E5E7EB',
+    paddingLeft: () => 8,
+    paddingRight: () => 8,
+    paddingTop: () => 6,
+    paddingBottom: () => 6
+  };
+
+  const tableWidths = isCustomer ? ['*', 70] : ['*', 35, 45, 55, 45, 60];
+
+  // Build content sections
+  const scopeContent = [];
+
+  // Materials section
+  if (materialItems.length > 0) {
+    scopeContent.push({ text: 'MATERIALS', style: 'categoryHeader', margin: [0, 0, 0, 8] });
+    scopeContent.push({
+      table: {
+        headerRows: 1,
+        widths: tableWidths,
+        body: buildSectionTable(materialItems, isCustomer)
+      },
+      layout: tableLayout,
+      margin: [0, 0, 0, 20]
     });
-  } else {
-    tableBody.push([
-      { text: 'Description', style: 'tableHeader' },
-      { text: 'Qty', style: 'tableHeader', alignment: 'center' },
-      { text: 'Unit', style: 'tableHeader', alignment: 'center' },
-      { text: 'Cost', style: 'tableHeader', alignment: 'right' },
-      { text: 'Markup', style: 'tableHeader', alignment: 'center' },
-      { text: 'Total', style: 'tableHeader', alignment: 'right' }
-    ]);
+  }
 
-    est.lineItems.forEach(item => {
-      const t = item.quantity * item.unitCost * (1 + item.markup / 100);
-      tableBody.push([
-        item.description,
-        { text: String(item.quantity), alignment: 'center' },
-        { text: pluralizeUnit(item.unit, item.quantity), alignment: 'center' },
-        { text: '$' + item.unitCost.toFixed(2), alignment: 'right' },
-        { text: item.markup + '%', alignment: 'center' },
-        { text: '$' + t.toFixed(2), alignment: 'right' }
-      ]);
+  // Labor section
+  if (laborItems.length > 0) {
+    scopeContent.push({ text: 'LABOR', style: 'categoryHeader', margin: [0, 0, 0, 8] });
+    scopeContent.push({
+      table: {
+        headerRows: 1,
+        widths: tableWidths,
+        body: buildSectionTable(laborItems, isCustomer)
+      },
+      layout: tableLayout,
+      margin: [0, 0, 0, 20]
+    });
+  }
+
+  // Other items section
+  if (otherItems.length > 0) {
+    scopeContent.push({ text: 'OTHER', style: 'categoryHeader', margin: [0, 0, 0, 8] });
+    scopeContent.push({
+      table: {
+        headerRows: 1,
+        widths: tableWidths,
+        body: buildSectionTable(otherItems, isCustomer)
+      },
+      layout: tableLayout,
+      margin: [0, 0, 0, 20]
     });
   }
 
@@ -392,7 +456,7 @@ function buildRetailPDF() {
         { width: '50%', stack: [{ text: 'PROJECT DETAILS:', style: 'label' }, { text: 'Roof Size: ' + est.measurements.squares.toFixed(1) + ' squares', margin: [0, 4, 0, 0] }, { text: 'Shingle: ' + (est.shingleColor || 'TBD'), margin: [0, 4, 0, 0] }] }
       ], margin: [0, 0, 0, 30] },
       { text: 'SCOPE OF WORK', style: 'sectionHeader', margin: [0, 0, 0, 12] },
-      { table: { headerRows: 1, widths: isCustomer ? ['*', 70] : ['*', 35, 45, 55, 45, 60], body: tableBody }, layout: { hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0.5, vLineWidth: () => 0, hLineColor: () => '#E5E7EB', paddingLeft: () => 8, paddingRight: () => 8, paddingTop: () => 6, paddingBottom: () => 6 }, margin: [0, 0, 0, 20] },
+      ...scopeContent,
       { columns: [{ width: '*', text: '' }, { width: 250, stack: totalsStack }] },
       { text: ' This estimate is valid for 30 days.', style: 'terms' },
       { columns: [{ width: '45%', stack: [{ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1 }], margin: [0, 50, 0, 4] }, { text: 'Customer Signature / Date', fontSize: 9, color: '#64748b' }] }, { width: '10%', text: '' }, { width: '45%', stack: [{ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1 }], margin: [0, 50, 0, 4] }, { text: 'Contractor Signature / Date', fontSize: 9, color: '#64748b' }] }] }
@@ -402,6 +466,7 @@ function buildRetailPDF() {
       label: { fontSize: 10, bold: true, color: '#64748b' },
       customerName: { fontSize: 14, bold: true },
       sectionHeader: { fontSize: 12, bold: true },
+      categoryHeader: { fontSize: 11, bold: true, color: '#0891b2' },
       tableHeader: { bold: true, fontSize: 9, fillColor: '#f8fafc' },
       terms: { fontSize: 9, color: '#64748b' }
     }
