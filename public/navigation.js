@@ -679,19 +679,32 @@ function setupRetailDropZone() {
   });
 }
 
-// Dynamic PDF.js loader
-async function loadPdfJs() {
+// Load PDF.js library dynamically
+function loadPdfJs() {
   return new Promise((resolve, reject) => {
+    // Check if already loaded
     if (typeof pdfjsLib !== 'undefined') {
       resolve();
       return;
     }
 
+    // Check if script tag already exists
+    if (document.querySelector('script[src*="pdf.min.js"]')) {
+      // Wait for it to load
+      const checkLoaded = setInterval(() => {
+        if (typeof pdfjsLib !== 'undefined') {
+          clearInterval(checkLoaded);
+          resolve();
+        }
+      }, 100);
+      return;
+    }
+
+    // Load the script
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
     script.onload = () => {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      console.log('[RETAIL] PDF.js loaded dynamically');
       resolve();
     };
     script.onerror = () => reject(new Error('Failed to load PDF.js'));
