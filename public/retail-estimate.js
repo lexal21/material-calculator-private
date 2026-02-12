@@ -175,11 +175,11 @@ function displayRetailEstimate() {
   const isCustomer = window.retailViewMode === 'customer';
   const el = id => document.getElementById(id);
 
-  if (el('retailCustomerName')) el('retailCustomerName').textContent = est.customerName || 'Customer';
-  if (el('retailJobAddress')) el('retailJobAddress').textContent = est.jobAddress || '';
-  if (el('retailJobNumber')) el('retailJobNumber').textContent = est.jobNumber || '-';
-  if (el('retailSquares')) el('retailSquares').textContent = est.measurements.squares.toFixed(1) + ' sq';
-  if (el('retailShingleColor')) el('retailShingleColor').textContent = est.shingleColor || 'TBD';
+  if (el('retailCustomerName')) el('retailCustomerName').value = est.customerName || '';
+  if (el('retailJobAddress')) el('retailJobAddress').value = est.jobAddress || '';
+  if (el('retailJobNumber')) el('retailJobNumber').value = est.jobNumber || '';
+  if (el('retailSquares')) el('retailSquares').value = est.measurements.squares.toFixed(1);
+  if (el('retailShingleColor')) el('retailShingleColor').value = est.shingleColor || '';
 
   document.querySelectorAll('.retail-internal-only').forEach(e => e.style.display = isCustomer ? 'none' : '');
 

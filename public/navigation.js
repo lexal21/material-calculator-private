@@ -413,27 +413,27 @@ function createModuleContainers() {
               </label>
             </div>
 
-            <!-- Customer Info Summary -->
-            <div class="customer-info" style="margin-bottom: 24px;">
+            <!-- Customer Info Summary - Editable -->
+            <div class="customer-info" style="margin-bottom: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
               <div class="info-item">
-                <div class="info-label">Customer</div>
-                <div class="info-value" id="retailCustomerName">-</div>
+                <label class="info-label" style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px;">Customer</label>
+                <input type="text" id="retailCustomerName" class="editable-input" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px;" onchange="updateRetailCustomerInfo('customerName', this.value)">
               </div>
               <div class="info-item">
-                <div class="info-label">Job Address</div>
-                <div class="info-value" id="retailJobAddress">-</div>
+                <label class="info-label" style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px;">Job Address</label>
+                <input type="text" id="retailJobAddress" class="editable-input" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px;" onchange="updateRetailCustomerInfo('jobAddress', this.value)">
               </div>
               <div class="info-item">
-                <div class="info-label">Job Number</div>
-                <div class="info-value" id="retailJobNumber">-</div>
+                <label class="info-label" style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px;">Job Number</label>
+                <input type="text" id="retailJobNumber" class="editable-input" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px;" onchange="updateRetailCustomerInfo('jobNumber', this.value)">
               </div>
               <div class="info-item">
-                <div class="info-label">Roof Size</div>
-                <div class="info-value" id="retailSquares">-</div>
+                <label class="info-label" style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px;">Roof Size (SQ)</label>
+                <input type="number" id="retailSquares" class="editable-input" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px;" step="0.1" onchange="updateRetailCustomerInfo('squares', this.value)">
               </div>
               <div class="info-item">
-                <div class="info-label">Shingle Color</div>
-                <div class="info-value" id="retailShingleColor">-</div>
+                <label class="info-label" style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px;">Shingle Color</label>
+                <input type="text" id="retailShingleColor" class="editable-input" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px;" onchange="updateRetailCustomerInfo('shingleColor', this.value)">
               </div>
             </div>
 
@@ -775,10 +775,89 @@ function initializeRetailFromParsedData(data) {
     });
   }
 
-  // Get measurements
+  // Add labor items - calculate based on measurements like the Labor tab does
   const measurements = data.measurements || {};
   const raw = data.raw || {};
   const squares = parseFloat(raw.roof_sq) || parseFloat(measurements.roofSquares) || 0;
+  const pitch = parseFloat(raw.pitch) || parseFloat(measurements.pitch) || 4;
+  const stories = parseFloat(raw.stories) || 1;
+  const plywoodSheets = data.materials?.find(m => m.name?.includes('Plywood'))?.quantity || 0;
+
+  // Labor - Squares (base labor rate)
+  if (squares > 0) {
+    const baseRate = 90; // Base labor rate per square
+    lineItems.push({
+      id: 'labor-squares',
+      category: 'Labor',
+      description: 'Labor - Squares',
+      quantity: squares,
+      unit: 'SQ',
+      unitCost: baseRate,
+      markup: 0
+    });
+  }
+
+  // Labor - Starter per Bundle
+  const starterBundles = data.materials?.find(m => m.name?.toLowerCase().includes('starter'))?.quantity || 0;
+  if (starterBundles > 0) {
+    lineItems.push({
+      id: 'labor-starter',
+      category: 'Labor',
+      description: 'Starter per Bundle',
+      quantity: starterBundles,
+      unit: 'BD',
+      unitCost: 25,
+      markup: 0
+    });
+  }
+
+  // Labor - Hip and Ridge Cap per Bundle
+  const hipRidgeBundles = data.materials?.find(m => m.name?.toLowerCase().includes('hip') || m.name?.toLowerCase().includes('ridge cap'))?.quantity || 0;
+  if (hipRidgeBundles > 0) {
+    lineItems.push({
+      id: 'labor-hipridge',
+      category: 'Labor',
+      description: 'Hip and Ridge Cap per Bundle',
+      quantity: hipRidgeBundles,
+      unit: 'BD',
+      unitCost: 25,
+      markup: 0
+    });
+  }
+
+  // Labor - Steep Charge (if pitch >= 8)
+  if (pitch >= 8 && squares > 0) {
+    let steepRate = 0;
+    if (pitch >= 8 && pitch <= 9) steepRate = 5;
+    else if (pitch >= 10 && pitch <= 11) steepRate = 10;
+    else if (pitch >= 12) steepRate = 20;
+
+    if (steepRate > 0) {
+      lineItems.push({
+        id: 'labor-steep',
+        category: 'Labor',
+        description: `Steep Charge for ${pitch}/12 pitch`,
+        quantity: squares,
+        unit: 'SQ',
+        unitCost: steepRate,
+        markup: 0
+      });
+    }
+  }
+
+  // Labor - Plywood Replacement
+  if (plywoodSheets > 0) {
+    const plywoodRate = plywoodSheets > 10 ? 10 : 30; // $10 if >10 sheets, $30 otherwise
+    lineItems.push({
+      id: 'labor-plywood',
+      category: 'Labor',
+      description: 'Plywood Replacement',
+      quantity: plywoodSheets,
+      unit: 'SH',
+      unitCost: plywoodRate,
+      markup: 0
+    });
+  }
 
   // Extract customer info from raw
   const customerName = raw.customer_name || '';
@@ -792,7 +871,7 @@ function initializeRetailFromParsedData(data) {
     jobAddress: jobAddress,
     jobNumber: jobNumber,
     shingleColor: shingleColor,
-    measurements: { squares: squares },
+    measurements: { squares: squares, pitch: pitch },
     lineItems: lineItems,
     fees: [
       { id: 'overhead', description: 'Overhead', type: 'percent', value: 10, enabled: true, calculated: 0 },
@@ -807,13 +886,20 @@ function initializeRetailFromParsedData(data) {
   window.retailViewMode = 'internal';
 
   console.log('[RETAIL] Created', lineItems.length, 'line items');
-  console.log('[RETAIL] retailData:', window.retailData);
 
   // Display the estimate
   if (typeof displayRetailEstimate === 'function') {
     displayRetailEstimate();
+  }
+}
+
+function updateRetailCustomerInfo(field, value) {
+  if (!window.retailData) return;
+
+  if (field === 'squares') {
+    window.retailData.measurements.squares = parseFloat(value) || 0;
   } else {
-    console.error('[RETAIL] displayRetailEstimate function not found!');
+    window.retailData[field] = value;
   }
 }
 
