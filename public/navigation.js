@@ -702,23 +702,33 @@ async function processRetailPdf(file) {
   `;
 
   try {
-    // Create FormData and send to server
-    const formData = new FormData();
-    formData.append('pdf', file);
+    // Use client-side PDF parsing (same as Materials/Labor)
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-    const response = await fetch('/api/parse-pdf', {
-      method: 'POST',
-      body: formData
-    });
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      fullText += pageText + ' ';
+    }
 
-    if (!response.ok) throw new Error('Server error');
+    console.log('[RETAIL] PDF text extracted, length:', fullText.length);
 
-    const result = await response.json();
+    // Parse the text using existing parseRoofData function if available, or custom parser
+    let result;
+    if (typeof parseRoofData === 'function') {
+      result = parseRoofData(fullText);
+    } else {
+      result = parseRetailPdfText(fullText);
+    }
 
     // Store data separately for retail module
     window.retailModuleData.pdfUploaded = true;
     window.retailModuleData.parsedData = result;
     window.retailModuleData.rawMeasurements = result.rawMeasurements || result.measurements;
+    window.retailModuleData.fullText = fullText;
 
     // Initialize retail estimate from parsed data
     initializeRetailFromParsedData(result);
@@ -728,9 +738,9 @@ async function processRetailPdf(file) {
     resultsSection.style.display = 'block';
 
     // Update project bar
-    const projectName = result.customerInfo?.name || result.customer_name || 'Project';
+    const projectName = result.customerInfo?.name || result.customer_name || '';
     const projectAddress = result.customerInfo?.address || result.job_address || '';
-    document.getElementById('retailProjectName').textContent = projectName;
+    document.getElementById('retailProjectName').textContent = projectName || 'Project';
     document.getElementById('retailProjectAddress').textContent = projectAddress;
 
   } catch (error) {
@@ -741,12 +751,85 @@ async function processRetailPdf(file) {
       <div class="retail-upload-area" id="retailDropZone">
         <div class="retail-upload-icon">❌</div>
         <p class="retail-upload-text">Error processing PDF</p>
-        <p class="retail-upload-subtext">Please try again or use a different file</p>
+        <p class="retail-upload-subtext">${error.message || 'Please try again or use a different file'}</p>
         <input type="file" id="retailPdfInput" accept=".pdf" style="display:none;" onchange="handleRetailPdfUpload(event)">
       </div>
     `;
     setupRetailDropZone();
   }
+}
+
+// Fallback parser for retail PDF if parseRoofData is not available
+function parseRetailPdfText(text) {
+  const result = {
+    measurements: {},
+    materials: [],
+    labor: [],
+    customerInfo: {},
+    rawMeasurements: {}
+  };
+
+  // Extract customer/address info
+  const addressMatch = text.match(/(\d+\s+[A-Za-z0-9\s]+(?:St|Street|Ave|Avenue|Rd|Road|Dr|Drive|Ln|Lane|Ct|Court|Way|Blvd|Circle|Cir)[^,]*,?\s*[A-Za-z\s]+,?\s*[A-Z]{2}\s*\d{5})/i);
+  if (addressMatch) {
+    result.customerInfo.address = addressMatch[1].trim();
+    result.job_address = addressMatch[1].trim();
+  }
+
+  // Extract roof squares - look for common patterns
+  const sqPatterns = [
+    /Total\s*(?:Roof)?\s*Area[:\s]+(\d+\.?\d*)\s*sq/i,
+    /Roof\s*Squares?[:\s]+(\d+\.?\d*)/i,
+    /(\d+\.?\d*)\s*squares?\s*(?:total|roof)/i,
+    /Total[:\s]+(\d+\.?\d*)\s*sq/i
+  ];
+
+  for (const pattern of sqPatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      result.measurements.squares = parseFloat(match[1]);
+      result.rawMeasurements.roof_sq = parseFloat(match[1]);
+      break;
+    }
+  }
+
+  // Extract pitch
+  const pitchMatch = text.match(/(?:Pitch|Slope)[:\s]+(\d+)\/12/i);
+  if (pitchMatch) {
+    result.measurements.pitch = pitchMatch[1] + '/12';
+    result.rawMeasurements.pitch = pitchMatch[1];
+  }
+
+  // Extract ridges
+  const ridgeMatch = text.match(/Ridge[s]?[:\s]+(\d+\.?\d*)\s*(?:ft|feet|LF)?/i);
+  if (ridgeMatch) {
+    result.measurements.ridgeLength = parseFloat(ridgeMatch[1]);
+    result.rawMeasurements.ridge_length = parseFloat(ridgeMatch[1]);
+  }
+
+  // Extract hips
+  const hipMatch = text.match(/Hip[s]?[:\s]+(\d+\.?\d*)\s*(?:ft|feet|LF)?/i);
+  if (hipMatch) {
+    result.measurements.hipLength = parseFloat(hipMatch[1]);
+    result.rawMeasurements.hip_length = parseFloat(hipMatch[1]);
+  }
+
+  // Extract valleys
+  const valleyMatch = text.match(/Valley[s]?[:\s]+(\d+\.?\d*)\s*(?:ft|feet|LF)?/i);
+  if (valleyMatch) {
+    result.measurements.valleyLength = parseFloat(valleyMatch[1]);
+    result.rawMeasurements.valley_length = parseFloat(valleyMatch[1]);
+  }
+
+  // Extract eaves/drip edge
+  const eavesMatch = text.match(/(?:Eaves?|Drip\s*Edge)[:\s]+(\d+\.?\d*)\s*(?:ft|feet|LF)?/i);
+  if (eavesMatch) {
+    result.measurements.eavesLength = parseFloat(eavesMatch[1]);
+    result.rawMeasurements.eaves_length = parseFloat(eavesMatch[1]);
+  }
+
+  console.log('[RETAIL] Parsed measurements:', result.measurements);
+  return result;
 }
 
 function initializeRetailFromParsedData(data) {
