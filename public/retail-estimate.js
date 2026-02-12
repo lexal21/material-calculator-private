@@ -402,7 +402,7 @@ function buildRetailPDF() {
 
   // Labor section
   if (laborItems.length > 0) {
-    scopeContent.push({ text: 'LABOR', style: 'categoryHeader', margin: [0, 0, 0, 8] });
+    scopeContent.push({ text: 'LABOR', style: 'categoryHeader', margin: [0, 10, 0, 8] });
     scopeContent.push({
       table: {
         headerRows: 1,
@@ -414,9 +414,9 @@ function buildRetailPDF() {
     });
   }
 
-  // Other items section
+  // Other section (if any)
   if (otherItems.length > 0) {
-    scopeContent.push({ text: 'OTHER', style: 'categoryHeader', margin: [0, 0, 0, 8] });
+    scopeContent.push({ text: 'OTHER', style: 'categoryHeader', margin: [0, 10, 0, 8] });
     scopeContent.push({
       table: {
         headerRows: 1,
@@ -455,7 +455,7 @@ function buildRetailPDF() {
         { width: '50%', stack: [{ text: 'PREPARED FOR:', style: 'label' }, { text: est.customerName || 'Customer', style: 'customerName', margin: [0, 4, 0, 0] }, { text: est.jobAddress || '', margin: [0, 4, 0, 0] }, { text: 'Job #: ' + (est.jobNumber || 'N/A'), margin: [0, 4, 0, 0] }] },
         { width: '50%', stack: [{ text: 'PROJECT DETAILS:', style: 'label' }, { text: 'Roof Size: ' + est.measurements.squares.toFixed(1) + ' squares', margin: [0, 4, 0, 0] }, { text: 'Shingle: ' + (est.shingleColor || 'TBD'), margin: [0, 4, 0, 0] }] }
       ], margin: [0, 0, 0, 30] },
-      { text: 'SCOPE OF WORK', style: 'sectionHeader', margin: [0, 0, 0, 12] },
+      { text: 'SCOPE OF WORK', style: 'sectionHeader', margin: [0, 0, 0, 16] },
       ...scopeContent,
       { columns: [{ width: '*', text: '' }, { width: 250, stack: totalsStack }] },
       { text: ' This estimate is valid for 30 days.', style: 'terms' },
