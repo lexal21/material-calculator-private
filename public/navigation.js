@@ -735,50 +735,37 @@ async function processRetailPdf(file) {
   `;
 
   try {
-    // Check if pdfjsLib is available
-    if (typeof pdfjsLib === 'undefined') {
-      // Load PDF.js dynamically if not available
-      await loadPdfJs();
-    }
+    // Use the same server endpoint as Materials/Labor
+    const formData = new FormData();
+    formData.append('pdf', file);
+    formData.append('location', 'charleston'); // Default location
+    formData.append('pricing', JSON.stringify(window.customPricing || {}));
 
-    // Use client-side PDF parsing
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const response = await fetch('/upload', {
+      method: 'POST',
+      body: formData
+    });
 
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map(item => item.str).join(' ');
-      fullText += pageText + ' ';
-    }
+    if (!response.ok) throw new Error('Server error: ' + response.status);
 
-    console.log('[RETAIL] PDF text extracted, length:', fullText.length);
-
-    // Parse the text using existing parseRoofData function if available, or custom parser
-    let result;
-    if (typeof parseRoofData === 'function') {
-      result = parseRoofData(fullText);
-    } else {
-      result = parseRetailPdfText(fullText);
-    }
+    const data = await response.json();
+    console.log('[RETAIL] Server response:', data);
 
     // Store data separately for retail module
     window.retailModuleData.pdfUploaded = true;
-    window.retailModuleData.parsedData = result;
-    window.retailModuleData.rawMeasurements = result.rawMeasurements || result.measurements;
-    window.retailModuleData.fullText = fullText;
+    window.retailModuleData.parsedData = data;
+    window.retailModuleData.rawMeasurements = data.rawMeasurements || data.measurements || {};
 
     // Initialize retail estimate from parsed data
-    initializeRetailFromParsedData(result);
+    initializeRetailFromParsedData(data);
 
     // Show results
     uploadSection.style.display = 'none';
     resultsSection.style.display = 'block';
 
     // Update project bar
-    const projectName = result.customerInfo?.name || result.customer_name || '';
-    const projectAddress = result.customerInfo?.address || result.job_address || '';
+    const projectName = data.customerName || data.customer_name || '';
+    const projectAddress = data.jobAddress || data.job_address || '';
     document.getElementById('retailProjectName').textContent = projectName || 'Project';
     document.getElementById('retailProjectAddress').textContent = projectAddress;
 
@@ -872,6 +859,8 @@ function parseRetailPdfText(text) {
 }
 
 function initializeRetailFromParsedData(data) {
+  console.log('[RETAIL] Initializing from data:', data);
+
   const lineItems = [];
 
   // Add materials from parsed data
@@ -881,27 +870,27 @@ function initializeRetailFromParsedData(data) {
         lineItems.push({
           id: 'mat-' + idx,
           category: 'Materials',
-          description: mat.name || mat.description,
+          description: mat.name || mat.description || mat.item,
           quantity: mat.quantity,
           unit: mat.unit || 'EA',
-          unitCost: mat.unitPrice || mat.price || 0,
+          unitCost: mat.unitPrice || mat.price || mat.cost || 0,
           markup: 0
         });
       }
     });
   }
 
-  // Add labor from parsed data
-  if (data.labor && Array.isArray(data.labor)) {
-    data.labor.forEach((lab, idx) => {
+  // Add labor from parsed data (server returns labor.items array)
+  if (data.labor && data.labor.items && Array.isArray(data.labor.items)) {
+    data.labor.items.forEach((lab, idx) => {
       if (lab.quantity > 0) {
         lineItems.push({
           id: 'labor-' + idx,
           category: 'Labor',
-          description: lab.name || lab.description,
+          description: lab.name || lab.description || lab.item,
           quantity: lab.quantity,
           unit: lab.unit || 'SQ',
-          unitCost: lab.unitPrice || lab.price || 0,
+          unitCost: lab.unitPrice || lab.price || lab.cost || 0,
           markup: 0
         });
       }
@@ -914,10 +903,10 @@ function initializeRetailFromParsedData(data) {
 
   // Create retail data object (separate from materials/labor module)
   window.retailData = {
-    customerName: data.customerInfo?.name || data.customer_name || '',
-    jobAddress: data.customerInfo?.address || data.job_address || '',
-    jobNumber: data.customerInfo?.jobNumber || data.job_number || '',
-    shingleColor: data.customerInfo?.shingleColor || data.shingle_color || 'TBD',
+    customerName: data.customerName || data.customer_name || '',
+    jobAddress: data.jobAddress || data.job_address || '',
+    jobNumber: data.jobNumber || data.job_number || '',
+    shingleColor: data.shingleColor || data.shingle_color || 'TBD',
     measurements: { squares: squares },
     lineItems: lineItems,
     fees: [
