@@ -50,7 +50,7 @@ function initializeRetailEstimate() {
         quantity: mat.quantity,
         unit: mat.unit,
         unitCost: mat.unitPrice,
-        markup: 35
+        markup: 0
       });
     }
   });
@@ -66,7 +66,7 @@ function initializeRetailEstimate() {
           quantity: labor.quantity,
           unit: labor.unit,
           unitCost: labor.unitPrice,
-          markup: 25
+          markup: 0
         });
       }
     });
@@ -78,7 +78,7 @@ function initializeRetailEstimate() {
       quantity: squares,
       unit: 'SQ',
       unitCost: 80,
-      markup: 25
+      markup: 0
     });
   }
 
@@ -200,7 +200,7 @@ function displayRetailEstimate() {
             <option value="Other" ${item.category==='Other'?'selected':''}>Other</option>
           </select></td>
           <td><input type="text" value="${item.description}" onchange="updateRetailItem(${idx},'description',this.value)" class="editable-input" style="width:100%;"></td>
-          <td style="text-align:right;"><input type="number" value="${item.quantity}" step="0.01" onchange="updateRetailItem(${idx},'quantity',this.value)" class="editable-input" style="width:70px;text-align:right;"> <span style="display:inline-block;width:50px;text-align:left;">${pluralizeUnit(item.unit, item.quantity)}</span></td>
+          <td style="text-align:right;"><input type="number" value="${item.quantity}" step="0.01" onchange="updateRetailItem(${idx},'quantity',this.value)" class="editable-input" style="width:85px;text-align:right;"> <span style="display:inline-block;width:50px;text-align:left;">${pluralizeUnit(item.unit, item.quantity)}</span></td>
           <td style="text-align:right;">$<input type="number" value="${item.unitCost.toFixed(2)}" step="0.01" onchange="updateRetailItem(${idx},'unitCost',this.value)" class="editable-input" style="width:80px;"></td>
           <td style="text-align:right;"><input type="number" value="${item.markup}" step="1" onchange="updateRetailItem(${idx},'markup',this.value)" class="editable-input" style="width:65px;text-align:right;">%</td>
           <td style="text-align:right;font-weight:600;">$${itemTotal.toFixed(2)}</td>
