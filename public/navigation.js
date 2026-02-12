@@ -433,7 +433,26 @@ function createModuleContainers() {
               </div>
               <div class="info-item">
                 <label class="info-label" style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px;">Shingle Color</label>
-                <input type="text" id="retailShingleColor" class="editable-input" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px;" onchange="updateRetailCustomerInfo('shingleColor', this.value)">
+                <select id="retailShingleColor" class="editable-input" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px;" onchange="updateRetailCustomerInfo('shingleColor', this.value)">
+                  <option value="">Select Color</option>
+                  <option value="Burnt Sienna">Burnt Sienna</option>
+                  <option value="Charcoal Black">Charcoal Black</option>
+                  <option value="Coastal Blue">Coastal Blue</option>
+                  <option value="Cobblestone Gray">Cobblestone Gray</option>
+                  <option value="Colonial Slate">Colonial Slate</option>
+                  <option value="Driftwood">Driftwood</option>
+                  <option value="Espresso">Espresso</option>
+                  <option value="Georgetown Gray">Georgetown Gray</option>
+                  <option value="Heather Blend">Heather Blend</option>
+                  <option value="Moire Black">Moire Black</option>
+                  <option value="Mojave Tan">Mojave Tan</option>
+                  <option value="Pewter">Pewter</option>
+                  <option value="Red Oak">Red Oak</option>
+                  <option value="Resawn Shake">Resawn Shake</option>
+                  <option value="Shenandoah">Shenandoah</option>
+                  <option value="Silver Birch">Silver Birch</option>
+                  <option value="Weathered Wood">Weathered Wood</option>
+                </select>
               </div>
             </div>
 
