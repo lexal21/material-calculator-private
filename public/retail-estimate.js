@@ -259,7 +259,7 @@ function addRetailLineItem() {
   if (!window.retailData) return;
 
   // Check if pricing data exists
-  const pricingItems = window.allMaterials || [];
+  const pricingItems = window.ALL_MATERIALS || [];
   
   if (pricingItems.length === 0) {
     // No pricing data, just add blank item
@@ -285,10 +285,13 @@ function showAddItemModal(pricingItems) {
   const existingModal = document.getElementById('addItemModal');
   if (existingModal) existingModal.remove();
 
-  // Build options HTML
-  const optionsHtml = pricingItems.map((item, idx) =>
-    `<option value="${idx}">${item.name} - $${(item.price || item.unitPrice || 0).toFixed(2)}/${item.unit || 'EA'}</option>`
-  ).join('');
+  // Build options HTML (filter out "Custom Item..." placeholder)
+  const optionsHtml = pricingItems
+    .map((item, idx) => ({ item, idx }))
+    .filter(({ item }) => item.name !== 'Custom Item...')
+    .map(({ item, idx }) =>
+      `<option value="${idx}">${item.name} - $${(item.price || item.unitPrice || 0).toFixed(2)}/${item.unit || 'EA'}</option>`
+    ).join('');
 
   const modalHtml = `
     <div id="addItemModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
@@ -370,7 +373,7 @@ function confirmAddItem() {
   const select = document.getElementById('addItemSelect');
   const category = document.getElementById('addItemCategory').value;
   const quantity = parseFloat(document.getElementById('addItemQty').value) || 1;
-  const pricingItems = window.allMaterials || [];
+  const pricingItems = window.ALL_MATERIALS || [];
 
   let newItem;
 
