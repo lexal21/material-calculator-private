@@ -2897,19 +2897,27 @@ function populateManufacturerMaterialOptions() {
       select.innerHTML += `<option value="L Flashing (Trim Coil)" data-unit="Roll" data-price="134.50">L Flashing (Trim Coil)</option>`;
     }
   } else {
-    // No manufacturer selected - show generic categories
-    filterMaterialOptions();
-    return;
+    // No manufacturer selected - show generic options
+    select.innerHTML += `<option value="Shingles" data-unit="Bundle" data-price="35.00">Shingles</option>`;
+    select.innerHTML += `<option value="Starter Strip" data-unit="Bundle" data-price="50.00">Starter Strip</option>`;
+    select.innerHTML += `<option value="Hip & Ridge Cap" data-unit="Bundle" data-price="65.00">Hip & Ridge Cap</option>`;
+    select.innerHTML += `<option value="Synthetic Underlayment" data-unit="Roll" data-price="85.00">Synthetic Underlayment</option>`;
+    select.innerHTML += `<option value="Ice & Water Shield" data-unit="Roll" data-price="69.00">Ice & Water Shield</option>`;
+    select.innerHTML += `<option value="Ridge Vent 4ft" data-unit="Piece" data-price="9.00">Ridge Vent 4ft</option>`;
+    select.innerHTML += `<option value="Drip Edge" data-unit="Piece" data-price="9.25">Drip Edge</option>`;
+    select.innerHTML += `<option value="Roofing Nails" data-unit="Box" data-price="39.99">Roofing Nails</option>`;
+    select.innerHTML += `<option value="Roof Sealant" data-unit="Tube" data-price="7.29">Roof Sealant</option>`;
+    select.innerHTML += `<option disabled>──────────────</option>`;
+    select.innerHTML += `<option value="7/16 OSB Plywood" data-unit="Sheet" data-price="15.99">7/16 OSB Plywood</option>`;
+    select.innerHTML += `<option value="Step Flashing" data-unit="Bundle" data-price="38.00">Step Flashing</option>`;
+    select.innerHTML += `<option value="Pipe Boot 2&quot;" data-unit="Piece" data-price="12.00">Pipe Boot 2"</option>`;
+    select.innerHTML += `<option value="Pipe Boot 3&quot;" data-unit="Piece" data-price="14.00">Pipe Boot 3"</option>`;
+    select.innerHTML += `<option value="Pipe Boot 4&quot;" data-unit="Piece" data-price="16.00">Pipe Boot 4"</option>`;
   }
   
-  // Add custom item option at the end
+  // Always add custom option at the end
+  select.innerHTML += `<option disabled>──────────────</option>`;
   select.innerHTML += `<option value="custom">-- Custom Item --</option>`;
-  
-  // Hide category selector when showing manufacturer items
-  const categoryDiv = document.getElementById('addMaterialCategory');
-  if (categoryDiv && categoryDiv.parentElement) {
-    categoryDiv.parentElement.style.display = 'none';
-  }
 }
 
 function closeAddMaterialModal() {
@@ -2918,11 +2926,6 @@ function closeAddMaterialModal() {
     modal.style.display = 'none';
   }
   // Reset form
-  const categoryDiv = document.getElementById('addMaterialCategory');
-  if (categoryDiv && categoryDiv.parentElement) {
-    categoryDiv.parentElement.style.display = 'block';
-  }
-  document.getElementById('addMaterialCategory').value = 'all';
   document.getElementById('addMaterialItem').value = '';
   document.getElementById('addMaterialQty').value = '1';
   document.getElementById('addMaterialPrice').value = '0.00';
