@@ -591,3 +591,8 @@ window.getShingleColors = getShingleColors;
 window.getShingleData = getShingleData;
 window.calculateSystemMaterials = calculateSystemMaterials;
 
+
+
+// Debug logs for script loading
+console.log('[MANUFACTURERS] Database ready. Manufacturers:', Object.keys(window.manufacturerDatabase));
+console.log('[MANUFACTURERS] getManufacturers available:', typeof getManufacturers === 'function');

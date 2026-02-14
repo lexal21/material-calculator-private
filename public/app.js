@@ -1124,3 +1124,47 @@ function updateLaborTotals() {
   window.laborData.subtotal = subtotal;
   console.log('[LABOR] Updated subtotal:', subtotal);
 }
+
+// ==========================================
+// PRICING TAB FUNCTIONS
+// ==========================================
+
+function initPricingTab() {
+  console.log('[PRICING] initPricingTab called');
+  console.log('[PRICING] getManufacturers exists:', typeof getManufacturers);
+  populatePricingManufacturerDropdown();
+  updateDefaultSystemBanner();
+}
+
+function populatePricingManufacturerDropdown() {
+  const select = document.getElementById('pricingManufacturerSelect');
+  if (!select) {
+    console.error('[PRICING] Manufacturer select not found');
+    return;
+  }
+
+  if (typeof getManufacturers !== 'function') {
+    console.error('[PRICING] getManufacturers function not available. Retrying in 500ms...');
+    setTimeout(populatePricingManufacturerDropdown, 500);
+    return;
+  }
+
+  const manufacturers = getManufacturers();
+  console.log('[PRICING] Populating manufacturers:', manufacturers);
+
+  select.innerHTML = '<option value="">Select Manufacturer</option>';
+  manufacturers.forEach(m => {
+    select.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+  });
+}
+
+// DOMContentLoaded fallback initialization
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[PRICING] DOMContentLoaded - initializing pricing dropdown');
+  // Initialize pricing dropdown after page loads
+  setTimeout(() => {
+    if (typeof populatePricingManufacturerDropdown === 'function') {
+      populatePricingManufacturerDropdown();
+    }
+  }, 500);
+});
