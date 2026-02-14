@@ -107,48 +107,67 @@ function initializeRetailEstimate() {
 }
 
 function calculateRetailTotals() {
-  if (!window.retailData) return { subtotal: 0, fees: 0, tax: 0, grandTotal: 0 };
-
-  const est = window.retailData;
-  let materialsTotal = 0, laborTotal = 0;
-
-  est.lineItems.forEach(item => {
-    const itemTotal = item.quantity * item.unitCost * (1 + item.markup / 100);
-    if (item.category === 'Materials') materialsTotal += itemTotal;
-    else laborTotal += itemTotal;
-  });
-
-  const subtotal = materialsTotal + laborTotal;
-  let feesTotal = 0, runningTotal = subtotal;
-
-  est.fees.forEach(fee => {
-    if (fee.enabled) {
-      fee.calculated = fee.type === 'percent' ? runningTotal * (fee.value / 100) : fee.value;
-      feesTotal += fee.calculated;
-      runningTotal += fee.calculated;
-    } else {
-      fee.calculated = 0;
-    }
-  });
-
-  let taxableAmount = est.tax.applyTo === 'materials' ? materialsTotal :
-                      est.tax.applyTo === 'all' ? subtotal + feesTotal : 0;
-
-  const taxAmount = taxableAmount * (est.tax.rate / 100);
-
-  // Save to storage after calculations
+  if (!window.retailData) return;
+  
+  // Separate line items
+  const materials = window.retailData.lineItems.filter(item => item.category === 'Materials');
+  const labor = window.retailData.lineItems.filter(item => item.category === 'Labor');
+  
+  // Calculate subtotals
+  const materialsSubtotal = materials.reduce((sum, item) => sum + calculateRetailItemTotal(item), 0);
+  const laborSubtotal = labor.reduce((sum, item) => sum + calculateRetailItemTotal(item), 0);
+  const subtotal = materialsSubtotal + laborSubtotal;
+  
+  // Update subtotal displays
+  const materialsSubtotalEl = document.getElementById('retailMaterialsSubtotal');
+  const laborSubtotalEl = document.getElementById('retailLaborSubtotal');
+  const subtotalEl = document.getElementById('retailSubtotal');
+  
+  if (materialsSubtotalEl) materialsSubtotalEl.textContent = '$' + materialsSubtotal.toFixed(2);
+  if (laborSubtotalEl) laborSubtotalEl.textContent = '$' + laborSubtotal.toFixed(2);
+  if (subtotalEl) subtotalEl.innerHTML = '<strong>$' + subtotal.toFixed(2) + '</strong>';
+  
+  // Calculate fees
+  let feesTotal = 0;
+  if (window.retailData.fees) {
+    window.retailData.fees.forEach(fee => {
+      if (fee.enabled) {
+        if (fee.type === 'percent') {
+          fee.calculated = subtotal * (fee.value / 100);
+        } else {
+          fee.calculated = fee.value;
+        }
+        feesTotal += fee.calculated;
+      }
+    });
+  }
+  
+  const feesTotalEl = document.getElementById('retailFeesTotal');
+  if (feesTotalEl) feesTotalEl.textContent = '$' + feesTotal.toFixed(2);
+  
+  // Calculate tax
+  let taxableAmount = 0;
+  const taxSettings = window.retailData.tax || { rate: 9, applyTo: 'materials' };
+  
+  if (taxSettings.applyTo === 'materials') {
+    taxableAmount = materialsSubtotal;
+  } else if (taxSettings.applyTo === 'all') {
+    taxableAmount = subtotal + feesTotal;
+  } // 'none' = 0
+  
+  const taxAmount = taxableAmount * (taxSettings.rate / 100);
+  const taxAmountEl = document.getElementById('retailTaxAmount');
+  if (taxAmountEl) taxAmountEl.textContent = '$' + taxAmount.toFixed(2);
+  
+  // Calculate grand total
+  const grandTotal = subtotal + feesTotal + taxAmount;
+  const grandTotalEl = document.getElementById('retailGrandTotal');
+  if (grandTotalEl) grandTotalEl.innerHTML = '<strong>$' + grandTotal.toFixed(2) + '</strong>';
+  
+  // Save to storage
   if (typeof saveRetailToStorage === 'function') {
     saveRetailToStorage();
   }
-
-  return {
-    materialsTotal,
-    laborTotal,
-    subtotal,
-    feesTotal,
-    taxAmount,
-    grandTotal: subtotal + feesTotal + taxAmount
-  };
 }
 
 function toggleRetailView(mode) {
@@ -180,10 +199,16 @@ function displayRetailEstimate() {
         </td>
         <td style="padding: 12px 16px; text-align: center;">${item.unit || 'EA'}</td>
         <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
-          $<input type="number" class="editable-input" value="${item.unitCost.toFixed(2)}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'unitCost', this.value)" style="width: 80px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
+            <span>$</span>
+            <input type="number" class="editable-input" value="${item.unitCost.toFixed(2)}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'unitCost', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+          </div>
         </td>
         <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
-          <input type="number" class="editable-input" value="${item.markup || 0}" min="0" step="1" onchange="updateRetailLineItem('${item.id}', 'markup', this.value)" style="width: 60px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">%
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
+            <input type="number" class="editable-input" value="${item.markup || 0}" min="0" step="1" onchange="updateRetailLineItem('${item.id}', 'markup', this.value)" style="width: 50px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+            <span>%</span>
+          </div>
         </td>
         <td style="padding: 12px 16px; text-align: right; font-weight: 600;">$${calculateRetailItemTotal(item).toFixed(2)}</td>
         <td style="padding: 12px 16px;" class="retail-internal-only">
@@ -203,10 +228,16 @@ function displayRetailEstimate() {
         </td>
         <td style="padding: 12px 16px; text-align: center;">${item.unit || 'EA'}</td>
         <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
-          $<input type="number" class="editable-input" value="${item.unitCost.toFixed(2)}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'unitCost', this.value)" style="width: 80px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
+            <span>$</span>
+            <input type="number" class="editable-input" value="${item.unitCost.toFixed(2)}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'unitCost', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+          </div>
         </td>
         <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
-          <input type="number" class="editable-input" value="${item.markup || 0}" min="0" step="1" onchange="updateRetailLineItem('${item.id}', 'markup', this.value)" style="width: 60px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">%
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
+            <input type="number" class="editable-input" value="${item.markup || 0}" min="0" step="1" onchange="updateRetailLineItem('${item.id}', 'markup', this.value)" style="width: 50px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+            <span>%</span>
+          </div>
         </td>
         <td style="padding: 12px 16px; text-align: right; font-weight: 600;">$${calculateRetailItemTotal(item).toFixed(2)}</td>
         <td style="padding: 12px 16px;" class="retail-internal-only">
@@ -238,7 +269,7 @@ function displayRetailEstimate() {
 }
 
 function calculateRetailItemTotal(item) {
-  const base = item.quantity * item.unitCost;
+  const base = (item.quantity || 0) * (item.unitCost || 0);
   const markup = item.markup || 0;
   return base * (1 + markup / 100);
 }
