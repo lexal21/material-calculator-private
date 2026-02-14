@@ -319,7 +319,8 @@ function displayResults(data) {
   if (data.raw && data.raw.roof_sq) {
     window.originalPdfData = {
       raw: data.raw,
-      measurements: data.measurements
+      measurements: data.measurements,
+      materials: data.materials
     };
     window.currentRawMeasurements = data.raw;
     window.currentMeasurements = data.measurements;
@@ -1611,7 +1612,7 @@ function applyMaterialsManufacturerSystem() {
     return;
   }
   
-  // Use ORIGINAL PDF measurements (not overwritten data)
+  // Use ORIGINAL PDF measurements
   const originalData = window.originalPdfData || {};
   const raw = originalData.raw || window.currentRawMeasurements || {};
   const measurements = originalData.measurements || window.currentMeasurements || {};
@@ -1628,12 +1629,50 @@ function applyMaterialsManufacturerSystem() {
   console.log('[MATERIALS] Using ORIGINAL measurements:', measurementData);
   
   // Calculate materials from manufacturer system
-  const materials = calculateSystemMaterials(window._materialsManufacturer, window._materialsShingleLine, measurementData);
+  const systemMaterials = calculateSystemMaterials(window._materialsManufacturer, window._materialsShingleLine, measurementData);
   
   // Add color to shingle name if selected
-  if (window._materialsColor && materials.length > 0) {
-    materials[0].name = `${materials[0].name} - ${window._materialsColor}`;
+  if (window._materialsColor && systemMaterials.length > 0) {
+    systemMaterials[0].name = `${systemMaterials[0].name} - ${window._materialsColor}`;
   }
+  
+  // Items to preserve from original materials (not part of shingle system)
+  const preserveItems = [
+    'step flashing',
+    'l flashing',
+    'trim coil',
+    'button caps',
+    'plywood',
+    'osb',
+    'pipe boot',
+    'skylight',
+    'chimney',
+    'vent'
+  ];
+  
+  // Get original materials from first PDF upload
+  const originalMaterials = window.originalPdfData?.materials || window.lastServerResponse?.materials || [];
+  
+  // Find items to preserve
+  const preservedMaterials = originalMaterials.filter(mat => {
+    const nameLower = (mat.name || '').toLowerCase();
+    return preserveItems.some(item => nameLower.includes(item));
+  });
+  
+  // Merge: system materials + preserved items (avoid duplicates)
+  const systemMaterialNames = systemMaterials.map(m => m.name.toLowerCase());
+  const uniquePreserved = preservedMaterials.filter(mat => {
+    const nameLower = (mat.name || '').toLowerCase();
+    return !systemMaterialNames.some(sysName => 
+      sysName.includes(nameLower.split(' ')[0]) || nameLower.includes(sysName.split(' ')[0])
+    );
+  });
+  
+  const materials = [...systemMaterials, ...uniquePreserved];
+  
+  console.log('[MATERIALS] System materials:', systemMaterials.length);
+  console.log('[MATERIALS] Preserved materials:', uniquePreserved.map(m => m.name));
+  console.log('[MATERIALS] Total materials:', materials.length);
   
   // Update global materialsData
   window.materialsData = materials;
@@ -1648,6 +1687,11 @@ function applyMaterialsManufacturerSystem() {
   }
   
   console.log('[MATERIALS] Applied', materials.length, 'materials');
+}
+
+function populateMaterialTemplateSelector() {
+  console.log('[MATERIALS] populateMaterialTemplateSelector called');
+  // Placeholder - no action needed for now
 }
 
 // ==========================================
