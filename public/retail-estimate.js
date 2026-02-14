@@ -136,6 +136,11 @@ function calculateRetailTotals() {
 
   const taxAmount = taxableAmount * (est.tax.rate / 100);
 
+  // Save to storage after calculations
+  if (typeof saveRetailToStorage === 'function') {
+    saveRetailToStorage();
+  }
+
   return {
     materialsTotal,
     laborTotal,

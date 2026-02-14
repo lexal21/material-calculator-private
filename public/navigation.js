@@ -20,6 +20,30 @@ function initializeNavigation() {
   createNavMenu();
   createModuleContainers();
   hideRetailTabFromMainTabs();
+
+  // Restore last active module
+  const savedModule = localStorage.getItem('quikbitz-current-module');
+  if (savedModule && savedModule !== 'materials-labor') {
+    setTimeout(() => {
+      // If retail module, try to restore saved estimate
+      if (savedModule === 'retail' && loadRetailFromStorage()) {
+        const uploadSection = document.getElementById('retailUploadSection');
+        const resultsSection = document.getElementById('retailResultsSection');
+        if (uploadSection) uploadSection.style.display = 'none';
+        if (resultsSection) resultsSection.style.display = 'block';
+
+        // Update project bar
+        document.getElementById('retailProjectName').textContent = window.retailData.customerName || 'Project';
+        document.getElementById('retailProjectAddress').textContent = window.retailData.jobAddress || '';
+
+        // Display the estimate
+        if (typeof displayRetailEstimate === 'function') {
+          displayRetailEstimate();
+        }
+      }
+      switchModule(savedModule);
+    }, 100);
+  }
 }
 
 function injectNavStyles() {
@@ -618,6 +642,7 @@ function closeNavMenu() {
 
 function switchModule(moduleName) {
   window.currentModule = moduleName;
+  localStorage.setItem('quikbitz-current-module', moduleName);
 
   // Update active state in nav
   document.querySelectorAll('.nav-item').forEach(item => {
@@ -939,6 +964,9 @@ function initializeRetailFromParsedData(data) {
   if (typeof displayRetailEstimate === 'function') {
     displayRetailEstimate();
   }
+
+  // Save to storage
+  saveRetailToStorage();
 }
 
 function updateRetailCustomerInfo(field, value) {
@@ -958,6 +986,7 @@ function clearRetailProject() {
   window.retailModuleData = { pdfUploaded: false, rawMeasurements: null, parsedData: null, isBlankEstimate: false };
   window.retailData = null;
   window.retailViewMode = 'internal';
+  clearRetailStorage();
 
   // Reset UI
   const uploadSection = document.getElementById('retailUploadSection');
@@ -1051,4 +1080,40 @@ function startBlankEstimate() {
   if (typeof displayRetailEstimate === 'function') {
     displayRetailEstimate();
   }
+
+  // Save to storage
+  saveRetailToStorage();
+}
+
+function saveRetailToStorage() {
+  if (window.retailData) {
+    localStorage.setItem('quikbitz-retail-data', JSON.stringify(window.retailData));
+    localStorage.setItem('quikbitz-retail-module-data', JSON.stringify(window.retailModuleData));
+    localStorage.setItem('quikbitz-retail-view-mode', window.retailViewMode || 'internal');
+  }
+}
+
+function loadRetailFromStorage() {
+  const savedData = localStorage.getItem('quikbitz-retail-data');
+  const savedModuleData = localStorage.getItem('quikbitz-retail-module-data');
+  const savedViewMode = localStorage.getItem('quikbitz-retail-view-mode');
+
+  if (savedData) {
+    try {
+      window.retailData = JSON.parse(savedData);
+      window.retailModuleData = savedModuleData ? JSON.parse(savedModuleData) : { pdfUploaded: true };
+      window.retailViewMode = savedViewMode || 'internal';
+      return true;
+    } catch (e) {
+      console.error('[RETAIL] Error loading saved data:', e);
+      return false;
+    }
+  }
+  return false;
+}
+
+function clearRetailStorage() {
+  localStorage.removeItem('quikbitz-retail-data');
+  localStorage.removeItem('quikbitz-retail-module-data');
+  localStorage.removeItem('quikbitz-retail-view-mode');
 }
