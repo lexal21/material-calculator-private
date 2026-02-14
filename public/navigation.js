@@ -383,6 +383,13 @@ function createModuleContainers() {
               <p class="retail-upload-subtext">or click to browse</p>
               <input type="file" id="retailPdfInput" accept=".pdf" style="display:none;" onchange="handleRetailPdfUpload(event)">
             </div>
+            <div style="text-align: center; margin-top: 20px;">
+              <p style="color: #64748b; margin-bottom: 12px;">— OR —</p>
+              <button onclick="startBlankEstimate()" style="background: #0891b2; color: white; border: none; padding: 14px 28px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: background 0.2s;">
+                Start Blank Estimate
+              </button>
+              <p style="color: #94a3b8; font-size: 13px; margin-top: 8px;">For repairs and custom jobs without a roof report</p>
+            </div>
           </div>
 
           <!-- Retail Results Section (hidden until PDF uploaded) -->
@@ -985,4 +992,56 @@ function refreshRetailFromSource() {
   }
   if (!confirm('Reload all items from PDF? Custom items will be lost.')) return;
   initializeRetailFromParsedData(window.retailModuleData.parsedData);
+}
+
+function startBlankEstimate() {
+  console.log('[RETAIL] Starting blank estimate');
+
+  // Create empty retail data
+  window.retailData = {
+    customerName: '',
+    jobAddress: '',
+    jobNumber: '',
+    shingleColor: '',
+    measurements: {
+      squares: 0
+    },
+    lineItems: [],
+    fees: [
+      { id: 'overhead', description: 'Overhead', type: 'percent', value: 10, enabled: true, calculated: 0 },
+      { id: 'profit', description: 'Profit', type: 'percent', value: 10, enabled: true, calculated: 0 },
+      { id: 'permit', description: 'Permit Fee', type: 'flat', value: 0, enabled: false, calculated: 0 },
+      { id: 'dumpster', description: 'Dumpster/Disposal', type: 'flat', value: 0, enabled: false, calculated: 0 }
+    ],
+    tax: {
+      rate: 9,
+      applyTo: 'materials'
+    },
+    createdAt: new Date().toISOString()
+  };
+
+  window.retailModuleData = {
+    pdfUploaded: false,
+    parsedData: null,
+    rawMeasurements: null,
+    isBlankEstimate: true
+  };
+
+  window.retailViewMode = 'internal';
+
+  // Hide upload, show results
+  const uploadSection = document.getElementById('retailUploadSection');
+  const resultsSection = document.getElementById('retailResultsSection');
+
+  uploadSection.style.display = 'none';
+  resultsSection.style.display = 'block';
+
+  // Update project bar
+  document.getElementById('retailProjectName').textContent = 'New Estimate';
+  document.getElementById('retailProjectAddress').textContent = '';
+
+  // Display the empty estimate
+  if (typeof displayRetailEstimate === 'function') {
+    displayRetailEstimate();
+  }
 }
