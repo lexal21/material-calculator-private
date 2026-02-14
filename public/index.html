@@ -467,12 +467,24 @@
           </div>
         </div>
 
+        <!-- Current Default System Banner -->
+        <div id="defaultSystemBanner" style="display: none; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-size: 12px; opacity: 0.9;">DEFAULT SYSTEM</span>
+              <div id="defaultSystemName" style="font-weight: 600; font-size: 16px;"></div>
+            </div>
+            <button onclick="clearDefaultSystem()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Clear Default</button>
+          </div>
+        </div>
+
         <!-- Pricing Editor Table -->
         <div id="pricingEditorContainer" style="display: none;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h3 id="pricingSystemTitle" style="margin: 0; color: #334155;"></h3>
             <div>
-              <button onclick="resetToDefaultPricing()" style="padding: 8px 16px; background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e0; border-radius: 6px; cursor: pointer; margin-right: 8px;">Reset to Default</button>
+              <button onclick="setAsDefaultSystem()" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 8px; font-weight: 600;">⭐️ Set as Default</button>
+              <button onclick="resetToDefaultPricing()" style="padding: 8px 16px; background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e0; border-radius: 6px; cursor: pointer; margin-right: 8px;">Reset Prices</button>
               <button onclick="savePricingTemplate()" style="padding: 8px 16px; background: #0891b2; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Save Pricing</button>
             </div>
           </div>
@@ -670,7 +682,10 @@
   <div id="addMaterialModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
     <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 style="margin: 0; color: #1e293b;">Add Material Item</h3>
+        <div>
+          <h3 style="margin: 0; color: #1e293b;">Add Material Item</h3>
+          <p id="addMaterialSystemLabel" style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;"></p>
+        </div>
         <button onclick="closeAddMaterialModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
       </div>
       <div style="margin-bottom: 16px;">
