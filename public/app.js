@@ -1087,6 +1087,18 @@ function displayLaborResults(data) {
   // Update totals
   updateLaborTotals();
   
+  // Show the labor results container
+  const laborResultsDiv = document.getElementById('laborResults');
+  if (laborResultsDiv) {
+    laborResultsDiv.style.display = 'block';
+  }
+  
+  // Also hide the "not ready" message if it exists
+  const laborNotReady = document.getElementById('laborNotReady');
+  if (laborNotReady) {
+    laborNotReady.style.display = 'none';
+  }
+  
   console.log('[LABOR] Rendered', laborData.items.length, 'labor items');
 }
 
