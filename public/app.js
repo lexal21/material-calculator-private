@@ -1585,6 +1585,54 @@ function handleMaterialsColorChange() {
   window._materialsColor = colorSelect?.value || null;
 }
 
+function applyMaterialsManufacturerSystem() {
+  if (!window._materialsManufacturer || !window._materialsShingleLine) {
+    alert('Please select a manufacturer and shingle model first.');
+    return;
+  }
+  
+  // Get measurements from current PDF data
+  const raw = window.currentRawMeasurements || window.lastServerResponse?.raw || {};
+  const measurements = window.currentMeasurements || window.lastServerResponse?.measurements || {};
+  
+  const measurementData = {
+    squares: parseFloat(raw.roof_sq) || measurements.roofSquares || 0,
+    ridgeLength: parseFloat(raw.ridge_length) || measurements.ridgeLength || 0,
+    hipLength: parseFloat(raw.hip_length) || measurements.hipLength || 0,
+    eaveLength: parseFloat(raw.eave_edge_length) || measurements.eaveLength || 0,
+    rakeLength: parseFloat(raw.rake_edge_length) || measurements.rakeLength || 0,
+    valleyLength: parseFloat(raw.valley_length) || measurements.valleyLength || 0
+  };
+  
+  console.log('[MATERIALS] Applying system with measurements:', measurementData);
+  
+  // Calculate materials from manufacturer system
+  const materials = calculateSystemMaterials(window._materialsManufacturer, window._materialsShingleLine, measurementData);
+  
+  // Add color to shingle name if selected
+  if (window._materialsColor && materials.length > 0) {
+    materials[0].name = `${materials[0].name} - ${window._materialsColor}`;
+  }
+  
+  console.log('[MATERIALS] Calculated materials:', materials);
+  
+  // Update global materialsData
+  window.materialsData = materials;
+  
+  // Refresh the materials display
+  if (typeof displayResults === 'function') {
+    displayResults({
+      materials: materials,
+      measurements: window.currentMeasurements || {},
+      raw: window.currentRawMeasurements || {},
+      labor: window.laborData,
+      success: true
+    });
+  }
+  
+  console.log('[MATERIALS] Applied', materials.length, 'materials');
+}
+
 // ==========================================
 // ADD MATERIAL MODAL FUNCTIONS
 // ==========================================
