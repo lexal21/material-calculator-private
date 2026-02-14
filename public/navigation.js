@@ -796,6 +796,34 @@ function createModuleContainers() {
                     </tbody>
                   </table>
                 </div>
+                
+                <!-- MISCELLANEOUS FEES SECTION -->
+                <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 24px; overflow: hidden;">
+                  <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Miscellaneous Fees</h3>
+                      <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Optional fees to add to estimates</p>
+                    </div>
+                    <button onclick="openAddCustomFeeModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">+ Add Custom Fee</button>
+                  </div>
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                      <tr style="background: #f8fafc;">
+                        <th style="padding: 12px 16px; text-align: center; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 10%;">Enabled</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 40%;">Fee Description</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 20%;">Default Price</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 25%;">Your Price</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 5%;"></th>
+                      </tr>
+                    </thead>
+                    <tbody id="retailPricingFeesBody">
+                      <!-- Populated by JavaScript -->
+                    </tbody>
+                  </table>
+                  <div style="padding: 12px 16px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
+                    <button onclick="resetFeesToDefault()" style="padding: 6px 12px; background: none; border: 1px solid #cbd5e0; color: #64748b; border-radius: 4px; cursor: pointer; font-size: 13px;">Reset to Default Fees</button>
+                  </div>
+                </div>
               </div>
               
               <!-- Placeholder -->
@@ -842,6 +870,30 @@ function createModuleContainers() {
                   </div>
                   <button onclick="addAdditionalMaterialItem()" style="width: 100%; padding: 12px; background: #f59e0b; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer;">
                     Add Item
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Add Custom Fee Modal -->
+              <div id="addCustomFeeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+                <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 450px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #1e293b;">Add Custom Fee</h3>
+                    <button onclick="closeAddCustomFeeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+                  </div>
+                  <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Fee Description</label>
+                    <input type="text" id="customFeeName" placeholder="e.g., Crane Rental" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                  </div>
+                  <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Default Price</label>
+                    <div style="display: flex; align-items: center;">
+                      <span style="color: #64748b; margin-right: 4px;">$</span>
+                      <input type="number" id="customFeePrice" value="0.00" min="0" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;">
+                    </div>
+                  </div>
+                  <button onclick="addCustomFeeItem()" style="width: 100%; padding: 12px; background: #f59e0b; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer;">
+                    Add Fee
                   </button>
                 </div>
               </div>
@@ -1799,6 +1851,7 @@ function initRetailPricingTab() {
   updateRetailDefaultBanner();
   populateRetailLaborPricingTable();
   renderAdditionalMaterialsTable();
+  renderMiscFeesTable();
 }
 
 function populateRetailPricingManufacturerDropdown() {
@@ -1974,6 +2027,9 @@ function handleRetailPricingShingleLineChange() {
   
   // Re-render additional materials with saved prices for this system
   renderAdditionalMaterialsTable();
+  
+  // Re-render miscellaneous fees with saved prices for this system
+  renderMiscFeesTable();
 }
 
 function saveRetailPricingTemplate() {
@@ -1991,6 +2047,20 @@ function saveRetailPricingTemplate() {
     const input = document.getElementById(`addlMat_${item.id}`);
     if (input) {
       additionalMaterials[item.id] = parseFloat(input.value) || item.defaultPrice;
+    }
+  });
+  
+  // Build miscellaneous fees data
+  const miscFees = {};
+  const feeItems = getMiscFees();
+  feeItems.forEach(fee => {
+    const priceInput = document.getElementById(`feePrice_${fee.id}`);
+    const enabledInput = document.getElementById(`feeEnabled_${fee.id}`);
+    if (priceInput && enabledInput) {
+      miscFees[fee.id] = {
+        price: parseFloat(priceInput.value) || fee.defaultPrice,
+        enabled: enabledInput.checked
+      };
     }
   });
   
@@ -2019,7 +2089,8 @@ function saveRetailPricingTemplate() {
       valley: parseFloat(document.getElementById('retail_laborRate_valley')?.value) || 5,
       pipeBoot: parseFloat(document.getElementById('retail_laborRate_pipeBoot')?.value) || 15,
       skylight: parseFloat(document.getElementById('retail_laborRate_skylight')?.value) || 75
-    }
+    },
+    miscFees: miscFees
   };
   
   const allPricing = typeof loadCustomPricing === 'function' ? loadCustomPricing() : {};
@@ -2046,6 +2117,14 @@ function resetRetailPricing() {
   
   document.querySelectorAll('[id^="addlMat_"]').forEach(input => {
     if (input.dataset.default) input.value = input.dataset.default;
+  });
+  
+  document.querySelectorAll('#retailPricingFeesBody input[data-default]').forEach(input => {
+    input.value = input.dataset.default;
+  });
+  
+  document.querySelectorAll('#retailPricingFeesBody input[type="checkbox"]').forEach(checkbox => {
+    checkbox.checked = false;
   });
 }
 
@@ -2220,4 +2299,137 @@ function resetAdditionalMaterialsToDefault() {
   renderAdditionalMaterialsTable();
   
   console.log('[ADDL MAT] Reset to defaults');
+}
+
+// ==========================================
+// MISCELLANEOUS FEES MANAGEMENT
+// ==========================================
+
+const MISC_FEES_KEY = 'quikbitz-misc-fees';
+
+// Default miscellaneous fees
+const defaultMiscFees = [
+  { id: 'permitFee', name: 'Permit Fee', defaultPrice: 0.00, enabled: false, isDefault: true },
+  { id: 'dumpsterRental', name: 'Dumpster Rental', defaultPrice: 0.00, enabled: false, isDefault: true },
+  { id: 'deliveryFee', name: 'Delivery Fee', defaultPrice: 0.00, enabled: false, isDefault: true },
+  { id: 'wasteDisposal', name: 'Waste Disposal', defaultPrice: 0.00, enabled: false, isDefault: true }
+];
+
+function getMiscFees() {
+  const saved = localStorage.getItem(MISC_FEES_KEY);
+  return saved ? JSON.parse(saved) : [...defaultMiscFees];
+}
+
+function saveMiscFees(fees) {
+  localStorage.setItem(MISC_FEES_KEY, JSON.stringify(fees));
+}
+
+function renderMiscFeesTable() {
+  const tbody = document.getElementById('retailPricingFeesBody');
+  if (!tbody) return;
+  
+  const fees = getMiscFees();
+  
+  // Get saved custom prices and enabled states if a system is selected
+  let savedData = {};
+  if (window._retailPricingManufacturer && window._retailPricingShingleLine) {
+    const pricingKey = `${window._retailPricingManufacturer}_${window._retailPricingShingleLine}`;
+    const allPricing = typeof loadCustomPricing === 'function' ? loadCustomPricing() : {};
+    savedData = allPricing[pricingKey]?.miscFees || {};
+  }
+  
+  tbody.innerHTML = fees.map((fee, index) => {
+    const feeData = savedData[fee.id] || { price: fee.defaultPrice, enabled: fee.enabled || false };
+    return `
+      <tr data-fee-id="${fee.id}">
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; text-align: center;">
+          <input type="checkbox" id="feeEnabled_${fee.id}" ${feeData.enabled ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
+        </td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">${fee.name}</td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$${fee.defaultPrice.toFixed(2)}</td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+          <div style="display: flex; align-items: center;">
+            <span style="color: #64748b; margin-right: 4px;">$</span>
+            <input type="number" id="feePrice_${fee.id}" value="${feeData.price.toFixed(2)}" data-default="${fee.defaultPrice}" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+          </div>
+        </td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; text-align: center;">
+          ${!fee.isDefault ? '<button onclick="deleteMiscFee(\'' + fee.id + '\', \'' + fee.name + '\')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 4px 8px;" title="Delete fee">x</button>' : ''}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openAddCustomFeeModal() {
+  const modal = document.getElementById('addCustomFeeModal');
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function closeAddCustomFeeModal() {
+  const modal = document.getElementById('addCustomFeeModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+function addCustomFeeItem() {
+  const name = document.getElementById('customFeeName')?.value.trim();
+  const price = parseFloat(document.getElementById('customFeePrice')?.value) || 0;
+  
+  if (!name) {
+    alert('Please enter a fee description.');
+    return;
+  }
+  
+  // Generate ID from name
+  const id = 'custom_' + name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  
+  // Check for duplicate
+  let fees = getMiscFees();
+  if (fees.some(f => f.id === id)) {
+    alert('A fee with this name already exists.');
+    return;
+  }
+  
+  // Add new fee
+  fees.push({
+    id: id,
+    name: name,
+    defaultPrice: price,
+    enabled: false,
+    isDefault: false
+  });
+  
+  saveMiscFees(fees);
+  renderMiscFeesTable();
+  closeAddCustomFeeModal();
+  
+  // Clear inputs
+  document.getElementById('customFeeName').value = '';
+  document.getElementById('customFeePrice').value = '0.00';
+  
+  console.log('[MISC FEES] Added:', name);
+}
+
+function deleteMiscFee(id, name) {
+  if (!confirm(`Delete "${name}"?`)) return;
+  
+  let fees = getMiscFees();
+  fees = fees.filter(f => f.id !== id);
+  saveMiscFees(fees);
+  renderMiscFeesTable();
+  
+  console.log('[MISC FEES] Deleted:', name);
+}
+
+function resetFeesToDefault() {
+  if (!confirm('Reset all fees to default list?')) return;
+  
+  saveMiscFees([...defaultMiscFees]);
+  renderMiscFeesTable();
+  
+  console.log('[MISC FEES] Reset to defaults');
 }
