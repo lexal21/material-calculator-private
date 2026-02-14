@@ -905,3 +905,110 @@ function pluralizeUnit(quantity, unit) {
 // ============================================
 // FORM VALIDATION
 
+
+// ==========================================
+// DEFAULT SYSTEM FUNCTIONS
+// ==========================================
+
+const DEFAULT_SYSTEM_KEY = 'quikbitz-default-system';
+
+function getDefaultSystem() {
+  try {
+    const saved = localStorage.getItem(DEFAULT_SYSTEM_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function setAsDefaultSystem() {
+  const manufacturerId = document.getElementById('pricingManufacturerSelect').value;
+  const shingleLineId = document.getElementById('pricingShingleLineSelect').value;
+  
+  if (!manufacturerId || !shingleLineId) {
+    alert('Please select a manufacturer and shingle model first');
+    return;
+  }
+  
+  // Get manufacturer and model names
+  let manufacturerName = manufacturerId;
+  let shingleLineName = shingleLineId;
+  
+  if (typeof getManufacturers === 'function') {
+    const manufacturers = getManufacturers();
+    const mfg = manufacturers.find(m => m.id === manufacturerId);
+    if (mfg) manufacturerName = mfg.name;
+  }
+  
+  if (typeof getShingleData === 'function') {
+    const shingleData = getShingleData(manufacturerId, shingleLineId);
+    if (shingleData) shingleLineName = shingleData.name;
+  }
+  
+  const defaultSystem = {
+    manufacturerId,
+    shingleLineId,
+    manufacturerName,
+    shingleLineName,
+    timestamp: Date.now()
+  };
+  
+  localStorage.setItem(DEFAULT_SYSTEM_KEY, JSON.stringify(defaultSystem));
+  alert(`✅ Default system set to: ${manufacturerName} ${shingleLineName}`);
+  
+  // Update banner
+  updateDefaultSystemBanner();
+}
+
+function clearDefaultSystem() {
+  if (confirm('Clear the default system?')) {
+    localStorage.removeItem(DEFAULT_SYSTEM_KEY);
+    updateDefaultSystemBanner();
+  }
+}
+
+function updateDefaultSystemBanner() {
+  const banner = document.getElementById('defaultSystemBanner');
+  const nameDiv = document.getElementById('defaultSystemName');
+  const defaultSystem = getDefaultSystem();
+  
+  if (banner && nameDiv) {
+    if (defaultSystem) {
+      nameDiv.textContent = `${defaultSystem.manufacturerName} ${defaultSystem.shingleLineName}`;
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+}
+
+// Auto-load default system on page load
+if (typeof initDefaultSystem === 'undefined') {
+  window.initDefaultSystem = function() {
+    const defaultSystem = getDefaultSystem();
+    if (defaultSystem) {
+      // Auto-select default system in Materials/Labor tab
+      const materialsManufacturerSelect = document.getElementById('materialsManufacturerSelect');
+      const materialsShingleLineSelect = document.getElementById('materialsShingleLineSelect');
+      
+      if (materialsManufacturerSelect && materialsShingleLineSelect) {
+        materialsManufacturerSelect.value = defaultSystem.manufacturerId;
+        handleMaterialsManufacturerChange();
+        
+        setTimeout(() => {
+          materialsShingleLineSelect.value = defaultSystem.shingleLineId;
+        }, 100);
+      }
+    }
+    
+    // Update banner
+    updateDefaultSystemBanner();
+  };
+  
+  // Run on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDefaultSystem);
+  } else {
+    initDefaultSystem();
+  }
+}
