@@ -497,6 +497,58 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
       });
     }
     
+    // Step Flashing Labor - find step flashing in materials
+    const stepFlashingMat = result.materials.find(m => m.name && m.name.toLowerCase().includes('step flashing'));
+    if (stepFlashingMat && stepFlashingMat.quantity > 0) {
+      laborItems.push({
+        name: 'Step Flashing Install',
+        quantity: stepFlashingMat.quantity,
+        unit: 'BD',
+        unitPrice: 25,
+        total: parseFloat((stepFlashingMat.quantity * 25).toFixed(2))
+      });
+    }
+    
+    // L Flashing / Trim Coil Labor - find in materials
+    const lFlashingMat = result.materials.find(m => 
+      m.name && (m.name.toLowerCase().includes('l flashing') || m.name.toLowerCase().includes('trim coil'))
+    );
+    if (lFlashingMat && lFlashingMat.quantity > 0) {
+      laborItems.push({
+        name: 'L Flashing (Trim Coil) Install',
+        quantity: lFlashingMat.quantity,
+        unit: 'Roll',
+        unitPrice: 50,
+        total: parseFloat((lFlashingMat.quantity * 50).toFixed(2))
+      });
+    }
+    
+    // Drip Edge Install Labor - calculate from eave + rake length
+    const eaveLength = parseFloat(result.raw.eave_edge_length) || result.measurements.eaveLength || 0;
+    const rakeLength = parseFloat(result.raw.rake_edge_length) || result.measurements.rakeLength || 0;
+    const dripEdgeLF = eaveLength + rakeLength;
+    if (dripEdgeLF > 0) {
+      laborItems.push({
+        name: 'Drip Edge Install',
+        quantity: parseFloat(dripEdgeLF.toFixed(2)),
+        unit: 'LF',
+        unitPrice: 2,
+        total: parseFloat((dripEdgeLF * 2).toFixed(2))
+      });
+    }
+    
+    // Valley Install Labor - from valley length
+    const valleyLength = parseFloat(result.raw.valley_length) || result.measurements.valleyLength || 0;
+    if (valleyLength > 0) {
+      laborItems.push({
+        name: 'Valley Install',
+        quantity: parseFloat(valleyLength.toFixed(2)),
+        unit: 'LF',
+        unitPrice: 5,
+        total: parseFloat((valleyLength * 5).toFixed(2))
+      });
+    }
+    
     // Calculate labor subtotal
     const laborSubtotal = laborItems.reduce((sum, item) => sum + item.total, 0);
     
