@@ -2836,7 +2836,79 @@ function openAddMaterialModal() {
   const modal = document.getElementById('addMaterialModal');
   if (modal) {
     modal.style.display = 'flex';
+    populateManufacturerMaterialOptions();
+  }
+}
+
+function populateManufacturerMaterialOptions() {
+  const select = document.getElementById('addMaterialItem');
+  if (!select) return;
+  
+  select.innerHTML = '<option value="">Select Item...</option>';
+  
+  // Check if a manufacturer system is selected
+  const manufacturerId = window._materialsManufacturer;
+  const shingleLineId = window._materialsShingleLine;
+  
+  if (manufacturerId && shingleLineId && typeof getShingleData === 'function') {
+    // Get the selected manufacturer's system components
+    const shingleData = getShingleData(manufacturerId, shingleLineId);
+    
+    if (shingleData) {
+      // Add the shingles option
+      select.innerHTML += `<option value="${shingleData.name} Shingles" data-unit="Bundle" data-price="${shingleData.pricePerBundle}">${shingleData.name} Shingles</option>`;
+      
+      // Add all system components
+      const components = shingleData.systemComponents;
+      if (components) {
+        if (components.starter) {
+          select.innerHTML += `<option value="${components.starter.name}" data-unit="${components.starter.unit}" data-price="${components.starter.pricePerUnit}">${components.starter.name}</option>`;
+        }
+        if (components.hipRidge) {
+          select.innerHTML += `<option value="${components.hipRidge.name}" data-unit="${components.hipRidge.unit}" data-price="${components.hipRidge.pricePerUnit}">${components.hipRidge.name}</option>`;
+        }
+        if (components.underlayment) {
+          select.innerHTML += `<option value="${components.underlayment.name}" data-unit="${components.underlayment.unit}" data-price="${components.underlayment.pricePerUnit}">${components.underlayment.name}</option>`;
+        }
+        if (components.iceWater) {
+          select.innerHTML += `<option value="${components.iceWater.name}" data-unit="${components.iceWater.unit}" data-price="${components.iceWater.pricePerUnit}">${components.iceWater.name}</option>`;
+        }
+        if (components.ridgeVent) {
+          select.innerHTML += `<option value="${components.ridgeVent.name}" data-unit="${components.ridgeVent.unit}" data-price="${components.ridgeVent.pricePerUnit}">${components.ridgeVent.name}</option>`;
+        }
+        if (components.dripEdge) {
+          select.innerHTML += `<option value="${components.dripEdge.name}" data-unit="${components.dripEdge.unit}" data-price="${components.dripEdge.pricePerUnit}">${components.dripEdge.name}</option>`;
+        }
+        if (components.nails) {
+          select.innerHTML += `<option value="${components.nails.name}" data-unit="${components.nails.unit}" data-price="${components.nails.pricePerUnit}">${components.nails.name}</option>`;
+        }
+        if (components.sealant) {
+          select.innerHTML += `<option value="${components.sealant.name}" data-unit="${components.sealant.unit}" data-price="${components.sealant.pricePerUnit}">${components.sealant.name}</option>`;
+        }
+      }
+      
+      // Add a separator and common extras
+      select.innerHTML += `<option disabled>──────────────</option>`;
+      select.innerHTML += `<option value="7/16 OSB Plywood" data-unit="Sheet" data-price="15.99">7/16 OSB Plywood</option>`;
+      select.innerHTML += `<option value="Pipe Boot 2 inch" data-unit="Piece" data-price="12.00">Pipe Boot 2"</option>`;
+      select.innerHTML += `<option value="Pipe Boot 3 inch" data-unit="Piece" data-price="14.00">Pipe Boot 3"</option>`;
+      select.innerHTML += `<option value="Pipe Boot 4 inch" data-unit="Piece" data-price="16.00">Pipe Boot 4"</option>`;
+      select.innerHTML += `<option value="Step Flashing" data-unit="Bundle" data-price="38.00">Step Flashing</option>`;
+      select.innerHTML += `<option value="L Flashing (Trim Coil)" data-unit="Roll" data-price="134.50">L Flashing (Trim Coil)</option>`;
+    }
+  } else {
+    // No manufacturer selected - show generic categories
     filterMaterialOptions();
+    return;
+  }
+  
+  // Add custom item option at the end
+  select.innerHTML += `<option value="custom">-- Custom Item --</option>`;
+  
+  // Hide category selector when showing manufacturer items
+  const categoryDiv = document.getElementById('addMaterialCategory');
+  if (categoryDiv && categoryDiv.parentElement) {
+    categoryDiv.parentElement.style.display = 'none';
   }
 }
 
@@ -2846,6 +2918,10 @@ function closeAddMaterialModal() {
     modal.style.display = 'none';
   }
   // Reset form
+  const categoryDiv = document.getElementById('addMaterialCategory');
+  if (categoryDiv && categoryDiv.parentElement) {
+    categoryDiv.parentElement.style.display = 'block';
+  }
   document.getElementById('addMaterialCategory').value = 'all';
   document.getElementById('addMaterialItem').value = '';
   document.getElementById('addMaterialQty').value = '1';
@@ -2856,6 +2932,12 @@ function closeAddMaterialModal() {
 function filterMaterialOptions() {
   const category = document.getElementById('addMaterialCategory').value;
   const select = document.getElementById('addMaterialItem');
+  
+  // Show category selector when using generic options
+  const categoryDiv = document.getElementById('addMaterialCategory');
+  if (categoryDiv && categoryDiv.parentElement) {
+    categoryDiv.parentElement.style.display = 'block';
+  }
   
   select.innerHTML = '<option value="">Select Item...</option>';
   
