@@ -1012,3 +1012,115 @@ if (typeof initDefaultSystem === 'undefined') {
     initDefaultSystem();
   }
 }
+
+// Missing displayLaborResults function
+function displayLaborResults(data) {
+  console.log('[LABOR] displayLaborResults called with data:', data);
+  
+  // Store labor data globally
+  if (data.labor && data.labor.items) {
+    window.laborData = data.labor;
+    console.log('[LABOR] Stored labor data:', window.laborData);
+  } else {
+    console.warn('[LABOR] No labor data in response');
+    return;
+  }
+  
+  // Get labor table
+  const laborTable = document.getElementById('laborTable');
+  if (!laborTable) {
+    console.error('[LABOR] Labor table element not found');
+    return;
+  }
+  
+  // Clear existing rows
+  laborTable.innerHTML = '';
+  
+  // Render each labor item
+  window.laborData.items.forEach((item, index) => {
+    const row = createLaborRow(item, index);
+    laborTable.innerHTML += row;
+  });
+  
+  // Update totals
+  updateLaborTotals();
+  
+  console.log('[LABOR] Rendered', window.laborData.items.length, 'labor items');
+}
+
+// Helper function to create labor row HTML
+function createLaborRow(item, index) {
+  const quantity = parseFloat(item.quantity) || 0;
+  const unitPrice = parseFloat(item.unitPrice) || 0;
+  const total = quantity * unitPrice;
+  
+  // Pluralize unit
+  const unit = item.unit || '';
+  let pluralUnit = unit;
+  if (quantity !== 1 && unit && typeof pluralizeUnit === 'function') {
+    pluralUnit = pluralizeUnit(quantity, unit);
+  }
+  
+  return `
+    <tr data-labor-row="${index}" ${quantity === 0 ? 'class="zero-quantity"' : ''}>
+      <td class="checkbox-cell no-print">
+        <input type="checkbox" class="labor-checkbox" data-labor-row="${index}" onchange="toggleLaborSelection(${index})">
+      </td>
+      <td data-label="Item">${item.name}</td>
+      <td data-label="Quantity" class="editable-cell" data-print-value="${quantity.toFixed(2)} ${pluralUnit}">
+        <input 
+          type="number" 
+          class="editable-input quantity-input" 
+          value="${quantity.toFixed(2)}" 
+          min="0"
+          step="0.01"
+          data-labor-row="${index}"
+          data-field="quantity"
+          onchange="updateLaborRow(${index})"
+          aria-label="Quantity for ${item.name}"
+        />
+      </td>
+      <td data-label="Unit">${item.unit || ''}</td>
+      <td data-label="Unit Price" class="editable-cell">
+        $<input 
+          type="number" 
+          step="0.01"
+          min="0"
+          class="editable-input price-input" 
+          value="${unitPrice.toFixed(2)}" 
+          data-labor-row="${index}"
+          data-field="unitPrice"
+          onchange="updateLaborRow(${index})"
+          aria-label="Unit price for ${item.name}"
+        />
+      </td>
+      <td data-label="Total" class="row-total">$${total.toFixed(2)}</td>
+      <td class="delete-cell no-print">
+        <button class="delete-btn" onclick="deleteLaborItem(${index})" aria-label="Delete ${item.name}">
+          ×
+        </button>
+      </td>
+    </tr>
+  `;
+}
+
+// Update labor totals
+function updateLaborTotals() {
+  if (!window.laborData || !window.laborData.items) return;
+  
+  let subtotal = 0;
+  window.laborData.items.forEach(item => {
+    const qty = parseFloat(item.quantity) || 0;
+    const price = parseFloat(item.unitPrice) || 0;
+    subtotal += qty * price;
+  });
+  
+  // Update labor subtotal display if it exists
+  const laborSubtotalEl = document.getElementById('laborSubtotal');
+  if (laborSubtotalEl) {
+    laborSubtotalEl.textContent = `$${subtotal.toFixed(2)}`;
+  }
+  
+  window.laborData.subtotal = subtotal;
+  console.log('[LABOR] Updated subtotal:', subtotal);
+}
