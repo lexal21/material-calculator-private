@@ -540,6 +540,9 @@ function displayResults(data) {
   
   results.style.display = 'block';
   
+  // Show manufacturer selector
+  showMaterialsManufacturerSelector();
+  
   // Switch to Materials (calculator) tab after processing
   switchTab('calculator');
   
@@ -2388,3 +2391,187 @@ function generateLaborPDF() {
   }
 }
 
+
+
+// ==========================================
+// MANUFACTURER SELECTOR FUNCTIONS FOR MATERIALS/LABOR
+// ==========================================
+
+function populateMaterialsManufacturerDropdown() {
+  const select = document.getElementById('materialsManufacturerSelect');
+  if (!select || typeof getManufacturers !== 'function') return;
+  
+  const manufacturers = getManufacturers();
+  select.innerHTML = '<option value="">Select Manufacturer</option>';
+  manufacturers.forEach(m => {
+    select.innerHTML += '<option value="' + m.id + '">' + m.name + '</option>';
+  });
+}
+
+function handleMaterialsManufacturerChange() {
+  const manufacturerSelect = document.getElementById('materialsManufacturerSelect');
+  const shingleLineSelect = document.getElementById('materialsShingleLineSelect');
+  const colorSelect = document.getElementById('materialsShingleColorSelect');
+  const systemInfo = document.getElementById('materialsSystemInfo');
+  const applyBtn = document.getElementById('materialsApplySystemBtn');
+  
+  const manufacturerId = manufacturerSelect.value;
+  
+  // Reset dropdowns
+  shingleLineSelect.innerHTML = '<option value="">Select Model</option>';
+  colorSelect.innerHTML = '<option value="">Select Color</option>';
+  colorSelect.disabled = true;
+  colorSelect.style.background = '#f1f5f9';
+  if (systemInfo) systemInfo.style.display = 'none';
+  if (applyBtn) {
+    applyBtn.disabled = true;
+    applyBtn.style.background = '#cbd5e0';
+    applyBtn.style.color = '#64748b';
+    applyBtn.style.cursor = 'not-allowed';
+  }
+  
+  if (!manufacturerId) {
+    shingleLineSelect.disabled = true;
+    shingleLineSelect.style.background = '#f1f5f9';
+    return;
+  }
+  
+  // Populate shingle lines
+  const shingleLines = getShingleLines(manufacturerId);
+  shingleLines.forEach(line => {
+    shingleLineSelect.innerHTML += '<option value="' + line.id + '">' + line.name + '</option>';
+  });
+  
+  shingleLineSelect.disabled = false;
+  shingleLineSelect.style.background = 'white';
+  
+  window._materialsManufacturer = manufacturerId;
+  window._materialsShingleLine = null;
+  window._materialsColor = null;
+}
+
+function handleMaterialsShingleLineChange() {
+  const manufacturerSelect = document.getElementById('materialsManufacturerSelect');
+  const shingleLineSelect = document.getElementById('materialsShingleLineSelect');
+  const colorSelect = document.getElementById('materialsShingleColorSelect');
+  const systemInfo = document.getElementById('materialsSystemInfo');
+  const applyBtn = document.getElementById('materialsApplySystemBtn');
+  
+  const manufacturerId = manufacturerSelect.value;
+  const shingleLineId = shingleLineSelect.value;
+  
+  colorSelect.innerHTML = '<option value="">Select Color</option>';
+  
+  if (!shingleLineId) {
+    colorSelect.disabled = true;
+    colorSelect.style.background = '#f1f5f9';
+    if (systemInfo) systemInfo.style.display = 'none';
+    if (applyBtn) {
+      applyBtn.disabled = true;
+      applyBtn.style.background = '#cbd5e0';
+      applyBtn.style.color = '#64748b';
+      applyBtn.style.cursor = 'not-allowed';
+    }
+    return;
+  }
+  
+  // Populate colors
+  const colors = getShingleColors(manufacturerId, shingleLineId);
+  colors.forEach(color => {
+    colorSelect.innerHTML += '<option value="' + color + '">' + color + '</option>';
+  });
+  
+  colorSelect.disabled = false;
+  colorSelect.style.background = 'white';
+  
+  // Show system info
+  const shingleData = getShingleData(manufacturerId, shingleLineId);
+  if (shingleData && systemInfo) {
+    document.getElementById('materialsSystemName').textContent = shingleData.manufacturer + ' ' + shingleData.name;
+    document.getElementById('materialsWindRating').textContent = shingleData.windRating;
+    document.getElementById('materialsWarranty').textContent = shingleData.warranty;
+    systemInfo.style.display = 'block';
+  }
+  
+  // Enable apply button
+  if (applyBtn) {
+    applyBtn.disabled = false;
+    applyBtn.style.background = '#0891b2';
+    applyBtn.style.color = 'white';
+    applyBtn.style.cursor = 'pointer';
+  }
+  
+  window._materialsShingleLine = shingleLineId;
+  window._materialsColor = null;
+}
+
+function handleMaterialsColorChange() {
+  const colorSelect = document.getElementById('materialsShingleColorSelect');
+  window._materialsColor = colorSelect.value;
+  
+  // Update shingle color input field if it exists
+  const shingleColorInput = document.getElementById('shingleColorInput');
+  if (shingleColorInput && window._materialsColor) {
+    shingleColorInput.value = window._materialsColor;
+  }
+}
+
+function applyMaterialsManufacturerSystem() {
+  if (!window._materialsManufacturer || !window._materialsShingleLine) {
+    alert('Please select a manufacturer and shingle model first.');
+    return;
+  }
+  
+  // Get measurements from current PDF data
+  const raw = window.currentRawMeasurements || {};
+  const measurements = window.currentMeasurements || {};
+  
+  const measurementData = {
+    squares: parseFloat(raw.roof_sq) || measurements.roofSquares || 0,
+    ridgeLength: parseFloat(raw.ridge_length) || measurements.ridgeLength || 0,
+    hipLength: parseFloat(raw.hip_length) || measurements.hipLength || 0,
+    eaveLength: parseFloat(raw.eave_length) || measurements.eaveLength || 0,
+    rakeLength: parseFloat(raw.rake_edge_length) || measurements.rakeLength || 0,
+    valleyLength: parseFloat(raw.valley_length) || measurements.valleyLength || 0
+  };
+  
+  console.log('[MATERIALS] Applying system with measurements:', measurementData);
+  
+  // Calculate materials from manufacturer system
+  const materials = calculateSystemMaterials(window._materialsManufacturer, window._materialsShingleLine, measurementData);
+  
+  // Add color to shingle name if selected
+  if (window._materialsColor && materials.length > 0) {
+    materials[0].name = materials[0].name + ' - ' + window._materialsColor;
+  }
+  
+  console.log('[MATERIALS] Calculated materials:', materials);
+  
+  // Update global materialsData
+  window.materialsData = materials;
+  
+  // Update shingle color input
+  const shingleColorInput = document.getElementById('shingleColorInput');
+  if (shingleColorInput && window._materialsColor) {
+    shingleColorInput.value = window._materialsColor;
+  }
+  
+  // Refresh the materials display
+  if (typeof displayResults === 'function') {
+    displayResults({ materials: materials });
+  }
+  
+  console.log('[MATERIALS] Applied', materials.length, 'materials');
+}
+
+function showMaterialsManufacturerSelector() {
+  const selector = document.getElementById('materialsManufacturerSelector');
+  if (selector) {
+    selector.style.display = 'block';
+    populateMaterialsManufacturerDropdown();
+  }
+}
+
+function initMaterialsManufacturerSelector() {
+  populateMaterialsManufacturerDropdown();
+}

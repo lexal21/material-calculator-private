@@ -1291,19 +1291,23 @@ function applyRetailManufacturerSystem() {
   }
   
   // Get measurements from retailData or retailModuleData
-  const measurements = {
-    squares: window.retailData?.measurements?.squares || window.retailModuleData?.rawMeasurements?.roofSquares || 0,
-    ridgeLength: window.retailModuleData?.parsedData?.measurements?.ridgeLength || 0,
-    hipLength: window.retailModuleData?.parsedData?.measurements?.hipLength || 0,
-    eaveLength: window.retailModuleData?.parsedData?.measurements?.eaveLength || 0,
-    rakeLength: window.retailModuleData?.parsedData?.measurements?.rakeLength || 0,
-    valleyLength: window.retailModuleData?.parsedData?.measurements?.valleyLength || 0
+  const parsedData = window.retailModuleData?.parsedData || {};
+  const rawMeasurements = parsedData.raw || {};
+  const measurements = parsedData.measurements || {};
+  
+  const measurementData = {
+    squares: window.retailData?.measurements?.squares || parseFloat(rawMeasurements.roof_sq) || measurements.roofSquares || 0,
+    ridgeLength: measurements.ridgeLength || parseFloat(rawMeasurements.ridge_length) || 0,
+    hipLength: measurements.hipLength || parseFloat(rawMeasurements.hip_length) || 0,
+    eaveLength: measurements.eaveLength || parseFloat(rawMeasurements.eave_length) || 0,
+    rakeLength: measurements.rakeLength || parseFloat(rawMeasurements.rake_edge_length) || 0,
+    valleyLength: measurements.valleyLength || parseFloat(rawMeasurements.valley_length) || 0
   };
   
-  console.log('[RETAIL] Applying system with measurements:', measurements);
+  console.log('[RETAIL] Applying system with measurements:', measurementData);
   
-  // Calculate materials
-  const materials = calculateSystemMaterials(window._retailManufacturer, window._retailShingleLine, measurements);
+  // Calculate materials from manufacturer system
+  const materials = calculateSystemMaterials(window._retailManufacturer, window._retailShingleLine, measurementData);
   
   // Add color to shingle name if selected
   if (window._retailColor && materials.length > 0) {
@@ -1312,7 +1316,7 @@ function applyRetailManufacturerSystem() {
   
   console.log('[RETAIL] Calculated materials:', materials);
   
-  // Convert to retail line items format
+  // Convert to retail line items format - MATERIALS ONLY
   const lineItems = materials.map((mat, idx) => ({
     id: 'mat-' + idx,
     category: 'Materials',
@@ -1323,8 +1327,24 @@ function applyRetailManufacturerSystem() {
     markup: 0
   }));
   
-  // Add labor items based on squares
-  const squares = measurements.squares;
+  // ==========================================
+  // ADD LABOR ITEMS (same logic as initializeRetailFromParsedData)
+  // ==========================================
+  
+  const squares = measurementData.squares;
+  
+  // Get pitch data for steep charges
+  const pitchData = rawMeasurements.pitch_data || {};
+  const tier_8_9 = parseFloat(pitchData.tier_8_9) || 0;
+  const tier_10_11 = parseFloat(pitchData.tier_10_11) || 0;
+  const tier_12_plus = parseFloat(pitchData.tier_12_plus) || 0;
+  
+  // Get material quantities for labor calculations
+  const starterBundles = materials.find(m => m.name?.toLowerCase().includes('starter'))?.quantity || 0;
+  const hipRidgeBundles = materials.find(m => m.name?.toLowerCase().includes('hip') || m.name?.toLowerCase().includes('ridge cap'))?.quantity || 0;
+  const plywoodSheets = parsedData.materials?.find(m => m.name?.toLowerCase().includes('plywood'))?.quantity || 0;
+  
+  // Labor - Squares (base labor rate)
   if (squares > 0) {
     lineItems.push({
       id: 'labor-squares',
@@ -1333,6 +1353,83 @@ function applyRetailManufacturerSystem() {
       quantity: parseFloat(squares.toFixed(2)),
       unit: 'SQ',
       unitCost: 90,
+      markup: 0
+    });
+  }
+  
+  // Labor - Starter per Bundle
+  if (starterBundles > 0) {
+    lineItems.push({
+      id: 'labor-starter',
+      category: 'Labor',
+      description: 'Starter per Bundle',
+      quantity: starterBundles,
+      unit: 'BD',
+      unitCost: 25,
+      markup: 0
+    });
+  }
+  
+  // Labor - Hip and Ridge Cap per Bundle
+  if (hipRidgeBundles > 0) {
+    lineItems.push({
+      id: 'labor-hipridge',
+      category: 'Labor',
+      description: 'Hip and Ridge Cap per Bundle',
+      quantity: hipRidgeBundles,
+      unit: 'BD',
+      unitCost: 25,
+      markup: 0
+    });
+  }
+  
+  // Labor - Steep Charges by tier
+  if (tier_8_9 > 0) {
+    lineItems.push({
+      id: 'labor-steep-8-9',
+      category: 'Labor',
+      description: 'Steep Charge for 8-9/12 pitch',
+      quantity: parseFloat(tier_8_9.toFixed(2)),
+      unit: 'SQ',
+      unitCost: 5,
+      markup: 0
+    });
+  }
+  
+  if (tier_10_11 > 0) {
+    lineItems.push({
+      id: 'labor-steep-10-11',
+      category: 'Labor',
+      description: 'Steep Charge for 10-11/12 pitch',
+      quantity: parseFloat(tier_10_11.toFixed(2)),
+      unit: 'SQ',
+      unitCost: 10,
+      markup: 0
+    });
+  }
+  
+  if (tier_12_plus > 0) {
+    lineItems.push({
+      id: 'labor-steep-12',
+      category: 'Labor',
+      description: 'Steep Charge for 12+/12 pitch',
+      quantity: parseFloat(tier_12_plus.toFixed(2)),
+      unit: 'SQ',
+      unitCost: 20,
+      markup: 0
+    });
+  }
+  
+  // Labor - Plywood Replacement
+  if (plywoodSheets > 0) {
+    const plywoodRate = plywoodSheets > 10 ? 10 : 30;
+    lineItems.push({
+      id: 'labor-plywood',
+      category: 'Labor',
+      description: 'Plywood Replacement',
+      quantity: plywoodSheets,
+      unit: 'SH',
+      unitCost: plywoodRate,
       markup: 0
     });
   }
@@ -1353,7 +1450,7 @@ function applyRetailManufacturerSystem() {
     saveRetailToStorage();
   }
   
-  console.log('[RETAIL] Applied', lineItems.length, 'line items');
+  console.log('[RETAIL] Applied', lineItems.length, 'line items (materials + labor)');
 }
 
 // Initialize manufacturer dropdown when retail module loads
