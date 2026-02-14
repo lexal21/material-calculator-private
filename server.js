@@ -401,6 +401,107 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
     const tax = subtotal * 0.09;
     const grandTotal = subtotal + tax;
     
+    // ==========================================
+    // CALCULATE LABOR ITEMS
+    // ==========================================
+    const laborItems = [];
+    
+    // Get measurements
+    const squares = parseFloat(result.raw.roof_sq) || result.measurements.roofSquares || 0;
+    const pitchData = result.raw.pitch_data || {};
+    
+    // Labor - Squares (base labor rate)
+    if (squares > 0) {
+      laborItems.push({
+        name: 'Labor - Squares',
+        quantity: parseFloat(squares.toFixed(2)),
+        unit: 'SQ',
+        unitPrice: 90,
+        total: parseFloat((squares * 90).toFixed(2))
+      });
+    }
+    
+    // Starter per Bundle - find starter in materials
+    const starterMat = result.materials.find(m => m.name && m.name.toLowerCase().includes('starter'));
+    if (starterMat && starterMat.quantity > 0) {
+      laborItems.push({
+        name: 'Starter per Bundle',
+        quantity: starterMat.quantity,
+        unit: 'BD',
+        unitPrice: 25,
+        total: starterMat.quantity * 25
+      });
+    }
+    
+    // Hip and Ridge Cap per Bundle - find hip/ridge cap in materials
+    const hipRidgeMat = result.materials.find(m => 
+      m.name && m.name.toLowerCase().includes('ridge') && 
+      (m.name.toLowerCase().includes('cap') || m.name.toLowerCase().includes('hip'))
+    );
+    if (hipRidgeMat && hipRidgeMat.quantity > 0) {
+      laborItems.push({
+        name: 'Hip and Ridge Cap per Bundle',
+        quantity: hipRidgeMat.quantity,
+        unit: 'BD',
+        unitPrice: 25,
+        total: hipRidgeMat.quantity * 25
+      });
+    }
+    
+    // Steep Charge 8-9/12 pitch
+    const tier_8_9 = parseFloat(pitchData.tier_8_9) || 0;
+    if (tier_8_9 > 0) {
+      laborItems.push({
+        name: 'Steep Charge for 8-9/12 pitch',
+        quantity: parseFloat(tier_8_9.toFixed(2)),
+        unit: 'SQ',
+        unitPrice: 5,
+        total: parseFloat((tier_8_9 * 5).toFixed(2))
+      });
+    }
+    
+    // Steep Charge 10-11/12 pitch
+    const tier_10_11 = parseFloat(pitchData.tier_10_11) || 0;
+    if (tier_10_11 > 0) {
+      laborItems.push({
+        name: 'Steep Charge for 10-11/12 pitch',
+        quantity: parseFloat(tier_10_11.toFixed(2)),
+        unit: 'SQ',
+        unitPrice: 10,
+        total: parseFloat((tier_10_11 * 10).toFixed(2))
+      });
+    }
+    
+    // Steep Charge 12+/12 pitch
+    const tier_12_plus = parseFloat(pitchData.tier_12_plus) || 0;
+    if (tier_12_plus > 0) {
+      laborItems.push({
+        name: 'Steep Charge for 12+/12 pitch',
+        quantity: parseFloat(tier_12_plus.toFixed(2)),
+        unit: 'SQ',
+        unitPrice: 20,
+        total: parseFloat((tier_12_plus * 20).toFixed(2))
+      });
+    }
+    
+    // Plywood Replacement - find plywood in materials
+    const plywoodMat = result.materials.find(m => m.name && m.name.toLowerCase().includes('plywood'));
+    if (plywoodMat && plywoodMat.quantity > 0) {
+      const plywoodRate = plywoodMat.quantity > 10 ? 10 : 30;
+      laborItems.push({
+        name: 'Plywood Replacement',
+        quantity: plywoodMat.quantity,
+        unit: 'SH',
+        unitPrice: plywoodRate,
+        total: plywoodMat.quantity * plywoodRate
+      });
+    }
+    
+    // Calculate labor subtotal
+    const laborSubtotal = laborItems.reduce((sum, item) => sum + item.total, 0);
+    
+    console.log('[UPLOAD] Generated', laborItems.length, 'labor items. Labor subtotal:', laborSubtotal);
+    
     // Track upload
     const user = HARDCODED_USERS[req.user.email];
     if (user) {
@@ -418,6 +519,10 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
       measurements: result.measurements,
       raw: result.raw,
       materials: result.materials,
+      labor: {
+        items: laborItems,
+        subtotal: laborSubtotal
+      },
       subtotal: subtotal,
       tax: tax,
       grandTotal: grandTotal
