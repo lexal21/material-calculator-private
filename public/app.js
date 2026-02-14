@@ -1642,12 +1642,16 @@ function applyMaterialsManufacturerSystem() {
     'l flashing',
     'trim coil',
     'button caps',
+    'button cap',
     'plywood',
     'osb',
     'pipe boot',
     'skylight',
     'chimney',
-    'vent'
+    'vent boot',
+    'joint sealant',
+    'caulk',
+    'collar'
   ];
   
   // Get original materials from first PDF upload
@@ -1659,14 +1663,34 @@ function applyMaterialsManufacturerSystem() {
     return preserveItems.some(item => nameLower.includes(item));
   });
   
-  // Merge: system materials + preserved items (avoid duplicates)
-  const systemMaterialNames = systemMaterials.map(m => m.name.toLowerCase());
+  // Get names of system materials (lowercase)
+  const systemMaterialNames = systemMaterials.map(m => (m.name || '').toLowerCase());
+  
+  // Keep preserved items that aren't already in the system materials
   const uniquePreserved = preservedMaterials.filter(mat => {
     const nameLower = (mat.name || '').toLowerCase();
-    return !systemMaterialNames.some(sysName => 
-      sysName.includes(nameLower.split(' ')[0]) || nameLower.includes(sysName.split(' ')[0])
-    );
+    
+    // Check if this exact item (or very similar) is already in system materials
+    const isDuplicate = systemMaterialNames.some(sysName => {
+      // Check for key word overlap
+      if (nameLower.includes('shingle') && sysName.includes('shingle')) return true;
+      if (nameLower.includes('starter') && sysName.includes('starter')) return true;
+      if (nameLower.includes('ridge cap') && sysName.includes('ridge')) return true;
+      if (nameLower.includes('hip') && sysName.includes('hip')) return true;
+      if (nameLower.includes('underlayment') && sysName.includes('underlayment')) return true;
+      if (nameLower.includes('ice & water') && sysName.includes('ice')) return true;
+      if (nameLower.includes('ice and water') && sysName.includes('ice')) return true;
+      if (nameLower.includes('drip edge') && sysName.includes('drip')) return true;
+      if (nameLower.includes('roofing nail') && sysName.includes('nail')) return true;
+      if (nameLower.includes('ridge vent') && sysName.includes('ridge vent')) return true;
+      if (nameLower.includes('roof sealant') && sysName.includes('sealant')) return true;
+      return false;
+    });
+    
+    return !isDuplicate;
   });
+  
+  console.log('[MATERIALS] Preserved items:', uniquePreserved.map(m => m.name));
   
   const materials = [...systemMaterials, ...uniquePreserved];
   
