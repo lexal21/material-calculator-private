@@ -313,12 +313,32 @@ function createAdditionalItemRow(rowNumber) {
 
 function displayResults(data) {
   console.log('[DISPLAY] Full data received:', data);
-  window.lastServerResponse = data; // Store for debugging
+  
+  // Only store ORIGINAL PDF measurements (when roof_sq exists)
+  // Don't overwrite if this is just a materials refresh
+  if (data.raw && data.raw.roof_sq) {
+    window.originalPdfData = {
+      raw: data.raw,
+      measurements: data.measurements
+    };
+    window.currentRawMeasurements = data.raw;
+    window.currentMeasurements = data.measurements;
+    window.lastServerResponse = data;
+    console.log('[DISPLAY] Stored ORIGINAL PDF data:', data.raw.roof_sq, 'squares');
+  } else {
+    // This is a refresh (e.g., after applying system), use stored original data
+    if (window.originalPdfData) {
+      data.raw = window.originalPdfData.raw;
+      data.measurements = window.originalPdfData.measurements;
+      console.log('[DISPLAY] Using stored original PDF data');
+    }
+  }
+  
+  // Ensure raw exists
+  if (!data.raw) data.raw = {};
   
   // Store data for restoration after print
   window.currentPDFData = data;
-  
-  if (!data.raw) data.raw = {};
   
   // Store customer name and job number for PDF
   window.currentCustomerName = data.raw.customer_name || '';
@@ -1591,9 +1611,10 @@ function applyMaterialsManufacturerSystem() {
     return;
   }
   
-  // Get measurements from current PDF data
-  const raw = window.currentRawMeasurements || window.lastServerResponse?.raw || {};
-  const measurements = window.currentMeasurements || window.lastServerResponse?.measurements || {};
+  // Use ORIGINAL PDF measurements (not overwritten data)
+  const originalData = window.originalPdfData || {};
+  const raw = originalData.raw || window.currentRawMeasurements || {};
+  const measurements = originalData.measurements || window.currentMeasurements || {};
   
   const measurementData = {
     squares: parseFloat(raw.roof_sq) || measurements.roofSquares || 0,
@@ -1604,7 +1625,7 @@ function applyMaterialsManufacturerSystem() {
     valleyLength: parseFloat(raw.valley_length) || measurements.valleyLength || 0
   };
   
-  console.log('[MATERIALS] Applying system with measurements:', measurementData);
+  console.log('[MATERIALS] Using ORIGINAL measurements:', measurementData);
   
   // Calculate materials from manufacturer system
   const materials = calculateSystemMaterials(window._materialsManufacturer, window._materialsShingleLine, measurementData);
@@ -1614,17 +1635,13 @@ function applyMaterialsManufacturerSystem() {
     materials[0].name = `${materials[0].name} - ${window._materialsColor}`;
   }
   
-  console.log('[MATERIALS] Calculated materials:', materials);
-  
   // Update global materialsData
   window.materialsData = materials;
   
-  // Refresh the materials display
+  // Refresh display
   if (typeof displayResults === 'function') {
     displayResults({
       materials: materials,
-      measurements: window.currentMeasurements || {},
-      raw: window.currentRawMeasurements || {},
       labor: window.laborData,
       success: true
     });
