@@ -430,6 +430,7 @@ function displayResults(data) {
           aria-label="Unit price for ${item.name}"
         />
       </td>
+      <td data-label="Unit">${item.unit || ''}</td>
       <td data-label="Total" class="row-total">$${item.total.toFixed(2)}</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMaterialRow(${index})" aria-label="Delete ${item.name}">
@@ -1097,6 +1098,7 @@ function buildPDFDocDefinition() {
     [
       { text: 'Item', style: 'tableHeader' },
       { text: 'Quantity', style: 'tableHeader', alignment: 'right' },
+      { text: 'Unit', style: 'tableHeader', alignment: 'center' },
       { text: 'Unit Price', style: 'tableHeader', alignment: 'right' },
       { text: 'Total', style: 'tableHeader', alignment: 'right' }
     ]
@@ -1108,7 +1110,8 @@ function buildPDFDocDefinition() {
     const pluralUnit = pluralizeUnit(item.quantity, item.unit);
     materialsTableBody.push([
       item.name,
-      { text: `${item.quantity} ${pluralUnit}`, alignment: 'right' },
+      { text: item.quantity.toString(), alignment: 'right' },
+      { text: pluralUnit, alignment: 'center' },
       { text: `$${item.unitPrice.toFixed(2)}`, alignment: 'right' },
       { text: `$${item.total.toFixed(2)}`, alignment: 'right' }
     ]);
@@ -1211,7 +1214,7 @@ function buildPDFDocDefinition() {
       {
         table: {
           headerRows: 1,
-          widths: ['*', 'auto', 'auto', 'auto'],
+          widths: ['*', 'auto', 'auto', 'auto', 'auto'],
           body: materialsTableBody
         },
         layout: {
@@ -1573,6 +1576,7 @@ onchange="toggleLaborSelection(${index})">
           aria-label="Unit price for ${item.name}"
         />
       </td>
+      <td data-label="Unit">${item.unit || ''}</td>
       <td data-label="Total" class="row-total">$${total.toFixed(2)}</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteLaborItem(${index})" aria-label="Delete ${item.name}">
@@ -2184,6 +2188,7 @@ function buildLaborPDFDocDefinition() {
     [
       { text: 'Item', style: 'tableHeader' },
       { text: 'Quantity', style: 'tableHeader', alignment: 'right' },
+      { text: 'Unit', style: 'tableHeader', alignment: 'center' },
       { text: 'Unit Price', style: 'tableHeader', alignment: 'right' },
       { text: 'Total', style: 'tableHeader', alignment: 'right' }
     ]
@@ -2196,7 +2201,8 @@ function buildLaborPDFDocDefinition() {
       const pluralUnit = pluralizeUnit(item.quantity, item.unit);
       laborTableBody.push([
         item.name,
-        { text: `${item.quantity} ${pluralUnit}`, alignment: 'right' },
+        { text: item.quantity.toString(), alignment: 'right' },
+        { text: pluralUnit, alignment: 'center' },
         { text: `$${item.unitPrice.toFixed(2)}`, alignment: 'right' },
         { text: `$${item.total.toFixed(2)}`, alignment: 'right' }
       ]);
@@ -2266,7 +2272,7 @@ function buildLaborPDFDocDefinition() {
       {
         table: {
           headerRows: 1,
-          widths: ['*', 'auto', 'auto', 'auto'],
+          widths: ['*', 'auto', 'auto', 'auto', 'auto'],
           body: laborTableBody
         },
         layout: {
