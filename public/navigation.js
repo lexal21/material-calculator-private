@@ -1459,3 +1459,106 @@ function initRetailManufacturerSelector() {
     populateRetailManufacturerDropdown();
   }, 100);
 }
+
+
+function updateRetailDefaultBanner() {
+  const banner = document.getElementById('retailDefaultSystemBanner');
+  const nameEl = document.getElementById('retailDefaultSystemName');
+  if (!banner) return;
+  
+  try {
+    const saved = localStorage.getItem('quikbitz-default-system');
+    const defaultSystem = saved ? JSON.parse(saved) : null;
+    
+    if (defaultSystem) {
+      banner.style.display = 'block';
+      if (nameEl) {
+        nameEl.textContent = `${defaultSystem.manufacturerName} ${defaultSystem.shingleLineName}`;
+      }
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch (e) {
+    banner.style.display = 'none';
+  }
+}
+
+function switchRetailTab(tabName) {
+  // Hide all retail tab contents
+  document.querySelectorAll('.retail-tab-content').forEach(tab => {
+    tab.style.display = 'none';
+  });
+  
+  // Remove active class from all tab buttons
+  document.querySelectorAll('.retail-tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // Show selected tab
+  const selectedTab = document.getElementById(tabName + 'Tab');
+  if (selectedTab) {
+    selectedTab.style.display = 'block';
+  }
+  
+  // Add active class to clicked button
+  const activeBtn = document.querySelector(`[data-retail-tab="${tabName}"]`);
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+  }
+  
+  // Initialize pricing tab if selected
+  if (tabName === 'retailPricing') {
+    initRetailPricingTab();
+  }
+}
+
+function updateRetailDefaultBanner() {
+  const banner = document.getElementById('retailDefaultSystemBanner');
+  const nameEl = document.getElementById('retailDefaultSystemName');
+  if (!banner) return;
+  
+  try {
+    const saved = localStorage.getItem('quikbitz-default-system');
+    const defaultSystem = saved ? JSON.parse(saved) : null;
+    
+    if (defaultSystem) {
+      banner.style.display = 'block';
+      if (nameEl) {
+        nameEl.textContent = `${defaultSystem.manufacturerName} ${defaultSystem.shingleLineName}`;
+      }
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch (e) {
+    banner.style.display = 'none';
+  }
+}
+
+function switchRetailTab(tabName) {
+  // Hide all retail tab contents
+  document.querySelectorAll('.retail-tab-content').forEach(tab => {
+    tab.style.display = 'none';
+  });
+  
+  // Remove active class from all tab buttons
+  document.querySelectorAll('.retail-tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // Show selected tab
+  const selectedTab = document.getElementById(tabName + 'Tab');
+  if (selectedTab) {
+    selectedTab.style.display = 'block';
+  }
+  
+  // Add active class to clicked button
+  const activeBtn = document.querySelector(`[data-retail-tab="${tabName}"]`);
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+  }
+  
+  // Initialize pricing tab if selected
+  if (tabName === 'retailPricing') {
+    initRetailPricingTab();
+  }
+}
