@@ -7,6 +7,32 @@ const loading = document.getElementById('loading');
 const results = document.getElementById('results');
 const error = document.getElementById('error');
 
+// Get current pricing based on default system
+function getCurrentPricing() {
+  // Try to get custom pricing from localStorage based on default system
+  try {
+    const defaultSystemStr = localStorage.getItem('quikbitz-default-system');
+    if (defaultSystemStr) {
+      const system = JSON.parse(defaultSystemStr);
+      const pricingKey = `${system.manufacturerId}_${system.shingleLineId}`;
+      
+      const allPricingStr = localStorage.getItem('quikbitz-custom-pricing');
+      if (allPricingStr) {
+        const allPricing = JSON.parse(allPricingStr);
+        if (allPricing[pricingKey]) {
+          console.log('[PRICING] Using custom pricing for:', pricingKey);
+          return allPricing[pricingKey];
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[PRICING] Error loading custom pricing:', e);
+  }
+  
+  // Return empty object if no custom pricing found
+  return {};
+}
+
 // Tab switching
 function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
