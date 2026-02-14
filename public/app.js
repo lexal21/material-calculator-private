@@ -632,6 +632,11 @@ function displayResults(data) {
   setTimeout(() => {
     applyZeroQuantityClasses();
   }, 100);
+  
+  // Show manufacturer selector
+  if (typeof showMaterialsManufacturerSelector === 'function') {
+    showMaterialsManufacturerSelector();
+  }
 }
 
 function updateMiscItemSelect(miscNum) {
@@ -1445,4 +1450,333 @@ function resetToDefaultPricing() {
   });
   
   console.log('[PRICING] Reset to defaults');
+}
+
+// ==========================================
+// MATERIALS MANUFACTURER SELECTOR FUNCTIONS
+// ==========================================
+
+function showMaterialsManufacturerSelector() {
+  const selector = document.getElementById('materialsManufacturerSelector');
+  if (selector) {
+    selector.style.display = 'block';
+    populateMaterialsManufacturerDropdown();
+  }
+}
+
+function populateMaterialsManufacturerDropdown() {
+  const select = document.getElementById('materialsManufacturerSelect');
+  if (!select || typeof getManufacturers !== 'function') {
+    console.error('[MATERIALS] Cannot populate manufacturer dropdown');
+    return;
+  }
+  
+  const manufacturers = getManufacturers();
+  select.innerHTML = '<option value="">Select Manufacturer</option>';
+  manufacturers.forEach(m => {
+    select.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+  });
+}
+
+function handleMaterialsManufacturerChange() {
+  const manufacturerSelect = document.getElementById('materialsManufacturerSelect');
+  const shingleLineSelect = document.getElementById('materialsShingleLineSelect');
+  const colorSelect = document.getElementById('materialsShingleColorSelect');
+  const systemInfo = document.getElementById('materialsSystemInfo');
+  const applyBtn = document.getElementById('materialsApplySystemBtn');
+  
+  const manufacturerId = manufacturerSelect.value;
+  
+  shingleLineSelect.innerHTML = '<option value="">Select Model</option>';
+  if (colorSelect) {
+    colorSelect.innerHTML = '<option value="">Select Color</option>';
+    colorSelect.disabled = true;
+    colorSelect.style.background = '#f1f5f9';
+  }
+  if (systemInfo) systemInfo.style.display = 'none';
+  if (applyBtn) {
+    applyBtn.disabled = true;
+    applyBtn.style.background = '#cbd5e0';
+    applyBtn.style.color = '#64748b';
+    applyBtn.style.cursor = 'not-allowed';
+  }
+  
+  if (!manufacturerId) {
+    shingleLineSelect.disabled = true;
+    shingleLineSelect.style.background = '#f1f5f9';
+    return;
+  }
+  
+  const shingleLines = getShingleLines(manufacturerId);
+  shingleLines.forEach(line => {
+    shingleLineSelect.innerHTML += `<option value="${line.id}">${line.name}</option>`;
+  });
+  
+  shingleLineSelect.disabled = false;
+  shingleLineSelect.style.background = 'white';
+  window._materialsManufacturer = manufacturerId;
+  window._materialsShingleLine = null;
+  window._materialsColor = null;
+}
+
+function handleMaterialsShingleLineChange() {
+  const manufacturerSelect = document.getElementById('materialsManufacturerSelect');
+  const shingleLineSelect = document.getElementById('materialsShingleLineSelect');
+  const colorSelect = document.getElementById('materialsShingleColorSelect');
+  const systemInfo = document.getElementById('materialsSystemInfo');
+  const applyBtn = document.getElementById('materialsApplySystemBtn');
+  
+  const manufacturerId = manufacturerSelect.value;
+  const shingleLineId = shingleLineSelect.value;
+  
+  if (colorSelect) {
+    colorSelect.innerHTML = '<option value="">Select Color</option>';
+  }
+  
+  if (!shingleLineId) {
+    if (colorSelect) {
+      colorSelect.disabled = true;
+      colorSelect.style.background = '#f1f5f9';
+    }
+    if (systemInfo) systemInfo.style.display = 'none';
+    if (applyBtn) {
+      applyBtn.disabled = true;
+      applyBtn.style.background = '#cbd5e0';
+      applyBtn.style.color = '#64748b';
+      applyBtn.style.cursor = 'not-allowed';
+    }
+    return;
+  }
+  
+  const colors = getShingleColors(manufacturerId, shingleLineId);
+  if (colorSelect) {
+    colors.forEach(color => {
+      colorSelect.innerHTML += `<option value="${color}">${color}</option>`;
+    });
+    colorSelect.disabled = false;
+    colorSelect.style.background = 'white';
+  }
+  
+  const shingleData = getShingleData(manufacturerId, shingleLineId);
+  if (shingleData && systemInfo) {
+    const nameEl = document.getElementById('materialsSystemName');
+    const windEl = document.getElementById('materialsWindRating');
+    const warrantyEl = document.getElementById('materialsWarranty');
+    
+    if (nameEl) nameEl.textContent = `${shingleData.manufacturer} ${shingleData.name}`;
+    if (windEl) windEl.textContent = shingleData.windRating;
+    if (warrantyEl) warrantyEl.textContent = shingleData.warranty;
+    systemInfo.style.display = 'block';
+  }
+  
+  if (applyBtn) {
+    applyBtn.disabled = false;
+    applyBtn.style.background = '#0891b2';
+    applyBtn.style.color = 'white';
+    applyBtn.style.cursor = 'pointer';
+  }
+  
+  window._materialsShingleLine = shingleLineId;
+  window._materialsColor = null;
+}
+
+function handleMaterialsColorChange() {
+  const colorSelect = document.getElementById('materialsShingleColorSelect');
+  window._materialsColor = colorSelect?.value || null;
+}
+
+// ==========================================
+// ADD MATERIAL MODAL FUNCTIONS
+// ==========================================
+
+function openAddMaterialModal() {
+  const modal = document.getElementById('addMaterialModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    populateManufacturerMaterialOptions();
+  }
+}
+
+function closeAddMaterialModal() {
+  const modal = document.getElementById('addMaterialModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+function populateManufacturerMaterialOptions() {
+  const select = document.getElementById('addMaterialItem');
+  if (!select) return;
+  
+  select.innerHTML = '<option value="">Select Item...</option>';
+  
+  const manufacturerId = window._materialsManufacturer;
+  const shingleLineId = window._materialsShingleLine;
+  
+  if (manufacturerId && shingleLineId && typeof getShingleData === 'function') {
+    const shingleData = getShingleData(manufacturerId, shingleLineId);
+    
+    if (shingleData) {
+      select.innerHTML += `<option value="${shingleData.name} Shingles" data-unit="Bundle" data-price="${shingleData.pricePerBundle}">${shingleData.name} Shingles</option>`;
+      
+      const components = shingleData.systemComponents;
+      if (components) {
+        Object.keys(components).forEach(key => {
+          const comp = components[key];
+          if (comp && comp.name) {
+            select.innerHTML += `<option value="${comp.name}" data-unit="${comp.unit}" data-price="${comp.pricePerUnit}">${comp.name}</option>`;
+          }
+        });
+      }
+      
+      select.innerHTML += `<option disabled>──────────────</option>`;
+    }
+  }
+  
+  select.innerHTML += `<option value="7/16 OSB Plywood" data-unit="Sheet" data-price="15.99">7/16 OSB Plywood</option>`;
+  select.innerHTML += `<option value="Step Flashing" data-unit="Bundle" data-price="38.00">Step Flashing</option>`;
+  select.innerHTML += `<option value="Pipe Boot 2&quot;" data-unit="Piece" data-price="12.00">Pipe Boot 2"</option>`;
+  select.innerHTML += `<option value="Pipe Boot 3&quot;" data-unit="Piece" data-price="14.00">Pipe Boot 3"</option>`;
+  select.innerHTML += `<option value="Pipe Boot 4&quot;" data-unit="Piece" data-price="16.00">Pipe Boot 4"</option>`;
+  select.innerHTML += `<option disabled>──────────────</option>`;
+  select.innerHTML += `<option value="custom">-- Custom Item --</option>`;
+}
+
+function populateMaterialDefaults() {
+  const select = document.getElementById('addMaterialItem');
+  const selectedOption = select.options[select.selectedIndex];
+  const customNameDiv = document.getElementById('customMaterialName');
+  
+  if (select.value === 'custom') {
+    if (customNameDiv) customNameDiv.style.display = 'block';
+    document.getElementById('addMaterialUnit').value = 'Piece';
+    document.getElementById('addMaterialPrice').value = '0.00';
+  } else if (select.value) {
+    if (customNameDiv) customNameDiv.style.display = 'none';
+    document.getElementById('addMaterialUnit').value = selectedOption.dataset.unit || 'Piece';
+    document.getElementById('addMaterialPrice').value = parseFloat(selectedOption.dataset.price || 0).toFixed(2);
+  } else {
+    if (customNameDiv) customNameDiv.style.display = 'none';
+  }
+}
+
+function addMaterialFromModal() {
+  const itemSelect = document.getElementById('addMaterialItem');
+  let itemName = itemSelect.value;
+  
+  if (itemName === 'custom') {
+    itemName = document.getElementById('addMaterialCustomName')?.value?.trim();
+    if (!itemName) {
+      alert('Please enter a custom item name');
+      return;
+    }
+  }
+  
+  if (!itemName) {
+    alert('Please select an item');
+    return;
+  }
+  
+  const quantity = parseFloat(document.getElementById('addMaterialQty').value) || 0;
+  const unit = document.getElementById('addMaterialUnit').value;
+  const unitPrice = parseFloat(document.getElementById('addMaterialPrice').value) || 0;
+  
+  const newMaterial = {
+    name: itemName,
+    quantity: quantity,
+    unit: unit,
+    unitPrice: unitPrice,
+    total: quantity * unitPrice
+  };
+  
+  if (!window.materialsData) window.materialsData = [];
+  window.materialsData.push(newMaterial);
+  
+  if (typeof displayResults === 'function') {
+    displayResults({
+      materials: window.materialsData,
+      measurements: window.currentMeasurements || {},
+      raw: window.currentRawMeasurements || {},
+      labor: window.laborData,
+      success: true
+    });
+  }
+  
+  closeAddMaterialModal();
+}
+
+// ==========================================
+// ADD LABOR MODAL FUNCTIONS
+// ==========================================
+
+function openAddLaborModal() {
+  const modal = document.getElementById('addLaborModal');
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function closeAddLaborModal() {
+  const modal = document.getElementById('addLaborModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+function populateLaborDefaults() {
+  const select = document.getElementById('addLaborItem');
+  const selectedOption = select.options[select.selectedIndex];
+  const customNameDiv = document.getElementById('customLaborName');
+  
+  if (select.value === 'custom') {
+    if (customNameDiv) customNameDiv.style.display = 'block';
+    document.getElementById('addLaborUnit').value = 'EA';
+    document.getElementById('addLaborPrice').value = '0.00';
+  } else if (select.value) {
+    if (customNameDiv) customNameDiv.style.display = 'none';
+    document.getElementById('addLaborUnit').value = selectedOption.dataset.unit || 'EA';
+    document.getElementById('addLaborPrice').value = parseFloat(selectedOption.dataset.price || 0).toFixed(2);
+  } else {
+    if (customNameDiv) customNameDiv.style.display = 'none';
+  }
+}
+
+function addLaborFromModal() {
+  const itemSelect = document.getElementById('addLaborItem');
+  let itemName = itemSelect.value;
+  
+  if (itemName === 'custom') {
+    itemName = document.getElementById('addLaborCustomName')?.value?.trim();
+    if (!itemName) {
+      alert('Please enter a custom item name');
+      return;
+    }
+  }
+  
+  if (!itemName) {
+    alert('Please select a labor item');
+    return;
+  }
+  
+  const quantity = parseFloat(document.getElementById('addLaborQty').value) || 0;
+  const unit = document.getElementById('addLaborUnit').value;
+  const unitPrice = parseFloat(document.getElementById('addLaborPrice').value) || 0;
+  
+  const newLabor = {
+    name: itemName,
+    quantity: quantity,
+    unit: unit,
+    unitPrice: unitPrice,
+    total: quantity * unitPrice
+  };
+  
+  if (!window.laborData) window.laborData = { items: [] };
+  if (!window.laborData.items) window.laborData.items = [];
+  window.laborData.items.push(newLabor);
+  
+  if (typeof displayLaborResults === 'function') {
+    displayLaborResults(window.laborData);
+  }
+  
+  closeAddLaborModal();
 }
