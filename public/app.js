@@ -537,6 +537,11 @@ function displayResults(data) {
   if (data.labor) {
     window.laborData = data.labor;
     console.log('[LABOR] Stored labor data:', window.laborData);
+    
+    // Display labor results
+    if (typeof displayLaborResults === 'function') {
+      displayLaborResults(data.labor);
+    }
   }
   
   window.taxRate = 9; // Default 9%
