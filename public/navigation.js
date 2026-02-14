@@ -427,6 +427,40 @@ function createModuleContainers() {
               <button onclick="clearRetailProject()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:8px 16px;border-radius:4px;cursor:pointer;">New Project</button>
             </div>
 
+            <!-- Manufacturer Selection -->
+            <div id="retailManufacturerSelector" style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #334155;">Select Roofing System</h3>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                <div>
+                  <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Manufacturer</label>
+                  <select id="retailManufacturerSelect" onchange="handleRetailManufacturerChange()" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+                    <option value="">Select Manufacturer</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Shingle Model</label>
+                  <select id="retailShingleLineSelect" onchange="handleRetailShingleLineChange()" disabled style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px; background: #f1f5f9;">
+                    <option value="">Select Model</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Shingle Color</label>
+                  <select id="retailShingleColorSelect" onchange="handleRetailColorChange()" disabled style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px; background: #f1f5f9;">
+                    <option value="">Select Color</option>
+                  </select>
+                </div>
+              </div>
+              <div id="retailSystemInfo" style="display: none; margin-top: 12px; padding: 12px; background: linear-gradient(135deg, #0891b2, #0e7490); color: white; border-radius: 6px;">
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                  <span id="retailSystemName" style="font-weight: 600;"></span>
+                  <span><span id="retailWindRating"></span> mph | <span id="retailWarranty"></span></span>
+                </div>
+              </div>
+              <button id="retailApplySystemBtn" onclick="applyRetailManufacturerSystem()" disabled style="margin-top: 12px; padding: 10px 20px; background: #cbd5e0; color: #64748b; border: none; border-radius: 6px; cursor: not-allowed; font-weight: 600;">
+                Apply System to Materials
+              </button>
+            </div>
+
             <!-- View Toggle -->
             <div style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%); color: white; padding: 16px 24px; border-radius: 8px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
               <div>
@@ -967,6 +1001,9 @@ function initializeRetailFromParsedData(data) {
 
   // Save to storage
   saveRetailToStorage();
+
+  // Initialize manufacturer selector
+  initRetailManufacturerSelector();
 }
 
 function updateRetailCustomerInfo(field, value) {
@@ -1083,6 +1120,9 @@ function startBlankEstimate() {
 
   // Save to storage
   saveRetailToStorage();
+
+  // Initialize manufacturer selector
+  initRetailManufacturerSelector();
 }
 
 function saveRetailToStorage() {
@@ -1116,4 +1156,209 @@ function clearRetailStorage() {
   localStorage.removeItem('quikbitz-retail-data');
   localStorage.removeItem('quikbitz-retail-module-data');
   localStorage.removeItem('quikbitz-retail-view-mode');
+}
+
+// ==========================================
+// MANUFACTURER SELECTOR FUNCTIONS FOR RETAIL
+// ==========================================
+
+function populateRetailManufacturerDropdown() {
+  const select = document.getElementById('retailManufacturerSelect');
+  if (!select || typeof getManufacturers !== 'function') return;
+  
+  const manufacturers = getManufacturers();
+  select.innerHTML = '<option value="">Select Manufacturer</option>';
+  manufacturers.forEach(m => {
+    select.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+  });
+}
+
+function handleRetailManufacturerChange() {
+  const manufacturerSelect = document.getElementById('retailManufacturerSelect');
+  const shingleLineSelect = document.getElementById('retailShingleLineSelect');
+  const colorSelect = document.getElementById('retailShingleColorSelect');
+  const systemInfo = document.getElementById('retailSystemInfo');
+  const applyBtn = document.getElementById('retailApplySystemBtn');
+  
+  const manufacturerId = manufacturerSelect.value;
+  
+  // Reset dropdowns
+  shingleLineSelect.innerHTML = '<option value="">Select Model</option>';
+  colorSelect.innerHTML = '<option value="">Select Color</option>';
+  colorSelect.disabled = true;
+  colorSelect.style.background = '#f1f5f9';
+  if (systemInfo) systemInfo.style.display = 'none';
+  if (applyBtn) {
+    applyBtn.disabled = true;
+    applyBtn.style.background = '#cbd5e0';
+    applyBtn.style.color = '#64748b';
+    applyBtn.style.cursor = 'not-allowed';
+  }
+  
+  if (!manufacturerId) {
+    shingleLineSelect.disabled = true;
+    shingleLineSelect.style.background = '#f1f5f9';
+    return;
+  }
+  
+  // Populate shingle lines
+  const shingleLines = getShingleLines(manufacturerId);
+  shingleLines.forEach(line => {
+    shingleLineSelect.innerHTML += `<option value="${line.id}">${line.name}</option>`;
+  });
+  
+  shingleLineSelect.disabled = false;
+  shingleLineSelect.style.background = 'white';
+  
+  window._retailManufacturer = manufacturerId;
+  window._retailShingleLine = null;
+  window._retailColor = null;
+}
+
+function handleRetailShingleLineChange() {
+  const manufacturerSelect = document.getElementById('retailManufacturerSelect');
+  const shingleLineSelect = document.getElementById('retailShingleLineSelect');
+  const colorSelect = document.getElementById('retailShingleColorSelect');
+  const systemInfo = document.getElementById('retailSystemInfo');
+  const applyBtn = document.getElementById('retailApplySystemBtn');
+  
+  const manufacturerId = manufacturerSelect.value;
+  const shingleLineId = shingleLineSelect.value;
+  
+  colorSelect.innerHTML = '<option value="">Select Color</option>';
+  
+  if (!shingleLineId) {
+    colorSelect.disabled = true;
+    colorSelect.style.background = '#f1f5f9';
+    if (systemInfo) systemInfo.style.display = 'none';
+    if (applyBtn) {
+      applyBtn.disabled = true;
+      applyBtn.style.background = '#cbd5e0';
+      applyBtn.style.color = '#64748b';
+      applyBtn.style.cursor = 'not-allowed';
+    }
+    return;
+  }
+  
+  // Populate colors
+  const colors = getShingleColors(manufacturerId, shingleLineId);
+  colors.forEach(color => {
+    colorSelect.innerHTML += `<option value="${color}">${color}</option>`;
+  });
+  
+  colorSelect.disabled = false;
+  colorSelect.style.background = 'white';
+  
+  // Show system info
+  const shingleData = getShingleData(manufacturerId, shingleLineId);
+  if (shingleData && systemInfo) {
+    document.getElementById('retailSystemName').textContent = `${shingleData.manufacturer} ${shingleData.name}`;
+    document.getElementById('retailWindRating').textContent = shingleData.windRating;
+    document.getElementById('retailWarranty').textContent = shingleData.warranty;
+    systemInfo.style.display = 'block';
+  }
+  
+  // Enable apply button
+  if (applyBtn) {
+    applyBtn.disabled = false;
+    applyBtn.style.background = '#0891b2';
+    applyBtn.style.color = 'white';
+    applyBtn.style.cursor = 'pointer';
+  }
+  
+  window._retailShingleLine = shingleLineId;
+  window._retailColor = null;
+}
+
+function handleRetailColorChange() {
+  const colorSelect = document.getElementById('retailShingleColorSelect');
+  window._retailColor = colorSelect.value;
+  
+  // Update shingle color field
+  const shingleColorInput = document.getElementById('retailShingleColor');
+  if (shingleColorInput && window._retailColor) {
+    shingleColorInput.value = window._retailColor;
+    if (window.retailData) {
+      window.retailData.shingleColor = window._retailColor;
+    }
+  }
+}
+
+function applyRetailManufacturerSystem() {
+  if (!window._retailManufacturer || !window._retailShingleLine) {
+    alert('Please select a manufacturer and shingle model first.');
+    return;
+  }
+  
+  // Get measurements from retailData or retailModuleData
+  const measurements = {
+    squares: window.retailData?.measurements?.squares || window.retailModuleData?.rawMeasurements?.roofSquares || 0,
+    ridgeLength: window.retailModuleData?.parsedData?.measurements?.ridgeLength || 0,
+    hipLength: window.retailModuleData?.parsedData?.measurements?.hipLength || 0,
+    eaveLength: window.retailModuleData?.parsedData?.measurements?.eaveLength || 0,
+    rakeLength: window.retailModuleData?.parsedData?.measurements?.rakeLength || 0,
+    valleyLength: window.retailModuleData?.parsedData?.measurements?.valleyLength || 0
+  };
+  
+  console.log('[RETAIL] Applying system with measurements:', measurements);
+  
+  // Calculate materials
+  const materials = calculateSystemMaterials(window._retailManufacturer, window._retailShingleLine, measurements);
+  
+  // Add color to shingle name if selected
+  if (window._retailColor && materials.length > 0) {
+    materials[0].name = `${materials[0].name} - ${window._retailColor}`;
+  }
+  
+  console.log('[RETAIL] Calculated materials:', materials);
+  
+  // Convert to retail line items format
+  const lineItems = materials.map((mat, idx) => ({
+    id: 'mat-' + idx,
+    category: 'Materials',
+    description: mat.name,
+    quantity: mat.quantity,
+    unit: mat.unit,
+    unitCost: mat.unitPrice,
+    markup: 0
+  }));
+  
+  // Add labor items based on squares
+  const squares = measurements.squares;
+  if (squares > 0) {
+    lineItems.push({
+      id: 'labor-squares',
+      category: 'Labor',
+      description: 'Labor - Squares',
+      quantity: parseFloat(squares.toFixed(2)),
+      unit: 'SQ',
+      unitCost: 90,
+      markup: 0
+    });
+  }
+  
+  // Update retailData
+  if (window.retailData) {
+    window.retailData.lineItems = lineItems;
+    window.retailData.shingleColor = window._retailColor || window.retailData.shingleColor;
+  }
+  
+  // Refresh display
+  if (typeof displayRetailEstimate === 'function') {
+    displayRetailEstimate();
+  }
+  
+  // Save to storage
+  if (typeof saveRetailToStorage === 'function') {
+    saveRetailToStorage();
+  }
+  
+  console.log('[RETAIL] Applied', lineItems.length, 'line items');
+}
+
+// Initialize manufacturer dropdown when retail module loads
+function initRetailManufacturerSelector() {
+  setTimeout(() => {
+    populateRetailManufacturerDropdown();
+  }, 100);
 }
