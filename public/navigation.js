@@ -955,7 +955,7 @@ function clearRetailProject() {
   if (!confirm('Start a new retail project? Current data will be cleared.')) return;
 
   // Clear retail-specific data
-  window.retailModuleData = { pdfUploaded: false, rawMeasurements: null, parsedData: null };
+  window.retailModuleData = { pdfUploaded: false, rawMeasurements: null, parsedData: null, isBlankEstimate: false };
   window.retailData = null;
   window.retailViewMode = 'internal';
 
@@ -969,6 +969,13 @@ function clearRetailProject() {
       <p class="retail-upload-text">Drag & drop your measurement PDF here</p>
       <p class="retail-upload-subtext">or click to browse</p>
       <input type="file" id="retailPdfInput" accept=".pdf" style="display:none;" onchange="handleRetailPdfUpload(event)">
+    </div>
+    <div style="text-align: center; margin-top: 20px;">
+      <p style="color: #64748b; margin-bottom: 12px;">— OR —</p>
+      <button onclick="startBlankEstimate()" style="background: #0891b2; color: white; border: none; padding: 14px 28px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: background 0.2s;">
+        Start Blank Estimate
+      </button>
+      <p style="color: #94a3b8; font-size: 13px; margin-top: 8px;">For repairs and custom jobs without a roof report</p>
     </div>
   `;
 
