@@ -439,6 +439,9 @@ function calculateSystemMaterials(manufacturerId, shingleLineId, measurements) {
   const shingleData = getShingleData(manufacturerId, shingleLineId);
   if (!shingleData) return [];
   
+  // Check for custom pricing
+  const customPricing = typeof getCustomPricingForSystem === 'function' ? getCustomPricingForSystem(manufacturerId, shingleLineId) : null;
+  
   const materials = [];
   const squares = measurements.squares || 0;
   const ridgeLength = measurements.ridgeLength || 0;
@@ -452,13 +455,14 @@ function calculateSystemMaterials(manufacturerId, shingleLineId, measurements) {
   const iceWaterLF = valleyLength + eaveLength;
   
   // Shingles
+  const shinglePrice = customPricing?.shingles || shingleData.pricePerBundle;
   const shingleBundles = Math.ceil(squares * shingleData.bundlesPerSquare * 1.1);
   materials.push({
     name: shingleData.name + ' Shingles',
     quantity: shingleBundles,
     unit: "Bundle",
-    unitPrice: shingleData.pricePerBundle,
-    total: shingleBundles * shingleData.pricePerBundle,
+    unitPrice: shinglePrice,
+    total: shingleBundles * shinglePrice,
     category: "Shingles"
   });
   
@@ -466,105 +470,113 @@ function calculateSystemMaterials(manufacturerId, shingleLineId, measurements) {
   
   // Starter Strip
   if (components.starter) {
+    const price = customPricing?.starter || components.starter.pricePerUnit;
     const qty = Math.ceil(perimeter / components.starter.coverage);
     materials.push({
       name: components.starter.name,
       quantity: qty,
       unit: components.starter.unit,
-      unitPrice: components.starter.pricePerUnit,
-      total: qty * components.starter.pricePerUnit,
+      unitPrice: price,
+      total: qty * price,
       category: "Starter"
     });
   }
   
   // Hip & Ridge
   if (components.hipRidge && hipRidgeTotal > 0) {
+    const price = customPricing?.hipRidge || components.hipRidge.pricePerUnit;
     const qty = Math.ceil(hipRidgeTotal / components.hipRidge.coverage);
     materials.push({
       name: components.hipRidge.name,
       quantity: qty,
       unit: components.hipRidge.unit,
-      unitPrice: components.hipRidge.pricePerUnit,
-      total: qty * components.hipRidge.pricePerUnit,
+      unitPrice: price,
+      total: qty * price,
       category: "Hip & Ridge"
     });
   }
   
   // Underlayment
   if (components.underlayment) {
+    const price = customPricing?.underlayment || components.underlayment.pricePerUnit;
     const qty = Math.ceil(squares / components.underlayment.coverage);
     materials.push({
       name: components.underlayment.name,
       quantity: qty,
       unit: components.underlayment.unit,
-      unitPrice: components.underlayment.pricePerUnit,
-      total: qty * components.underlayment.pricePerUnit,
+      unitPrice: price,
+      total: qty * price,
       category: "Underlayment"
     });
   }
   
   // Ice & Water Shield
   if (components.iceWater && iceWaterLF > 0) {
+    const price = customPricing?.iceWater || components.iceWater.pricePerUnit;
     const iceWaterSq = (iceWaterLF * 3) / 100;
     const qty = Math.ceil(iceWaterSq / components.iceWater.coverage);
     materials.push({
       name: components.iceWater.name,
       quantity: Math.max(qty, 1),
       unit: components.iceWater.unit,
-      unitPrice: components.iceWater.pricePerUnit,
-      total: Math.max(qty, 1) * components.iceWater.pricePerUnit,
+      unitPrice: price,
+      total: Math.max(qty, 1) * price,
       category: "Ice & Water"
     });
   }
   
   // Ridge Vent
   if (components.ridgeVent && ridgeLength > 0) {
+    const price = customPricing?.ridgeVent || components.ridgeVent.pricePerUnit;
     const qty = Math.ceil(ridgeLength / components.ridgeVent.coverage);
     materials.push({
       name: components.ridgeVent.name,
       quantity: qty,
       unit: components.ridgeVent.unit,
-      unitPrice: components.ridgeVent.pricePerUnit,
-      total: qty * components.ridgeVent.pricePerUnit,
+      unitPrice: price,
+      total: qty * price,
       category: "Ventilation"
     });
   }
   
   // Drip Edge
   if (components.dripEdge) {
+    const price = customPricing?.dripEdge || components.dripEdge.pricePerUnit;
     const qty = Math.ceil(perimeter / components.dripEdge.coverage);
     materials.push({
       name: components.dripEdge.name,
       quantity: qty,
       unit: components.dripEdge.unit,
-      unitPrice: components.dripEdge.pricePerUnit,
-      total: qty * components.dripEdge.pricePerUnit,
+      unitPrice: price,
+      total: qty * price,
       category: "Drip Edge"
     });
   }
   
   // Nails
   if (components.nails) {
+    const price = customPricing?.nails || components.nails.pricePerUnit;
     const qty = Math.ceil(squares / components.nails.coverage);
     materials.push({
       name: components.nails.name,
       quantity: qty,
       unit: components.nails.unit,
-      unitPrice: components.nails.pricePerUnit,
-      total: qty * components.nails.pricePerUnit,
+      unitPrice: price,
+      total: qty * price,
       category: "Fasteners"
     });
   }
   
   // Sealant
   if (components.sealant) {
+    const price = customPricing?.sealant || components.sealant.pricePerUnit;
     const qty = components.sealant.qtyPerJob || 2;
     materials.push({
       name: components.sealant.name,
       quantity: qty,
       unit: components.sealant.unit,
-      unitPrice: components.sealant.pricePerUnit,
-      total: qty * components.sealant.pricePerUnit,
+      unitPrice: price,
+      total: qty * price,
       category: "Sealant"
     });
   }
@@ -578,3 +590,4 @@ window.getShingleLines = getShingleLines;
 window.getShingleColors = getShingleColors;
 window.getShingleData = getShingleData;
 window.calculateSystemMaterials = calculateSystemMaterials;
+

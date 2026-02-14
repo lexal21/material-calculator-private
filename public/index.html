@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -155,7 +155,7 @@
           + New Project
         </button>
         <button class="btn-save-project" onclick="projectManager.showSaveProjectDialog()" title="Save current project">
-          💾 Save As...
+          ?? Save As...
         </button>
         <button class="btn-delete-project" onclick="projectManager.showDeleteProjectDialog()" title="Delete selected project">
           Delete Project
@@ -315,14 +315,14 @@
 
         <!-- Materials Photos Section -->
         <div id="materialsPhotoSection" class="photo-section no-print">
-          <h3 style="margin-bottom: 12px;">📸 Photos (<span id="materialsPhotoCount">0</span>)</h3>
+          <h3 style="margin-bottom: 12px;">?? Photos (<span id="materialsPhotoCount">0</span>)</h3>
           <div style="margin-bottom: 12px;">
             <input type="file" id="materialsPhotoInput" accept="image/*" multiple onchange="handleMaterialsPhotos(event)" style="display: none;">
             <button class="btn-secondary btn-sm" onclick="document.getElementById('materialsPhotoInput').click()">
               + Upload Photos
             </button>
             <button class="btn-primary btn-sm" onclick="openCompanyCamModal('materials')" style="background: #0891b2;">
-              📷 Import from CompanyCam
+              ?? Import from CompanyCam
             </button>
             <button class="btn-danger btn-sm" id="deleteMaterialsPhotosBtn" onclick="deleteSelectedPhotos('materials')" disabled>
               Delete Selected
@@ -416,14 +416,14 @@
 
           <!-- Labor Photos Section -->
           <div id="laborPhotoSection" class="photo-section no-print">
-            <h3 style="margin-bottom: 12px;">📸 Photos (<span id="laborPhotoCount">0</span>)</h3>
+            <h3 style="margin-bottom: 12px;">?? Photos (<span id="laborPhotoCount">0</span>)</h3>
             <div style="margin-bottom: 12px;">
               <input type="file" id="laborPhotoInput" accept="image/*" multiple onchange="handleLaborPhotos(event)" style="display: none;">
               <button class="btn-secondary btn-sm" onclick="document.getElementById('laborPhotoInput').click()">
                 + Upload Photos
               </button>
               <button class="btn-primary btn-sm" onclick="openCompanyCamModal('labor')" style="background: #0891b2;">
-                📷 Import from CompanyCam
+                ?? Import from CompanyCam
               </button>
               <button class="btn-danger btn-sm" id="deleteLaborPhotosBtn" onclick="deleteSelectedPhotos('labor')" disabled>
                 Delete Selected
@@ -446,61 +446,131 @@
       </div>
     </div>
 
+        <!-- Custom Pricing Editor -->
     <div id="pricingTab" class="tab-content">
-      <div class="section">
-        <h2>&#128200; Manage Pricing</h2>
-        <p class="pricing-note">Edit material prices below. Changes are saved automatically and will be used in all future calculations.</p>
-        
-        <div class="pricing-controls">
-          <div class="template-selector">
-            <label for="templateSelect">Price List Template:</label>
-            <select id="templateSelect" onchange="loadSelectedTemplate()">
-              <option value="">Current Pricing</option>
+      <div style="padding: 20px;">
+        <h2 style="margin: 0 0 8px 0; color: #1e293b;">Custom Pricing</h2>
+        <p style="color: #64748b; margin-bottom: 20px;">Set your company's pricing for each manufacturer's roofing system. Prices are saved to your browser.</p>
+
+        <!-- Manufacturer Selection for Pricing -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Manufacturer</label>
+            <select id="pricingManufacturerSelect" onchange="handlePricingManufacturerChange()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;">
+              <option value="">Select Manufacturer</option>
             </select>
-            <button class="btn-secondary btn-sm" onclick="showSaveTemplateDialog()">Save as Template</button>
-            <button class="btn-danger btn-sm" onclick="deleteSelectedTemplate()">Delete Template</button>
           </div>
-          
-          <div class="search-box">
-            <input 
-              type="text" 
-              id="pricingSearch" 
-              placeholder="Search materials..." 
-              onkeyup="filterPricingTable()"
-            />
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Shingle Model</label>
+            <select id="pricingShingleLineSelect" onchange="handlePricingShingleLineChange()" disabled style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; background: #f1f5f9;">
+              <option value="">Select Model</option>
+            </select>
           </div>
         </div>
-        
-        <table class="pricing-table">
-          <thead>
-            <tr>
-              <th>Material</th>
-              <th>Unit</th>
-              <th>Price</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="pricingTableBody">
-            <!-- Populated by JavaScript -->
-          </tbody>
-        </table>
-        
-        <div style="margin: 16px 0; text-align: center; display: flex; align-items: center; justify-content: center; gap: 12px;">
-          <select id="pricingItemSelector" class="editable-input" style="min-width: 300px; padding: 8px;">
-            <!-- Options populated by JavaScript -->
-          </select>
-          <button class="btn-secondary" onclick="addMorePricingItems()" id="addMorePricingItemsBtn">
-            + Add Item
-          </button>
+
+        <!-- Pricing Editor Table -->
+        <div id="pricingEditorContainer" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 id="pricingSystemTitle" style="margin: 0; color: #334155;"></h3>
+            <div>
+              <button onclick="resetToDefaultPricing()" style="padding: 8px 16px; background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e0; border-radius: 6px; cursor: pointer; margin-right: 8px;">Reset to Default</button>
+              <button onclick="savePricingTemplate()" style="padding: 8px 16px; background: #0891b2; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Save Pricing</button>
+            </div>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <thead>
+              <tr style="background: #f8fafc;">
+                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Component</th>
+                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Unit</th>
+                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Default Price</th>
+                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Your Price</th>
+              </tr>
+            </thead>
+            <tbody id="pricingEditorBody">
+            </tbody>
+          </table>
+
+          <!-- Labor Pricing Section -->
+          <h3 style="margin: 24px 0 16px 0; color: #334155;">Labor Rates</h3>
+          <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <thead>
+              <tr style="background: #f8fafc;">
+                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Labor Item</th>
+                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Unit</th>
+                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Default Rate</th>
+                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Your Rate</th>
+              </tr>
+            </thead>
+            <tbody id="laborPricingBody">
+              <tr>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Labor - Squares</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">SQ</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">$90.00</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                  <input type="number" id="laborRate_squares" value="90" step="0.01" style="width: 100px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Starter per Bundle</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">BD</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">$25.00</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                  <input type="number" id="laborRate_starter" value="25" step="0.01" style="width: 100px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Hip & Ridge per Bundle</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">BD</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">$25.00</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                  <input type="number" id="laborRate_hipRidge" value="25" step="0.01" style="width: 100px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Steep Charge 8-9/12</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">SQ</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">$5.00</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                  <input type="number" id="laborRate_steep8" value="5" step="0.01" style="width: 100px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Steep Charge 10-11/12</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">SQ</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">$10.00</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                  <input type="number" id="laborRate_steep10" value="10" step="0.01" style="width: 100px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Steep Charge 12+/12</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">SQ</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">$20.00</td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                  <input type="number" id="laborRate_steep12" value="20" step="0.01" style="width: 100px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 16px;">Plywood Replacement (per sheet)</td>
+                <td style="padding: 12px 16px;">SH</td>
+                <td style="padding: 12px 16px;">$30.00</td>
+                <td style="padding: 12px 16px;">
+                  <input type="number" id="laborRate_plywood" value="30" step="0.01" style="width: 100px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        
-        <div class="pricing-actions">
-          <button class="btn-secondary" onclick="resetPricing()">Reset to Defaults</button>
+
+        <div id="pricingPlaceholder" style="text-align: center; padding: 60px 20px; color: #94a3b8;">
+          <div style="font-size: 48px; margin-bottom: 16px;">💰</div>
+          <p style="font-size: 16px;">Select a manufacturer and shingle model to customize pricing</p>
         </div>
       </div>
     </div>
 
-  <!-- CompanyCam Import Modal -->
+      <!-- CompanyCam Import Modal -->
   <div id="companycam-modal" class="companycam-modal" style="display: none;">
     <div class="companycam-modal-content">
       <div class="companycam-modal-header">
@@ -545,7 +615,7 @@
         <div id="companycam-photos-view" style="display: none;">
           <div class="companycam-section-header">
             <button class="btn-secondary" onclick="backToCompanyCamProjects()" style="margin-bottom: 12px;">
-              ← Back to Projects
+              ? Back to Projects
             </button>
             <h3 id="companycam-selected-project-name">Project Photos</h3>
             <p>Select photos to import to <strong id="companycam-modal-tab">Materials</strong> tab</p>
@@ -599,3 +669,4 @@
   <script src="navigation.js"></script>
 </body>
 </html>
+

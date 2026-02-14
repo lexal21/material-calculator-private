@@ -34,6 +34,13 @@ function switchTab(tabName) {
       uploadSection.style.display = 'block';
     }
   }
+  
+  // Initialize pricing tab when switched to
+  if (tabName === 'pricing') {
+    if (typeof initPricingTab === 'function') {
+      initPricingTab();
+    }
+  }
 }
 
 // Load current user on page load
@@ -281,6 +288,8 @@ function createAdditionalItemRow(rowNumber) {
 function displayResults(data) {
   // Store data for restoration after print
   window.currentPDFData = data;
+  
+  if (!data.raw) data.raw = {};
   
   // Store customer name and job number for PDF
   window.currentCustomerName = data.raw.customer_name || '';
@@ -2556,9 +2565,14 @@ function applyMaterialsManufacturerSystem() {
     shingleColorInput.value = window._materialsColor;
   }
   
-  // Refresh the materials display
+  // Refresh the materials display - pass full data structure that displayResults expects
   if (typeof displayResults === 'function') {
-    displayResults({ materials: materials });
+    displayResults({
+      materials: materials,
+      measurements: window.currentMeasurements || {},
+      raw: window.currentRawMeasurements || {},
+      success: true
+    });
   }
   
   console.log('[MATERIALS] Applied', materials.length, 'materials');
@@ -2574,4 +2588,211 @@ function showMaterialsManufacturerSelector() {
 
 function initMaterialsManufacturerSelector() {
   populateMaterialsManufacturerDropdown();
+}
+
+
+// ==========================================
+// CUSTOM PRICING FUNCTIONS
+// ==========================================
+
+const PRICING_STORAGE_KEY = 'quikbitz-custom-pricing';
+
+function loadCustomPricing() {
+  try {
+    const saved = localStorage.getItem(PRICING_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveCustomPricing(pricing) {
+  localStorage.setItem(PRICING_STORAGE_KEY, JSON.stringify(pricing));
+}
+
+function getCustomPricingForSystem(manufacturerId, shingleLineId) {
+  const customPricing = loadCustomPricing();
+  const pricingKey = `${manufacturerId}_${shingleLineId}`;
+  return customPricing[pricingKey] || null;
+}
+
+function populatePricingManufacturerDropdown() {
+  const select = document.getElementById('pricingManufacturerSelect');
+  if (!select || typeof getManufacturers !== 'function') return;
+  
+  const manufacturers = getManufacturers();
+  select.innerHTML = '<option value="">Select Manufacturer</option>';
+  manufacturers.forEach(m => {
+    select.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+  });
+}
+
+function handlePricingManufacturerChange() {
+  const manufacturerSelect = document.getElementById('pricingManufacturerSelect');
+  const shingleLineSelect = document.getElementById('pricingShingleLineSelect');
+  const editorContainer = document.getElementById('pricingEditorContainer');
+  const placeholder = document.getElementById('pricingPlaceholder');
+  
+  const manufacturerId = manufacturerSelect.value;
+  
+  shingleLineSelect.innerHTML = '<option value="">Select Model</option>';
+  if (editorContainer) editorContainer.style.display = 'none';
+  if (placeholder) placeholder.style.display = 'block';
+  
+  if (!manufacturerId) {
+    shingleLineSelect.disabled = true;
+    shingleLineSelect.style.background = '#f1f5f9';
+    return;
+  }
+  
+  const shingleLines = getShingleLines(manufacturerId);
+  shingleLines.forEach(line => {
+    shingleLineSelect.innerHTML += `<option value="${line.id}">${line.name}</option>`;
+  });
+  
+  shingleLineSelect.disabled = false;
+  shingleLineSelect.style.background = 'white';
+  
+  window._pricingManufacturer = manufacturerId;
+  window._pricingShingleLine = null;
+}
+
+function handlePricingShingleLineChange() {
+  const manufacturerSelect = document.getElementById('pricingManufacturerSelect');
+  const shingleLineSelect = document.getElementById('pricingShingleLineSelect');
+  const editorContainer = document.getElementById('pricingEditorContainer');
+  const placeholder = document.getElementById('pricingPlaceholder');
+  const titleEl = document.getElementById('pricingSystemTitle');
+  
+  const manufacturerId = manufacturerSelect.value;
+  const shingleLineId = shingleLineSelect.value;
+  
+  if (!shingleLineId) {
+    if (editorContainer) editorContainer.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'block';
+    return;
+  }
+  
+  window._pricingShingleLine = shingleLineId;
+  
+  const shingleData = getShingleData(manufacturerId, shingleLineId);
+  if (!shingleData) return;
+  
+  if (titleEl) {
+    titleEl.textContent = `${shingleData.manufacturer} ${shingleData.name} Pricing`;
+  }
+  
+  const customPricing = loadCustomPricing();
+  const pricingKey = `${manufacturerId}_${shingleLineId}`;
+  const savedPricing = customPricing[pricingKey] || {};
+  
+  const tbody = document.getElementById('pricingEditorBody');
+  if (!tbody) return;
+  
+  let html = '';
+  
+  html += `<tr>
+    <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-weight: 600;">${shingleData.name} Shingles</td>
+    <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Bundle</td>
+    <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">$${shingleData.pricePerBundle.toFixed(2)}</td>
+    <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+      <input type="number" id="price_shingles" data-default="${shingleData.pricePerBundle}" value="${savedPricing.shingles || shingleData.pricePerBundle}" step="0.01" style="width: 100px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px;">
+    </td>
+  </tr>`;
+  
+  const components = shingleData.systemComponents;
+  const componentKeys = ['starter', 'hipRidge', 'underlayment', 'iceWater', 'ridgeVent', 'dripEdge', 'nails', 'sealant'];
+  
+  componentKeys.forEach(key => {
+    const comp = components[key];
+    if (comp) {
+      const savedPrice = savedPricing[key] || comp.pricePerUnit;
+      html += `<tr>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">${comp.name}</td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">${comp.unit}</td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">$${comp.pricePerUnit.toFixed(2)}</td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+          <input type="number" id="price_${key}" data-default="${comp.pricePerUnit}" value="${savedPrice}" step="0.01" style="width: 100px; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px;">
+        </td>
+      </tr>`;
+    }
+  });
+  
+  tbody.innerHTML = html;
+  
+  const laborRates = savedPricing.labor || {};
+  const laborInputs = {
+    'laborRate_squares': laborRates.squares || 90,
+    'laborRate_starter': laborRates.starter || 25,
+    'laborRate_hipRidge': laborRates.hipRidge || 25,
+    'laborRate_steep8': laborRates.steep8 || 5,
+    'laborRate_steep10': laborRates.steep10 || 10,
+    'laborRate_steep12': laborRates.steep12 || 20,
+    'laborRate_plywood': laborRates.plywood || 30
+  };
+  
+  Object.keys(laborInputs).forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.value = laborInputs[id];
+  });
+  
+  if (editorContainer) editorContainer.style.display = 'block';
+  if (placeholder) placeholder.style.display = 'none';
+}
+
+function savePricingTemplate() {
+  if (!window._pricingManufacturer || !window._pricingShingleLine) {
+    alert('Please select a manufacturer and model first.');
+    return;
+  }
+  
+  const pricingKey = `${window._pricingManufacturer}_${window._pricingShingleLine}`;
+  
+  const pricing = {
+    shingles: parseFloat(document.getElementById('price_shingles')?.value) || 0,
+    starter: parseFloat(document.getElementById('price_starter')?.value) || 0,
+    hipRidge: parseFloat(document.getElementById('price_hipRidge')?.value) || 0,
+    underlayment: parseFloat(document.getElementById('price_underlayment')?.value) || 0,
+    iceWater: parseFloat(document.getElementById('price_iceWater')?.value) || 0,
+    ridgeVent: parseFloat(document.getElementById('price_ridgeVent')?.value) || 0,
+    dripEdge: parseFloat(document.getElementById('price_dripEdge')?.value) || 0,
+    nails: parseFloat(document.getElementById('price_nails')?.value) || 0,
+    sealant: parseFloat(document.getElementById('price_sealant')?.value) || 0,
+    labor: {
+      squares: parseFloat(document.getElementById('laborRate_squares')?.value) || 90,
+      starter: parseFloat(document.getElementById('laborRate_starter')?.value) || 25,
+      hipRidge: parseFloat(document.getElementById('laborRate_hipRidge')?.value) || 25,
+      steep8: parseFloat(document.getElementById('laborRate_steep8')?.value) || 5,
+      steep10: parseFloat(document.getElementById('laborRate_steep10')?.value) || 10,
+      steep12: parseFloat(document.getElementById('laborRate_steep12')?.value) || 20,
+      plywood: parseFloat(document.getElementById('laborRate_plywood')?.value) || 30
+    }
+  };
+  
+  const allPricing = loadCustomPricing();
+  allPricing[pricingKey] = pricing;
+  saveCustomPricing(allPricing);
+  
+  alert('Pricing saved successfully!');
+  console.log('[PRICING] Saved pricing for', pricingKey, pricing);
+}
+
+function resetToDefaultPricing() {
+  if (!confirm('Reset all prices to default values?')) return;
+  
+  document.querySelectorAll('#pricingEditorBody input[data-default]').forEach(input => {
+    input.value = input.dataset.default;
+  });
+  
+  document.getElementById('laborRate_squares').value = 90;
+  document.getElementById('laborRate_starter').value = 25;
+  document.getElementById('laborRate_hipRidge').value = 25;
+  document.getElementById('laborRate_steep8').value = 5;
+  document.getElementById('laborRate_steep10').value = 10;
+  document.getElementById('laborRate_steep12').value = 20;
+  document.getElementById('laborRate_plywood').value = 30;
+}
+
+function initPricingTab() {
+  populatePricingManufacturerDropdown();
 }
