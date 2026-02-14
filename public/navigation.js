@@ -427,6 +427,15 @@ function createModuleContainers() {
               <button onclick="clearRetailProject()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:8px 16px;border-radius:4px;cursor:pointer;">New Project</button>
             </div>
 
+            <!-- Retail Tab Navigation -->
+            <div class="retail-tabs" style="display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0;">
+              <button class="retail-tab-btn active" data-retail-tab="retailEstimate" onclick="switchRetailTab('retailEstimate')" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid #0891b2; color: #0891b2; font-weight: 600; cursor: pointer; font-size: 15px;">Estimate</button>
+              <button class="retail-tab-btn" data-retail-tab="retailPricing" onclick="switchRetailTab('retailPricing')" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; color: #64748b; font-weight: 500; cursor: pointer; font-size: 15px;">Pricing</button>
+            </div>
+
+            <!-- Estimate Tab Content -->
+            <div id="retailEstimateTab" class="retail-tab-content" style="display: block;">
+              
             <!-- Manufacturer Selection -->
             <div id="retailManufacturerSelector" style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
               <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #334155;">Select Roofing System</h3>
@@ -620,6 +629,46 @@ function createModuleContainers() {
               </button>
               <button class="btn-primary" onclick="printRetailEstimate()">Print Estimate</button>
               <button class="btn-primary" onclick="saveRetailEstimate()">Save as PDF</button>
+            </div>
+            </div>
+            
+            <!-- Pricing Tab Content -->
+            <div id="retailPricingTab" class="retail-tab-content" style="display: none; padding: 0;">
+              <h2 style="margin: 0 0 8px 0; color: #1e293b;">Custom Pricing</h2>
+              <p style="color: #64748b; margin-bottom: 20px;">Set your company's pricing for each manufacturer's roofing system.</p>
+              
+              <!-- Current Default System Banner -->
+              <div id="retailDefaultSystemBanner" style="display: none; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <span style="font-size: 12px; opacity: 0.9;">DEFAULT SYSTEM</span>
+                    <div id="retailDefaultSystemName" style="font-weight: 600; font-size: 16px;"></div>
+                  </div>
+                  <button onclick="clearDefaultSystem(); updateRetailDefaultBanner();" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Clear Default</button>
+                </div>
+              </div>
+              
+              <!-- Manufacturer Selection -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Manufacturer</label>
+                  <select id="retailPricingManufacturerSelect" onchange="handleRetailPricingManufacturerChange()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;">
+                    <option value="">Select Manufacturer</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Shingle Model</label>
+                  <select id="retailPricingShingleLineSelect" onchange="handleRetailPricingShingleLineChange()" disabled style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; background: #f1f5f9;">
+                    <option value="">Select Model</option>
+                  </select>
+                </div>
+              </div>
+              
+              <!-- Pricing Editor Container -->
+              <div id="retailPricingEditorContainer" style="display: none;">
+                <!-- Placeholder for pricing editor (will be populated dynamically) -->
+                <p style="color: #64748b;">Pricing editor will be populated here when a manufacturer/model is selected.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -1561,4 +1610,85 @@ function switchRetailTab(tabName) {
   if (tabName === 'retailPricing') {
     initRetailPricingTab();
   }
+}
+
+// ==========================================
+// RETAIL PRICING TAB FUNCTIONS
+// ==========================================
+
+function initRetailPricingTab() {
+  console.log('[RETAIL PRICING] Initializing pricing tab');
+  populateRetailPricingManufacturerDropdown();
+  updateRetailDefaultBanner();
+}
+
+function populateRetailPricingManufacturerDropdown() {
+  const select = document.getElementById('retailPricingManufacturerSelect');
+  if (!select) {
+    console.log('[RETAIL PRICING] Dropdown not found');
+    return;
+  }
+  
+  if (typeof window.manufacturerDatabase === 'undefined') {
+    console.log('[RETAIL PRICING] Database not loaded, retrying in 100ms');
+    setTimeout(populateRetailPricingManufacturerDropdown, 100);
+    return;
+  }
+  
+  select.innerHTML = '<option value="">Select Manufacturer</option>';
+  Object.keys(window.manufacturerDatabase).forEach(id => {
+    const mfr = window.manufacturerDatabase[id];
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = mfr.name;
+    select.appendChild(option);
+  });
+  
+  console.log('[RETAIL PRICING] Populated', Object.keys(window.manufacturerDatabase).length, 'manufacturers');
+}
+
+function handleRetailPricingManufacturerChange() {
+  const select = document.getElementById('retailPricingManufacturerSelect');
+  const shingleLineSelect = document.getElementById('retailPricingShingleLineSelect');
+  const manufacturerId = select.value;
+  
+  if (!manufacturerId) {
+    shingleLineSelect.disabled = true;
+    shingleLineSelect.innerHTML = '<option value="">Select Model</option>';
+    document.getElementById('retailPricingEditorContainer').style.display = 'none';
+    return;
+  }
+  
+  const manufacturer = window.manufacturerDatabase[manufacturerId];
+  shingleLineSelect.disabled = false;
+  shingleLineSelect.innerHTML = '<option value="">Select Model</option>';
+  
+  Object.keys(manufacturer.shingleLines).forEach(lineId => {
+    const line = manufacturer.shingleLines[lineId];
+    const option = document.createElement('option');
+    option.value = lineId;
+    option.textContent = line.name;
+    shingleLineSelect.appendChild(option);
+  });
+  
+  document.getElementById('retailPricingEditorContainer').style.display = 'none';
+}
+
+function handleRetailPricingShingleLineChange() {
+  const manufacturerId = document.getElementById('retailPricingManufacturerSelect').value;
+  const shingleLineId = document.getElementById('retailPricingShingleLineSelect').value;
+  
+  if (!manufacturerId || !shingleLineId) {
+    document.getElementById('retailPricingEditorContainer').style.display = 'none';
+    return;
+  }
+  
+  // Show editor placeholder for now
+  const container = document.getElementById('retailPricingEditorContainer');
+  container.style.display = 'block';
+  
+  const manufacturer = window.manufacturerDatabase[manufacturerId];
+  const shingleLine = manufacturer.shingleLines[shingleLineId];
+  
+  container.innerHTML = '<p style="color: #10b981; font-weight: 600;">Selected: ' + manufacturer.name + ' - ' + shingleLine.name + '</p><p style="color: #64748b;">Pricing editor will be implemented here.</p>';
 }
