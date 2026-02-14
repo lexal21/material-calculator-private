@@ -666,8 +666,63 @@ function createModuleContainers() {
               
               <!-- Pricing Editor Container -->
               <div id="retailPricingEditorContainer" style="display: none;">
-                <!-- Placeholder for pricing editor (will be populated dynamically) -->
-                <p style="color: #64748b;">Pricing editor will be populated here when a manufacturer/model is selected.</p>
+                <!-- Action Buttons -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                  <h3 id="retailPricingSystemTitle" style="margin: 0; color: #334155;"></h3>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button onclick="setAsDefaultSystemFromRetail()" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">&#11088; Set as Default</button>
+                    <button onclick="resetRetailPricing()" style="padding: 8px 16px; background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e0; border-radius: 6px; cursor: pointer;">Reset Prices</button>
+                    <button onclick="saveRetailPricingTemplate()" style="padding: 8px 16px; background: #0891b2; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Save Pricing</button>
+                  </div>
+                </div>
+                
+                <!-- MATERIALS SECTION -->
+                <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden;">
+                  <div style="background: linear-gradient(135deg, #0891b2, #0e7490); color: white; padding: 16px 20px;">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Materials Pricing</h3>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Set unit prices for roofing materials</p>
+                  </div>
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                      <tr style="background: #f8fafc;">
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 40%;">Component</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 15%;">Unit</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 20%;">Default Price</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 25%;">Your Price</th>
+                      </tr>
+                    </thead>
+                    <tbody id="retailPricingMaterialsBody">
+                      <!-- Populated by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+                
+                <!-- LABOR SECTION -->
+                <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+                  <div style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; padding: 16px 20px;">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Labor Pricing</h3>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Set rates for labor and installation</p>
+                  </div>
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                      <tr style="background: #f8fafc;">
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 40%;">Labor Item</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 15%;">Unit</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 20%;">Default Rate</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 25%;">Your Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody id="retailPricingLaborBody">
+                      <!-- Populated by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <!-- Placeholder -->
+              <div id="retailPricingPlaceholder" style="text-align: center; padding: 60px 20px; color: #94a3b8;">
+                <div style="font-size: 48px; margin-bottom: 16px;">&#128176;</div>
+                <p style="font-size: 16px;">Select a manufacturer and shingle model to customize pricing</p>
               </div>
             </div>
           </div>
@@ -1613,82 +1668,258 @@ function switchRetailTab(tabName) {
 }
 
 // ==========================================
+
+// ==========================================
 // RETAIL PRICING TAB FUNCTIONS
 // ==========================================
 
 function initRetailPricingTab() {
-  console.log('[RETAIL PRICING] Initializing pricing tab');
   populateRetailPricingManufacturerDropdown();
   updateRetailDefaultBanner();
+  populateRetailLaborPricingTable();
 }
 
 function populateRetailPricingManufacturerDropdown() {
   const select = document.getElementById('retailPricingManufacturerSelect');
-  if (!select) {
-    console.log('[RETAIL PRICING] Dropdown not found');
-    return;
-  }
+  if (!select || typeof getManufacturers !== 'function') return;
   
-  if (typeof window.manufacturerDatabase === 'undefined') {
-    console.log('[RETAIL PRICING] Database not loaded, retrying in 100ms');
-    setTimeout(populateRetailPricingManufacturerDropdown, 100);
-    return;
-  }
-  
+  const manufacturers = getManufacturers();
   select.innerHTML = '<option value="">Select Manufacturer</option>';
-  Object.keys(window.manufacturerDatabase).forEach(id => {
-    const mfr = window.manufacturerDatabase[id];
-    const option = document.createElement('option');
-    option.value = id;
-    option.textContent = mfr.name;
-    select.appendChild(option);
+  manufacturers.forEach(m => {
+    select.innerHTML += `<option value="${m.id}">${m.name}</option>`;
   });
+}
+
+function populateRetailLaborPricingTable() {
+  const tbody = document.getElementById('retailPricingLaborBody');
+  if (!tbody) return;
   
-  console.log('[RETAIL PRICING] Populated', Object.keys(window.manufacturerDatabase).length, 'manufacturers');
+  const laborItems = [
+    { id: 'squares', name: 'Labor - Squares', unit: 'SQ', default: 90 },
+    { id: 'starter', name: 'Starter per Bundle', unit: 'BD', default: 25 },
+    { id: 'hipRidge', name: 'Hip & Ridge per Bundle', unit: 'BD', default: 25 },
+    { id: 'steep8', name: 'Steep Charge 8-9/12', unit: 'SQ', default: 5 },
+    { id: 'steep10', name: 'Steep Charge 10-11/12', unit: 'SQ', default: 10 },
+    { id: 'steep12', name: 'Steep Charge 12+/12', unit: 'SQ', default: 20 },
+    { id: 'plywood', name: 'Plywood Replacement', unit: 'SH', default: 30 },
+    { id: 'tearoff1', name: 'Tear Off - 1 Layer', unit: 'SQ', default: 25 },
+    { id: 'tearoff2', name: 'Tear Off - 2 Layers', unit: 'SQ', default: 40 },
+    { id: 'dripEdge', name: 'Drip Edge Install', unit: 'LF', default: 2 },
+    { id: 'valley', name: 'Valley Install', unit: 'LF', default: 5 },
+    { id: 'pipeBoot', name: 'Pipe Boot Install', unit: 'EA', default: 15 },
+    { id: 'skylight', name: 'Skylight Flash/Reseal', unit: 'EA', default: 75 }
+  ];
+  
+  tbody.innerHTML = laborItems.map(item => `
+    <tr>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">${item.name}</td>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">${item.unit}</td>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$${item.default.toFixed(2)}</td>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+        <div style="display: flex; align-items: center;">
+          <span style="color: #64748b; margin-right: 4px;">$</span>
+          <input type="number" id="retail_laborRate_${item.id}" value="${item.default}" data-default="${item.default}" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+        </div>
+      </td>
+    </tr>
+  `).join('');
 }
 
 function handleRetailPricingManufacturerChange() {
-  const select = document.getElementById('retailPricingManufacturerSelect');
+  const manufacturerSelect = document.getElementById('retailPricingManufacturerSelect');
   const shingleLineSelect = document.getElementById('retailPricingShingleLineSelect');
-  const manufacturerId = select.value;
+  const editorContainer = document.getElementById('retailPricingEditorContainer');
+  const placeholder = document.getElementById('retailPricingPlaceholder');
+  const manufacturerId = manufacturerSelect.value;
+  
+  shingleLineSelect.innerHTML = '<option value="">Select Model</option>';
+  if (editorContainer) editorContainer.style.display = 'none';
+  if (placeholder) placeholder.style.display = 'block';
   
   if (!manufacturerId) {
     shingleLineSelect.disabled = true;
-    shingleLineSelect.innerHTML = '<option value="">Select Model</option>';
-    document.getElementById('retailPricingEditorContainer').style.display = 'none';
+    shingleLineSelect.style.background = '#f1f5f9';
     return;
   }
   
-  const manufacturer = window.manufacturerDatabase[manufacturerId];
-  shingleLineSelect.disabled = false;
-  shingleLineSelect.innerHTML = '<option value="">Select Model</option>';
-  
-  Object.keys(manufacturer.shingleLines).forEach(lineId => {
-    const line = manufacturer.shingleLines[lineId];
-    const option = document.createElement('option');
-    option.value = lineId;
-    option.textContent = line.name;
-    shingleLineSelect.appendChild(option);
+  const shingleLines = getShingleLines(manufacturerId);
+  shingleLines.forEach(line => {
+    shingleLineSelect.innerHTML += `<option value="${line.id}">${line.name}</option>`;
   });
   
-  document.getElementById('retailPricingEditorContainer').style.display = 'none';
+  shingleLineSelect.disabled = false;
+  shingleLineSelect.style.background = 'white';
+  window._retailPricingManufacturer = manufacturerId;
+  window._retailPricingShingleLine = null;
 }
 
 function handleRetailPricingShingleLineChange() {
-  const manufacturerId = document.getElementById('retailPricingManufacturerSelect').value;
-  const shingleLineId = document.getElementById('retailPricingShingleLineSelect').value;
+  const manufacturerSelect = document.getElementById('retailPricingManufacturerSelect');
+  const shingleLineSelect = document.getElementById('retailPricingShingleLineSelect');
+  const editorContainer = document.getElementById('retailPricingEditorContainer');
+  const placeholder = document.getElementById('retailPricingPlaceholder');
+  const titleEl = document.getElementById('retailPricingSystemTitle');
   
-  if (!manufacturerId || !shingleLineId) {
-    document.getElementById('retailPricingEditorContainer').style.display = 'none';
+  const manufacturerId = manufacturerSelect.value;
+  const shingleLineId = shingleLineSelect.value;
+  
+  if (!shingleLineId) {
+    if (editorContainer) editorContainer.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'block';
     return;
   }
   
-  // Show editor placeholder for now
-  const container = document.getElementById('retailPricingEditorContainer');
-  container.style.display = 'block';
+  window._retailPricingShingleLine = shingleLineId;
+  const shingleData = getShingleData(manufacturerId, shingleLineId);
+  if (!shingleData) return;
   
-  const manufacturer = window.manufacturerDatabase[manufacturerId];
-  const shingleLine = manufacturer.shingleLines[shingleLineId];
+  if (titleEl) {
+    titleEl.textContent = `${shingleData.manufacturer} ${shingleData.name} Pricing`;
+  }
   
-  container.innerHTML = '<p style="color: #10b981; font-weight: 600;">Selected: ' + manufacturer.name + ' - ' + shingleLine.name + '</p><p style="color: #64748b;">Pricing editor will be implemented here.</p>';
+  // Load custom pricing if exists
+  const customPricing = typeof loadCustomPricing === 'function' ? loadCustomPricing() : {};
+  const pricingKey = `${manufacturerId}_${shingleLineId}`;
+  const savedPricing = customPricing[pricingKey] || {};
+  
+  // Populate materials pricing
+  const tbody = document.getElementById('retailPricingMaterialsBody');
+  if (tbody) {
+    let html = '';
+    
+    // Shingles
+    html += `<tr>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-weight: 600;">${shingleData.name} Shingles</td>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Bundle</td>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$${shingleData.pricePerBundle.toFixed(2)}</td>
+      <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+        <div style="display: flex; align-items: center;">
+          <span style="color: #64748b; margin-right: 4px;">$</span>
+          <input type="number" id="retail_price_shingles" data-default="${shingleData.pricePerBundle}" value="${savedPricing.shingles || shingleData.pricePerBundle}" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+        </div>
+      </td>
+    </tr>`;
+    
+    // System components
+    const components = shingleData.systemComponents;
+    const componentKeys = ['starter', 'hipRidge', 'underlayment', 'iceWater', 'ridgeVent', 'dripEdge', 'nails', 'sealant'];
+    
+    componentKeys.forEach(key => {
+      const comp = components[key];
+      if (comp) {
+        const savedPrice = savedPricing[key] || comp.pricePerUnit;
+        html += `<tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">${comp.name}</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">${comp.unit}</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$${comp.pricePerUnit.toFixed(2)}</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+            <div style="display: flex; align-items: center;">
+              <span style="color: #64748b; margin-right: 4px;">$</span>
+              <input type="number" id="retail_price_${key}" data-default="${comp.pricePerUnit}" value="${savedPrice}" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+            </div>
+          </td>
+        </tr>`;
+      }
+    });
+    
+    tbody.innerHTML = html;
+  }
+  
+  // Load saved labor rates
+  const laborRates = savedPricing.labor || {};
+  const laborFields = ['squares', 'starter', 'hipRidge', 'steep8', 'steep10', 'steep12', 'plywood', 'tearoff1', 'tearoff2', 'dripEdge', 'valley', 'pipeBoot', 'skylight'];
+  
+  laborFields.forEach(field => {
+    const input = document.getElementById(`retail_laborRate_${field}`);
+    if (input) {
+      input.value = laborRates[field] ?? input.dataset.default;
+    }
+  });
+  
+  if (editorContainer) editorContainer.style.display = 'block';
+  if (placeholder) placeholder.style.display = 'none';
 }
+
+function saveRetailPricingTemplate() {
+  if (!window._retailPricingManufacturer || !window._retailPricingShingleLine) {
+    alert('Please select a manufacturer and model first.');
+    return;
+  }
+  
+  const pricingKey = `${window._retailPricingManufacturer}_${window._retailPricingShingleLine}`;
+  
+  const pricing = {
+    shingles: parseFloat(document.getElementById('retail_price_shingles')?.value) || 0,
+    starter: parseFloat(document.getElementById('retail_price_starter')?.value) || 0,
+    hipRidge: parseFloat(document.getElementById('retail_price_hipRidge')?.value) || 0,
+    underlayment: parseFloat(document.getElementById('retail_price_underlayment')?.value) || 0,
+    iceWater: parseFloat(document.getElementById('retail_price_iceWater')?.value) || 0,
+    ridgeVent: parseFloat(document.getElementById('retail_price_ridgeVent')?.value) || 0,
+    dripEdge: parseFloat(document.getElementById('retail_price_dripEdge')?.value) || 0,
+    nails: parseFloat(document.getElementById('retail_price_nails')?.value) || 0,
+    sealant: parseFloat(document.getElementById('retail_price_sealant')?.value) || 0,
+    labor: {
+      squares: parseFloat(document.getElementById('retail_laborRate_squares')?.value) || 90,
+      starter: parseFloat(document.getElementById('retail_laborRate_starter')?.value) || 25,
+      hipRidge: parseFloat(document.getElementById('retail_laborRate_hipRidge')?.value) || 25,
+      steep8: parseFloat(document.getElementById('retail_laborRate_steep8')?.value) || 5,
+      steep10: parseFloat(document.getElementById('retail_laborRate_steep10')?.value) || 10,
+      steep12: parseFloat(document.getElementById('retail_laborRate_steep12')?.value) || 20,
+      plywood: parseFloat(document.getElementById('retail_laborRate_plywood')?.value) || 30,
+      tearoff1: parseFloat(document.getElementById('retail_laborRate_tearoff1')?.value) || 25,
+      tearoff2: parseFloat(document.getElementById('retail_laborRate_tearoff2')?.value) || 40,
+      dripEdge: parseFloat(document.getElementById('retail_laborRate_dripEdge')?.value) || 2,
+      valley: parseFloat(document.getElementById('retail_laborRate_valley')?.value) || 5,
+      pipeBoot: parseFloat(document.getElementById('retail_laborRate_pipeBoot')?.value) || 15,
+      skylight: parseFloat(document.getElementById('retail_laborRate_skylight')?.value) || 75
+    }
+  };
+  
+  const allPricing = typeof loadCustomPricing === 'function' ? loadCustomPricing() : {};
+  allPricing[pricingKey] = pricing;
+  
+  if (typeof saveCustomPricing === 'function') {
+    saveCustomPricing(allPricing);
+  }
+  
+  alert('Pricing saved successfully!');
+  console.log('[RETAIL PRICING] Saved pricing for', pricingKey, pricing);
+}
+
+function resetRetailPricing() {
+  if (!confirm('Reset all prices to default values?')) return;
+  
+  document.querySelectorAll('#retailPricingMaterialsBody input[data-default]').forEach(input => {
+    input.value = input.dataset.default;
+  });
+  
+  document.querySelectorAll('#retailPricingLaborBody input[data-default]').forEach(input => {
+    input.value = input.dataset.default;
+  });
+}
+
+function setAsDefaultSystemFromRetail() {
+  if (!window._retailPricingManufacturer || !window._retailPricingShingleLine) {
+    alert('Please select a manufacturer and shingle model first.');
+    return;
+  }
+  
+  const shingleData = getShingleData(window._retailPricingManufacturer, window._retailPricingShingleLine);
+  if (!shingleData) {
+    alert('Could not get system data.');
+    return;
+  }
+  
+  const defaultSystem = {
+    manufacturerId: window._retailPricingManufacturer,
+    shingleLineId: window._retailPricingShingleLine,
+    manufacturerName: shingleData.manufacturer,
+    shingleLineName: shingleData.name,
+    savedAt: new Date().toISOString()
+  };
+  
+  localStorage.setItem('quikbitz-default-system', JSON.stringify(defaultSystem));
+  alert(`${shingleData.manufacturer} ${shingleData.name} has been set as your default roofing system!`);
+  updateRetailDefaultBanner();
+}
+

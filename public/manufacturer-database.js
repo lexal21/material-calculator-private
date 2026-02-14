@@ -584,12 +584,43 @@ function calculateSystemMaterials(manufacturerId, shingleLineId, measurements) {
   return materials;
 }
 
+// Custom pricing functions
+function loadCustomPricing() {
+  try {
+    const saved = localStorage.getItem('quikbitz-custom-pricing');
+    return saved ? JSON.parse(saved) : {};
+  } catch (e) {
+    console.error('[PRICING] Error loading custom pricing:', e);
+    return {};
+  }
+}
+
+function saveCustomPricing(pricingData) {
+  try {
+    localStorage.setItem('quikbitz-custom-pricing', JSON.stringify(pricingData));
+    console.log('[PRICING] Custom pricing saved successfully');
+    return true;
+  } catch (e) {
+    console.error('[PRICING] Error saving custom pricing:', e);
+    return false;
+  }
+}
+
+function getCustomPricingForSystem(manufacturerId, shingleLineId) {
+  const allPricing = loadCustomPricing();
+  const key = `${manufacturerId}_${shingleLineId}`;
+  return allPricing[key] || null;
+}
+
 // Export functions to window
 window.getManufacturers = getManufacturers;
 window.getShingleLines = getShingleLines;
 window.getShingleColors = getShingleColors;
 window.getShingleData = getShingleData;
 window.calculateSystemMaterials = calculateSystemMaterials;
+window.loadCustomPricing = loadCustomPricing;
+window.saveCustomPricing = saveCustomPricing;
+window.getCustomPricingForSystem = getCustomPricingForSystem;
 
 
 
