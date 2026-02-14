@@ -367,10 +367,10 @@ function startNewProject() {
     displayLaborPhotos();
   }
   
-  // Clear retail estimate
-  if (typeof resetRetailEstimate === 'function') {
-    resetRetailEstimate();
-  }
+  // Retail is now independent - don't clear it from Materials/Labor
+  // if (typeof resetRetailEstimate === 'function') {
+  //   resetRetailEstimate();
+  // }
   
   // Clear localStorage current session
   localStorage.removeItem(CURRENT_SESSION_KEY);
