@@ -303,8 +303,8 @@
         </table>
         
         <div style="margin: 16px 0; text-align: center;">
-          <button class="btn-secondary" onclick="addMoreAdditionalItems()" style="display: none;" id="addMoreItemsBtn">
-            + Add More Items
+          <button class="btn-secondary" onclick="openAddMaterialModal()" style="display: inline-block;" id="addMoreItemsBtn">
+            + Add Item
           </button>
         </div>
         
@@ -396,7 +396,7 @@
             <select id="laborItemSelector" class="editable-input" style="min-width: 300px; padding: 8px;">
               <!-- Options populated by JavaScript -->
             </select>
-            <button class="btn-secondary" onclick="addMoreLaborItems()" style="display: inline-block;" id="addMoreLaborItemsBtn">
+            <button class="btn-secondary" onclick="openAddLaborModal()" style="display: inline-block;" id="addMoreLaborItemsBtn">
               + Add Item
             </button>
           </div>
@@ -669,6 +669,126 @@
   <script src="companycam-integration.js"></script>
   <script src="retail-estimate.js"></script>
   <script src="navigation.js"></script>
+  <!-- Add Material Item Modal -->
+  <div id="addMaterialModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0; color: #1e293b;">Add Material Item</h3>
+        <button onclick="closeAddMaterialModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Category</label>
+        <select id="addMaterialCategory" onchange="filterMaterialOptions()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+          <option value="all">All Categories</option>
+          <option value="shingles">Shingles</option>
+          <option value="starter">Starter</option>
+          <option value="hipridge">Hip & Ridge</option>
+          <option value="underlayment">Underlayment</option>
+          <option value="icewater">Ice & Water Shield</option>
+          <option value="ventilation">Ventilation</option>
+          <option value="flashing">Flashing</option>
+          <option value="fasteners">Fasteners</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Item</label>
+        <select id="addMaterialItem" onchange="populateMaterialDefaults()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+          <option value="">Select Item...</option>
+          <option value="custom">-- Custom Item --</option>
+        </select>
+      </div>
+      <div id="customMaterialName" style="display: none; margin-bottom: 16px;">
+        <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Custom Item Name</label>
+        <input type="text" id="addMaterialCustomName" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;" placeholder="Enter item name">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Quantity</label>
+          <input type="number" id="addMaterialQty" value="1" min="0" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Unit</label>
+          <select id="addMaterialUnit" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+            <option value="Bundle">Bundle</option>
+            <option value="Roll">Roll</option>
+            <option value="Piece">Piece</option>
+            <option value="Sheet">Sheet</option>
+            <option value="Box">Box</option>
+            <option value="Tube">Tube</option>
+            <option value="EA">EA</option>
+            <option value="LF">LF</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Unit Price</label>
+          <input type="number" id="addMaterialPrice" value="0.00" min="0" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+        </div>
+      </div>
+      <button onclick="addMaterialFromModal()" style="width: 100%; padding: 12px; background: #0891b2; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer;">
+        Add Item
+      </button>
+    </div>
+  </div>
+
+  <!-- Add Labor Item Modal -->
+  <div id="addLaborModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0; color: #1e293b;">Add Labor Item</h3>
+        <button onclick="closeAddLaborModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Labor Item</label>
+        <select id="addLaborItem" onchange="populateLaborDefaults()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+          <option value="">Select Item...</option>
+          <option value="Labor - Squares" data-unit="SQ" data-price="90">Labor - Squares</option>
+          <option value="Starter per Bundle" data-unit="BD" data-price="25">Starter per Bundle</option>
+          <option value="Hip and Ridge Cap per Bundle" data-unit="BD" data-price="25">Hip and Ridge Cap per Bundle</option>
+          <option value="Steep Charge 8-9/12" data-unit="SQ" data-price="5">Steep Charge 8-9/12</option>
+          <option value="Steep Charge 10-11/12" data-unit="SQ" data-price="10">Steep Charge 10-11/12</option>
+          <option value="Steep Charge 12+/12" data-unit="SQ" data-price="20">Steep Charge 12+/12</option>
+          <option value="Plywood Replacement" data-unit="SH" data-price="30">Plywood Replacement</option>
+          <option value="Tear Off - 1 Layer" data-unit="SQ" data-price="25">Tear Off - 1 Layer</option>
+          <option value="Tear Off - 2 Layers" data-unit="SQ" data-price="40">Tear Off - 2 Layers</option>
+          <option value="Drip Edge Install" data-unit="LF" data-price="2">Drip Edge Install</option>
+          <option value="Valley Install" data-unit="LF" data-price="5">Valley Install</option>
+          <option value="Pipe Boot Install" data-unit="EA" data-price="15">Pipe Boot Install</option>
+          <option value="Skylight Flash/Reseal" data-unit="EA" data-price="75">Skylight Flash/Reseal</option>
+          <option value="custom">-- Custom Item --</option>
+        </select>
+      </div>
+      <div id="customLaborName" style="display: none; margin-bottom: 16px;">
+        <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Custom Item Name</label>
+        <input type="text" id="addLaborCustomName" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;" placeholder="Enter labor item name">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Quantity</label>
+          <input type="number" id="addLaborQty" value="1" min="0" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Unit</label>
+          <select id="addLaborUnit" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+            <option value="SQ">SQ</option>
+            <option value="BD">BD</option>
+            <option value="SH">SH</option>
+            <option value="LF">LF</option>
+            <option value="EA">EA</option>
+            <option value="HR">HR</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Rate</label>
+          <input type="number" id="addLaborPrice" value="0.00" min="0" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px;">
+        </div>
+      </div>
+      <button onclick="addLaborFromModal()" style="width: 100%; padding: 12px; background: #0891b2; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer;">
+        Add Labor Item
+      </button>
+    </div>
+  </div>
 </body>
 </html>
+
 

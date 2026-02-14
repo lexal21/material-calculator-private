@@ -442,7 +442,8 @@ function displayResults(data) {
   
   window.additionalItemOptions = additionalItemOptions;
   
-  // Add 3 additional items to the materials table
+  // Add 3 additional items to the materials table - COMMENTED OUT (use + Add Item button instead)
+  /*
   for (let i = 1; i <= 3; i++) {
     const optionsHTML = additionalItemOptions.map(item => 
       `<option value="${item.name}" data-price="${item.price}">${item.name}</option>`
@@ -498,6 +499,7 @@ function displayResults(data) {
       </tr>
     `;
   }
+  */
   
   // Store original data for recalculation
   window.materialsData = data.materials;
@@ -2793,4 +2795,229 @@ function resetToDefaultPricing() {
 
 function initPricingTab() {
   populatePricingManufacturerDropdown();
+}
+
+
+// ==========================================
+// ADD MATERIAL MODAL FUNCTIONS
+// ==========================================
+
+const materialOptions = [
+  { name: "Landmark PRO Shingles", category: "shingles", unit: "Bundle", price: 42.00 },
+  { name: "Landmark Shingles", category: "shingles", unit: "Bundle", price: 35.00 },
+  { name: "Timberline HDZ Shingles", category: "shingles", unit: "Bundle", price: 36.00 },
+  { name: "Timberline UHDZ Shingles", category: "shingles", unit: "Bundle", price: 52.00 },
+  { name: "SwiftStart Starter Strip", category: "starter", unit: "Bundle", price: 52.00 },
+  { name: "Pro-Start Starter Strip", category: "starter", unit: "Bundle", price: 48.00 },
+  { name: "Shadow Ridge Hip & Ridge", category: "hipridge", unit: "Bundle", price: 65.50 },
+  { name: "Seal-A-Ridge Hip & Ridge", category: "hipridge", unit: "Bundle", price: 62.00 },
+  { name: "TimberTex Premium Ridge", category: "hipridge", unit: "Bundle", price: 78.00 },
+  { name: "DiamondDeck Synthetic Underlayment", category: "underlayment", unit: "Roll", price: 85.75 },
+  { name: "FeltBuster Synthetic Underlayment", category: "underlayment", unit: "Roll", price: 82.00 },
+  { name: "RoofRunner Synthetic Underlayment", category: "underlayment", unit: "Roll", price: 85.75 },
+  { name: "WinterGuard Ice & Water Shield", category: "icewater", unit: "Roll", price: 69.00 },
+  { name: "StormGuard Ice & Water Shield", category: "icewater", unit: "Roll", price: 72.00 },
+  { name: "Ice & Water Shield", category: "icewater", unit: "Roll", price: 69.00 },
+  { name: "Ridge Vent 4ft", category: "ventilation", unit: "Piece", price: 9.00 },
+  { name: "Cobra Ridge Vent", category: "ventilation", unit: "Piece", price: 11.00 },
+  { name: "Drip Edge 1-1/2 x 3-3/4", category: "flashing", unit: "Piece", price: 9.25 },
+  { name: "Step Flashing", category: "flashing", unit: "Bundle", price: 38.00 },
+  { name: "L Flashing (Trim Coil)", category: "flashing", unit: "Roll", price: 134.50 },
+  { name: "1-1/4\" Roofing Nails", category: "fasteners", unit: "Box", price: 39.99 },
+  { name: "Button Caps", category: "fasteners", unit: "Box", price: 19.50 },
+  { name: "Roof Sealant 10oz", category: "other", unit: "Tube", price: 7.29 },
+  { name: "7/16 OSB Plywood", category: "other", unit: "Sheet", price: 15.99 },
+  { name: "Pipe Boot 2\"", category: "flashing", unit: "Piece", price: 12.00 },
+  { name: "Pipe Boot 3\"", category: "flashing", unit: "Piece", price: 14.00 },
+  { name: "Pipe Boot 4\"", category: "flashing", unit: "Piece", price: 16.00 }
+];
+
+function openAddMaterialModal() {
+  const modal = document.getElementById('addMaterialModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    filterMaterialOptions();
+  }
+}
+
+function closeAddMaterialModal() {
+  const modal = document.getElementById('addMaterialModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  // Reset form
+  document.getElementById('addMaterialCategory').value = 'all';
+  document.getElementById('addMaterialItem').value = '';
+  document.getElementById('addMaterialQty').value = '1';
+  document.getElementById('addMaterialPrice').value = '0.00';
+  document.getElementById('customMaterialName').style.display = 'none';
+}
+
+function filterMaterialOptions() {
+  const category = document.getElementById('addMaterialCategory').value;
+  const select = document.getElementById('addMaterialItem');
+  
+  select.innerHTML = '<option value="">Select Item...</option>';
+  
+  const filtered = category === 'all' 
+    ? materialOptions 
+    : materialOptions.filter(m => m.category === category);
+  
+  filtered.forEach(item => {
+    select.innerHTML += `<option value="${item.name}" data-unit="${item.unit}" data-price="${item.price}">${item.name}</option>`;
+  });
+  
+  select.innerHTML += '<option value="custom">-- Custom Item --</option>';
+}
+
+function populateMaterialDefaults() {
+  const select = document.getElementById('addMaterialItem');
+  const selectedOption = select.options[select.selectedIndex];
+  const customNameDiv = document.getElementById('customMaterialName');
+  
+  if (select.value === 'custom') {
+    customNameDiv.style.display = 'block';
+    document.getElementById('addMaterialUnit').value = 'Piece';
+    document.getElementById('addMaterialPrice').value = '0.00';
+  } else if (select.value) {
+    customNameDiv.style.display = 'none';
+    document.getElementById('addMaterialUnit').value = selectedOption.dataset.unit || 'Piece';
+    document.getElementById('addMaterialPrice').value = parseFloat(selectedOption.dataset.price || 0).toFixed(2);
+  } else {
+    customNameDiv.style.display = 'none';
+  }
+}
+
+function addMaterialFromModal() {
+  const itemSelect = document.getElementById('addMaterialItem');
+  let itemName = itemSelect.value;
+  
+  if (itemName === 'custom') {
+    itemName = document.getElementById('addMaterialCustomName').value.trim();
+    if (!itemName) {
+      alert('Please enter a custom item name');
+      return;
+    }
+  }
+  
+  if (!itemName) {
+    alert('Please select an item');
+    return;
+  }
+  
+  const quantity = parseFloat(document.getElementById('addMaterialQty').value) || 0;
+  const unit = document.getElementById('addMaterialUnit').value;
+  const unitPrice = parseFloat(document.getElementById('addMaterialPrice').value) || 0;
+  
+  // Add to materialsData
+  const newMaterial = {
+    name: itemName,
+    quantity: quantity,
+    unit: unit,
+    unitPrice: unitPrice,
+    total: quantity * unitPrice
+  };
+  
+  if (!window.materialsData) window.materialsData = [];
+  window.materialsData.push(newMaterial);
+  
+  // Refresh display
+  if (typeof displayResults === 'function') {
+    displayResults({
+      materials: window.materialsData,
+      measurements: window.currentMeasurements || {},
+      raw: window.currentRawMeasurements || {},
+      success: true
+    });
+  }
+  
+  closeAddMaterialModal();
+  console.log('[MATERIALS] Added item:', newMaterial);
+}
+
+// ==========================================
+// ADD LABOR MODAL FUNCTIONS
+// ==========================================
+
+function openAddLaborModal() {
+  const modal = document.getElementById('addLaborModal');
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function closeAddLaborModal() {
+  const modal = document.getElementById('addLaborModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  // Reset form
+  document.getElementById('addLaborItem').value = '';
+  document.getElementById('addLaborQty').value = '1';
+  document.getElementById('addLaborPrice').value = '0.00';
+  document.getElementById('customLaborName').style.display = 'none';
+}
+
+function populateLaborDefaults() {
+  const select = document.getElementById('addLaborItem');
+  const selectedOption = select.options[select.selectedIndex];
+  const customNameDiv = document.getElementById('customLaborName');
+  
+  if (select.value === 'custom') {
+    customNameDiv.style.display = 'block';
+    document.getElementById('addLaborUnit').value = 'EA';
+    document.getElementById('addLaborPrice').value = '0.00';
+  } else if (select.value) {
+    customNameDiv.style.display = 'none';
+    document.getElementById('addLaborUnit').value = selectedOption.dataset.unit || 'EA';
+    document.getElementById('addLaborPrice').value = parseFloat(selectedOption.dataset.price || 0).toFixed(2);
+  } else {
+    customNameDiv.style.display = 'none';
+  }
+}
+
+function addLaborFromModal() {
+  const itemSelect = document.getElementById('addLaborItem');
+  let itemName = itemSelect.value;
+  
+  if (itemName === 'custom') {
+    itemName = document.getElementById('addLaborCustomName').value.trim();
+    if (!itemName) {
+      alert('Please enter a custom item name');
+      return;
+    }
+  }
+  
+  if (!itemName) {
+    alert('Please select a labor item');
+    return;
+  }
+  
+  const quantity = parseFloat(document.getElementById('addLaborQty').value) || 0;
+  const unit = document.getElementById('addLaborUnit').value;
+  const unitPrice = parseFloat(document.getElementById('addLaborPrice').value) || 0;
+  
+  // Add to laborData
+  const newLabor = {
+    name: itemName,
+    quantity: quantity,
+    unit: unit,
+    unitPrice: unitPrice,
+    total: quantity * unitPrice
+  };
+  
+  if (!window.laborData) window.laborData = { items: [] };
+  if (!window.laborData.items) window.laborData.items = [];
+  window.laborData.items.push(newLabor);
+  
+  // Refresh display
+  const laborTable = document.getElementById('laborTable');
+  if (laborTable) {
+    laborTable.innerHTML = window.laborData.items.map((item, index) => createLaborRow(item, index)).join('');
+  }
+  
+  updateLaborTotals();
+  
+  closeAddLaborModal();
+  console.log('[LABOR] Added item:', newLabor);
 }

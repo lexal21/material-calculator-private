@@ -667,6 +667,13 @@ input[type="file"] {
   flex-shrink: 0;
 }
 
+/* Labor table quantity inputs - wider */
+#laborTable .quantity-input,
+#laborResultsTable .quantity-input {
+  width: 80px;
+  min-width: 80px;
+}
+
 .price-input {
   text-align: right;
   width: 90px;
