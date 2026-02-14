@@ -161,129 +161,86 @@ function toggleRetailView(mode) {
 }
 
 function displayRetailEstimate() {
-  const notReady = document.getElementById('retailNotReady');
-  const results = document.getElementById('retailResults');
-
-  if (!window.retailData) initializeRetailEstimate();
-
-  if (!window.retailData) {
-    if (notReady) notReady.style.display = 'block';
-    if (results) results.style.display = 'none';
-    return;
-  }
-
-  if (notReady) notReady.style.display = 'none';
-  if (results) results.style.display = 'block';
-
-  const est = window.retailData;
-  const totals = calculateRetailTotals();
-  const isCustomer = window.retailViewMode === 'customer';
-  const el = id => document.getElementById(id);
-
-  if (el('retailCustomerName')) el('retailCustomerName').value = est.customerName || '';
-  if (el('retailJobAddress')) el('retailJobAddress').value = est.jobAddress || '';
-  if (el('retailJobNumber')) el('retailJobNumber').value = est.jobNumber || '';
-  if (el('retailSquares')) el('retailSquares').value = est.measurements.squares.toFixed(1);
-  if (el('retailShingleColor')) el('retailShingleColor').value = est.shingleColor || '';
-
-  document.querySelectorAll('.retail-internal-only').forEach(e => e.style.display = isCustomer ? 'none' : '');
-
-  // Split line items into materials and labor
-  const materials = est.lineItems.filter(item => item.category === 'Materials');
-  const labor = est.lineItems.filter(item => item.category === 'Labor');
+  if (!window.retailData) return;
   
-  // Render materials table
-  const materialsBody = el('retailMaterialsTable');
-  if (materialsBody) {
-    materialsBody.innerHTML = materials.map((item, idx) => {
-      const globalIdx = est.lineItems.indexOf(item);
-      const itemTotal = item.quantity * item.unitCost * (1 + item.markup / 100);
-
-      if (isCustomer) {
-        return `<tr><td>${item.description}</td><td style="text-align:center;">${item.quantity} ${pluralizeUnit(item.unit, item.quantity)}</td></tr>`;
-      }
-
-      return `
-        <tr>
-          <td><input type="text" value="${item.description}" onchange="updateRetailItem(${globalIdx},'description',this.value)" class="editable-input" style="width:100%;"></td>
-          <td style="text-align:right;"><input type="number" value="${item.quantity}" step="0.01" onchange="updateRetailItem(${globalIdx},'quantity',this.value)" class="editable-input" style="width:70px;text-align:right;"></td>
-          <td style="text-align:center;">${pluralizeUnit(item.unit, item.quantity)}</td>
-          <td style="text-align:right;" class="retail-internal-only">$<input type="number" value="${item.unitCost.toFixed(2)}" step="0.01" onchange="updateRetailItem(${globalIdx},'unitCost',this.value)" class="editable-input" style="width:80px;text-align:right;"></td>
-          <td style="text-align:right;" class="retail-internal-only"><input type="number" value="${item.markup}" step="1" onchange="updateRetailItem(${globalIdx},'markup',this.value)" class="editable-input" style="width:55px;text-align:right;">%</td>
-          <td style="text-align:right;font-weight:600;">$${itemTotal.toFixed(2)}</td>
-          <td class="delete-cell retail-internal-only"><button class="delete-btn" onclick="deleteRetailItem(${globalIdx})">×</button></td>
-        </tr>`;
-    }).join('');
+  const materialsTable = document.getElementById('retailMaterialsTable');
+  const laborTable = document.getElementById('retailLaborTable');
+  
+  // Separate line items by category
+  const materials = window.retailData.lineItems.filter(item => item.category === 'Materials');
+  const labor = window.retailData.lineItems.filter(item => item.category === 'Labor');
+  
+  // Render materials
+  if (materialsTable) {
+    materialsTable.innerHTML = materials.map((item, idx) => `
+      <tr data-item-id="${item.id}">
+        <td style="padding: 12px 16px;">${item.description}</td>
+        <td style="padding: 12px 16px; text-align: right;">
+          <input type="number" class="editable-input" value="${item.quantity}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'quantity', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+        </td>
+        <td style="padding: 12px 16px; text-align: center;">${item.unit || 'EA'}</td>
+        <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
+          $<input type="number" class="editable-input" value="${item.unitCost.toFixed(2)}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'unitCost', this.value)" style="width: 80px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+        </td>
+        <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
+          <input type="number" class="editable-input" value="${item.markup || 0}" min="0" step="1" onchange="updateRetailLineItem('${item.id}', 'markup', this.value)" style="width: 60px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">%
+        </td>
+        <td style="padding: 12px 16px; text-align: right; font-weight: 600;">$${calculateRetailItemTotal(item).toFixed(2)}</td>
+        <td style="padding: 12px 16px;" class="retail-internal-only">
+          <button onclick="deleteRetailLineItem('${item.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px;">×</button>
+        </td>
+      </tr>
+    `).join('');
   }
   
-  // Render labor table
-  const laborBody = el('retailLaborTable');
-  if (laborBody) {
-    laborBody.innerHTML = labor.map((item, idx) => {
-      const globalIdx = est.lineItems.indexOf(item);
-      const itemTotal = item.quantity * item.unitCost * (1 + item.markup / 100);
-
-      if (isCustomer) {
-        return `<tr><td>${item.description}</td><td style="text-align:center;">${item.quantity} ${pluralizeUnit(item.unit, item.quantity)}</td></tr>`;
-      }
-
-      return `
-        <tr>
-          <td><input type="text" value="${item.description}" onchange="updateRetailItem(${globalIdx},'description',this.value)" class="editable-input" style="width:100%;"></td>
-          <td style="text-align:right;"><input type="number" value="${item.quantity}" step="0.01" onchange="updateRetailItem(${globalIdx},'quantity',this.value)" class="editable-input" style="width:70px;text-align:right;"></td>
-          <td style="text-align:center;">${pluralizeUnit(item.unit, item.quantity)}</td>
-          <td style="text-align:right;" class="retail-internal-only">$<input type="number" value="${item.unitCost.toFixed(2)}" step="0.01" onchange="updateRetailItem(${globalIdx},'unitCost',this.value)" class="editable-input" style="width:80px;text-align:right;"></td>
-          <td style="text-align:right;" class="retail-internal-only"><input type="number" value="${item.markup}" step="1" onchange="updateRetailItem(${globalIdx},'markup',this.value)" class="editable-input" style="width:55px;text-align:right;">%</td>
-          <td style="text-align:right;font-weight:600;">$${itemTotal.toFixed(2)}</td>
-          <td class="delete-cell retail-internal-only"><button class="delete-btn" onclick="deleteRetailItem(${globalIdx})">×</button></td>
-        </tr>`;
-    }).join('');
+  // Render labor
+  if (laborTable) {
+    laborTable.innerHTML = labor.map((item, idx) => `
+      <tr data-item-id="${item.id}">
+        <td style="padding: 12px 16px;">${item.description}</td>
+        <td style="padding: 12px 16px; text-align: right;">
+          <input type="number" class="editable-input" value="${item.quantity}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'quantity', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+        </td>
+        <td style="padding: 12px 16px; text-align: center;">${item.unit || 'EA'}</td>
+        <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
+          $<input type="number" class="editable-input" value="${item.unitCost.toFixed(2)}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'unitCost', this.value)" style="width: 80px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+        </td>
+        <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
+          <input type="number" class="editable-input" value="${item.markup || 0}" min="0" step="1" onchange="updateRetailLineItem('${item.id}', 'markup', this.value)" style="width: 60px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">%
+        </td>
+        <td style="padding: 12px 16px; text-align: right; font-weight: 600;">$${calculateRetailItemTotal(item).toFixed(2)}</td>
+        <td style="padding: 12px 16px;" class="retail-internal-only">
+          <button onclick="deleteRetailLineItem('${item.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px;">×</button>
+        </td>
+      </tr>
+    `).join('');
   }
   
-  // Update subtotals
-  const materialsSubtotal = materials.reduce((sum, item) => {
-    return sum + (item.quantity * item.unitCost * (1 + item.markup / 100));
-  }, 0);
-  const laborSubtotal = labor.reduce((sum, item) => {
-    return sum + (item.quantity * item.unitCost * (1 + item.markup / 100));
-  }, 0);
+  // Calculate and display subtotals
+  const materialsSubtotal = materials.reduce((sum, item) => sum + calculateRetailItemTotal(item), 0);
+  const laborSubtotal = labor.reduce((sum, item) => sum + calculateRetailItemTotal(item), 0);
   
-  if (el('retailMaterialsSubtotal')) el('retailMaterialsSubtotal').textContent = '$' + materialsSubtotal.toFixed(2);
-  if (el('retailLaborSubtotal')) el('retailLaborSubtotal').textContent = '$' + laborSubtotal.toFixed(2);
+  const materialsSubtotalEl = document.getElementById('retailMaterialsSubtotal');
+  const laborSubtotalEl = document.getElementById('retailLaborSubtotal');
+  
+  if (materialsSubtotalEl) materialsSubtotalEl.textContent = '$' + materialsSubtotal.toFixed(2);
+  if (laborSubtotalEl) laborSubtotalEl.textContent = '$' + laborSubtotal.toFixed(2);
+  
+  // Update customer info fields
+  document.getElementById('retailCustomerName').value = window.retailData.customerName || '';
+  document.getElementById('retailJobAddress').value = window.retailData.jobAddress || '';
+  document.getElementById('retailJobNumber').value = window.retailData.jobNumber || '';
+  document.getElementById('retailSquares').value = window.retailData.measurements?.squares || '';
+  document.getElementById('retailShingleColor').value = window.retailData.shingleColor || '';
+  
+  // Calculate totals
+  calculateRetailTotals();
+}
 
-  const feesBody = el('retailFeesTable');
-  if (feesBody && !isCustomer) {
-    feesBody.innerHTML = est.fees.map((fee, idx) => `
-      <tr>
-        <td><label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <input type="checkbox" ${fee.enabled?'checked':''} onchange="toggleRetailFee(${idx},this.checked)">
-          <input type="text" value="${fee.description}" onchange="updateRetailFee(${idx},'description',this.value)" class="editable-input" style="width:150px;">
-        </label></td>
-        <td><select onchange="updateRetailFee(${idx},'type',this.value)" class="editable-input" style="width:90px;">
-          <option value="percent" ${fee.type==='percent'?'selected':''}>Percent</option>
-          <option value="flat" ${fee.type==='flat'?'selected':''}>Flat $</option>
-        </select></td>
-        <td style="white-space:nowrap;"><input type="number" value="${fee.value}" step="0.01" onchange="updateRetailFee(${idx},'value',this.value)" class="editable-input" style="width:70px;text-align:right;">${fee.type==='percent'?' %':''}</td>
-        <td style="text-align:right;font-weight:600;">${fee.enabled?'$'+fee.calculated.toFixed(2):'-'}</td>
-      </tr>`).join('');
-  }
-
-  if (isCustomer) {
-    // Customer view: fees rolled into subtotal
-    const customerSubtotal = totals.subtotal + totals.feesTotal;
-    if (el('retailSubtotal')) el('retailSubtotal').innerHTML = '<strong>$' + customerSubtotal.toFixed(2) + '</strong>';
-    if (el('retailTaxAmount')) el('retailTaxAmount').textContent = '$' + totals.taxAmount.toFixed(2);
-    if (el('retailGrandTotal')) el('retailGrandTotal').innerHTML = '<strong>$' + totals.grandTotal.toFixed(2) + '</strong>';
-  } else {
-    // Internal view: show fees separately
-    if (el('retailSubtotal')) el('retailSubtotal').innerHTML = '<strong>$' + totals.subtotal.toFixed(2) + '</strong>';
-    if (el('retailFeesTotal')) el('retailFeesTotal').textContent = '$' + totals.feesTotal.toFixed(2);
-    if (el('retailTaxAmount')) el('retailTaxAmount').textContent = '$' + totals.taxAmount.toFixed(2);
-    if (el('retailGrandTotal')) el('retailGrandTotal').innerHTML = '<strong>$' + totals.grandTotal.toFixed(2) + '</strong>';
-  }
-
-  if (el('retailTaxRate')) el('retailTaxRate').value = est.tax.rate;
-  if (el('retailTaxApplyTo')) el('retailTaxApplyTo').value = est.tax.applyTo;
+function calculateRetailItemTotal(item) {
+  const base = item.quantity * item.unitCost;
+  const markup = item.markup || 0;
+  return base * (1 + markup / 100);
 }
 
 function updateRetailItem(idx, field, value) {

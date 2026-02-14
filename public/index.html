@@ -502,6 +502,114 @@
             </tbody>
           </table>
 
+          <!-- ADDITIONAL MATERIALS SECTION -->
+          <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 24px 0; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 16px 20px;">
+              <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Additional Materials</h3>
+              <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Common items not tied to shingle manufacturer</p>
+            </div>
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #f8fafc;">
+                  <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 40%;">Item</th>
+                  <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 15%;">Unit</th>
+                  <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 20%;">Default Price</th>
+                  <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 25%;">Your Price</th>
+                </tr>
+              </thead>
+              <tbody id="additionalMaterialsPricingBody">
+                <tr>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">L Flashing (Trim Coil)</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Roll</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$134.50</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center;">
+                      <span style="color: #64748b; margin-right: 4px;">$</span>
+                      <input type="number" id="addlMat_lFlashing" value="134.50" data-default="134.50" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Step Flashing</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Bundle</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$38.00</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center;">
+                      <span style="color: #64748b; margin-right: 4px;">$</span>
+                      <input type="number" id="addlMat_stepFlashing" value="38.00" data-default="38.00" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Button Caps</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Box</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$19.50</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center;">
+                      <span style="color: #64748b; margin-right: 4px;">$</span>
+                      <input type="number" id="addlMat_buttonCaps" value="19.50" data-default="19.50" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">7/16 OSB Plywood</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Sheet</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$15.99</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center;">
+                      <span style="color: #64748b; margin-right: 4px;">$</span>
+                      <input type="number" id="addlMat_plywood" value="15.99" data-default="15.99" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Joint Sealant 10oz</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Tube</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$7.29</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center;">
+                      <span style="color: #64748b; margin-right: 4px;">$</span>
+                      <input type="number" id="addlMat_sealant" value="7.29" data-default="7.29" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Pipe Boot 2"</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Piece</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$12.00</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center;">
+                      <span style="color: #64748b; margin-right: 4px;">$</span>
+                      <input type="number" id="addlMat_pipeBoot2" value="12.00" data-default="12.00" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Pipe Boot 3"</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Piece</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$14.00</td>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center;">
+                      <span style="color: #64748b; margin-right: 4px;">$</span>
+                      <input type="number" id="addlMat_pipeBoot3" value="14.00" data-default="14.00" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 16px;">Pipe Boot 4"</td>
+                  <td style="padding: 12px 16px;">Piece</td>
+                  <td style="padding: 12px 16px; color: #64748b;">$16.00</td>
+                  <td style="padding: 12px 16px;">
+                    <div style="display: flex; align-items: center;">
+                      <span style="color: #64748b; margin-right: 4px;">$</span>
+                      <input type="number" id="addlMat_pipeBoot4" value="16.00" data-default="16.00" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
           <!-- Labor Pricing Section -->
           <h3 style="margin: 24px 0 16px 0; color: #334155;">Labor Rates</h3>
           <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
