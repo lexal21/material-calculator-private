@@ -1053,14 +1053,20 @@ if (typeof initDefaultSystem === 'undefined') {
 function displayLaborResults(data) {
   console.log('[LABOR] displayLaborResults called with data:', data);
   
-  // Store labor data globally
+  // Handle both formats: data.labor.items OR data.items directly
+  let laborData;
   if (data.labor && data.labor.items) {
-    window.laborData = data.labor;
-    console.log('[LABOR] Stored labor data:', window.laborData);
+    laborData = data.labor;
+  } else if (data.items) {
+    laborData = data;
   } else {
     console.warn('[LABOR] No labor data in response');
     return;
   }
+  
+  // Store labor data globally
+  window.laborData = laborData;
+  console.log('[LABOR] Stored labor data:', window.laborData);
   
   // Get labor table
   const laborTable = document.getElementById('laborTable');
@@ -1073,7 +1079,7 @@ function displayLaborResults(data) {
   laborTable.innerHTML = '';
   
   // Render each labor item
-  window.laborData.items.forEach((item, index) => {
+  laborData.items.forEach((item, index) => {
     const row = createLaborRow(item, index);
     laborTable.innerHTML += row;
   });
@@ -1081,7 +1087,7 @@ function displayLaborResults(data) {
   // Update totals
   updateLaborTotals();
   
-  console.log('[LABOR] Rendered', window.laborData.items.length, 'labor items');
+  console.log('[LABOR] Rendered', laborData.items.length, 'labor items');
 }
 
 // Helper function to create labor row HTML
