@@ -401,21 +401,17 @@ function displayResults(data) {
         </select>
       </td>
       <td data-label="Quantity" class="editable-cell" data-print-value="${qtyForPrint} ${pluralUnit}">
-        <div class="quantity-cell">
-          <span class="unit-label unit-before">${pluralUnit}</span>
-          <input 
-            type="number" 
-            class="editable-input quantity-input" 
-            value="${qtyDisplay}" 
-            min="0"
-            step="0.01"
-            data-row="${index}"
-            data-field="quantity"
-            onchange="updateMaterialRow(${index})"
-            aria-label="Quantity for ${item.name}"
-          />
-          <span class="unit-label unit-after">${pluralUnit}</span>
-        </div>
+        <input 
+          type="number" 
+          class="editable-input quantity-input" 
+          value="${qtyDisplay}" 
+          min="0"
+          step="0.01"
+          data-row="${index}"
+          data-field="quantity"
+          onchange="updateMaterialRow(${index})"
+          aria-label="Quantity for ${item.name}"
+        />
       </td>
       <td data-label="Unit">${item.unit || ''}</td>
       <td data-label="Unit Price" class="editable-cell">
@@ -1547,21 +1543,17 @@ onchange="toggleLaborSelection(${index})">
       </td>
       <td data-label="Item">${item.name}</td>
       <td data-label="Quantity" class="editable-cell" data-print-value="${quantity.toFixed(2)} ${pluralUnit}">
-        <div class="quantity-cell">
-          <span class="unit-label unit-before">${pluralUnit}</span>
-          <input 
-            type="number" 
-            class="editable-input quantity-input" 
-            value="${quantity.toFixed(2)}" 
-            min="0"
-            step="0.01"
-            data-labor-row="${index}"
-            data-field="quantity"
-            onchange="updateLaborRow(${index})"
-            aria-label="Quantity for ${item.name}"
-          />
-          <span class="unit-label unit-after">${pluralUnit}</span>
-        </div>
+        <input 
+          type="number" 
+          class="editable-input quantity-input" 
+          value="${quantity.toFixed(2)}" 
+          min="0"
+          step="0.01"
+          data-labor-row="${index}"
+          data-field="quantity"
+          onchange="updateLaborRow(${index})"
+          aria-label="Quantity for ${item.name}"
+        />
       </td>
       <td data-label="Unit">${item.unit || ''}</td>
       <td data-label="Unit Price" class="editable-cell">

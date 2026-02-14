@@ -673,7 +673,8 @@ input[type="file"] {
   flex-shrink: 0;
 }
 
-/* Quantity cell with unit labels */
+/* Quantity cell with unit labels - COMMENTED OUT (unit now in separate column) */
+/*
 .quantity-cell {
   display: flex;
   align-items: center;
@@ -698,6 +699,7 @@ input[type="file"] {
 .unit-after {
   display: inline;
 }
+*/
 
 /* Row total */
 .row-total {
@@ -1111,9 +1113,12 @@ input[type="file"] {
     opacity: 1;
   }
 
+  /* .quantity-cell - COMMENTED OUT (no longer used) */
+  /*
   .quantity-cell {
     justify-content: flex-end;
   }
+  */
 
   .totals-table {
     max-width: 100%;
