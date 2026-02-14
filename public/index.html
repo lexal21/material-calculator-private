@@ -155,7 +155,7 @@
           + New Project
         </button>
         <button class="btn-save-project" onclick="projectManager.showSaveProjectDialog()" title="Save current project">
-          ?? Save As...
+          Save As...
         </button>
         <button class="btn-delete-project" onclick="projectManager.showDeleteProjectDialog()" title="Delete selected project">
           Delete Project
@@ -315,14 +315,14 @@
 
         <!-- Materials Photos Section -->
         <div id="materialsPhotoSection" class="photo-section no-print">
-          <h3 style="margin-bottom: 12px;">?? Photos (<span id="materialsPhotoCount">0</span>)</h3>
+          <h3 style="margin-bottom: 12px;">Photos (<span id="materialsPhotoCount">0</span>)</h3>
           <div style="margin-bottom: 12px;">
             <input type="file" id="materialsPhotoInput" accept="image/*" multiple onchange="handleMaterialsPhotos(event)" style="display: none;">
             <button class="btn-secondary btn-sm" onclick="document.getElementById('materialsPhotoInput').click()">
               + Upload Photos
             </button>
             <button class="btn-primary btn-sm" onclick="openCompanyCamModal('materials')" style="background: #0891b2;">
-              ?? Import from CompanyCam
+              &#128247; Import from CompanyCam
             </button>
             <button class="btn-danger btn-sm" id="deleteMaterialsPhotosBtn" onclick="deleteSelectedPhotos('materials')" disabled>
               Delete Selected
@@ -416,14 +416,14 @@
 
           <!-- Labor Photos Section -->
           <div id="laborPhotoSection" class="photo-section no-print">
-            <h3 style="margin-bottom: 12px;">?? Photos (<span id="laborPhotoCount">0</span>)</h3>
+            <h3 style="margin-bottom: 12px;">Photos (<span id="laborPhotoCount">0</span>)</h3>
             <div style="margin-bottom: 12px;">
               <input type="file" id="laborPhotoInput" accept="image/*" multiple onchange="handleLaborPhotos(event)" style="display: none;">
               <button class="btn-secondary btn-sm" onclick="document.getElementById('laborPhotoInput').click()">
                 + Upload Photos
               </button>
               <button class="btn-primary btn-sm" onclick="openCompanyCamModal('labor')" style="background: #0891b2;">
-                ?? Import from CompanyCam
+                &#128247; Import from CompanyCam
               </button>
               <button class="btn-danger btn-sm" id="deleteLaborPhotosBtn" onclick="deleteSelectedPhotos('labor')" disabled>
                 Delete Selected
@@ -615,7 +615,7 @@
         <div id="companycam-photos-view" style="display: none;">
           <div class="companycam-section-header">
             <button class="btn-secondary" onclick="backToCompanyCamProjects()" style="margin-bottom: 12px;">
-              ? Back to Projects
+              &larr; Back to Projects
             </button>
             <h3 id="companycam-selected-project-name">Project Photos</h3>
             <p>Select photos to import to <strong id="companycam-modal-tab">Materials</strong> tab</p>
