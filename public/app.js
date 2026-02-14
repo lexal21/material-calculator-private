@@ -417,6 +417,7 @@ function displayResults(data) {
           <span class="unit-label unit-after">${pluralUnit}</span>
         </div>
       </td>
+      <td data-label="Unit">${item.unit || ''}</td>
       <td data-label="Unit Price" class="editable-cell">
         $<input 
           type="number" 
@@ -430,7 +431,6 @@ function displayResults(data) {
           aria-label="Unit price for ${item.name}"
         />
       </td>
-      <td data-label="Unit">${item.unit || ''}</td>
       <td data-label="Total" class="row-total">$${item.total.toFixed(2)}</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMaterialRow(${index})" aria-label="Delete ${item.name}">
@@ -1563,6 +1563,7 @@ onchange="toggleLaborSelection(${index})">
           <span class="unit-label unit-after">${pluralUnit}</span>
         </div>
       </td>
+      <td data-label="Unit">${item.unit || ''}</td>
       <td data-label="Unit Price" class="editable-cell">
         $<input 
           type="number" 
@@ -1576,7 +1577,6 @@ onchange="toggleLaborSelection(${index})">
           aria-label="Unit price for ${item.name}"
         />
       </td>
-      <td data-label="Unit">${item.unit || ''}</td>
       <td data-label="Total" class="row-total">$${total.toFixed(2)}</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteLaborItem(${index})" aria-label="Delete ${item.name}">
