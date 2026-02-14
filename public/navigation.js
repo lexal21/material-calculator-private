@@ -750,110 +750,30 @@ function createModuleContainers() {
                 
                 <!-- ADDITIONAL MATERIALS SECTION -->
                 <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden;">
-                  <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 16px 20px;">
-                    <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Additional Materials</h3>
-                    <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Common items not tied to shingle manufacturer</p>
+                  <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Additional Materials</h3>
+                      <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Common items not tied to shingle manufacturer</p>
+                    </div>
+                    <button onclick="openAddAdditionalMaterialModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">+ Add Item</button>
                   </div>
                   <table style="width: 100%; border-collapse: collapse;">
                     <thead>
                       <tr style="background: #f8fafc;">
-                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 40%;">Item</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 35%;">Item</th>
                         <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 15%;">Unit</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 20%;">Default Price</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 25%;">Your Price</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 18%;">Default Price</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 22%;">Your Price</th>
+                        <th style="padding: 12px 16px; text-align: center; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; width: 10%;"></th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">L Flashing (Trim Coil)</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Roll</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$134.50</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-                          <div style="display: flex; align-items: center;">
-                            <span style="color: #64748b; margin-right: 4px;">$</span>
-                            <input type="number" id="addlMat_lFlashing" value="134.50" data-default="134.50" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Step Flashing</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Bundle</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$38.00</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-                          <div style="display: flex; align-items: center;">
-                            <span style="color: #64748b; margin-right: 4px;">$</span>
-                            <input type="number" id="addlMat_stepFlashing" value="38.00" data-default="38.00" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Button Caps</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Box</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$19.50</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-                          <div style="display: flex; align-items: center;">
-                            <span style="color: #64748b; margin-right: 4px;">$</span>
-                            <input type="number" id="addlMat_buttonCaps" value="19.50" data-default="19.50" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">7/16 OSB Plywood</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Sheet</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$15.99</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-                          <div style="display: flex; align-items: center;">
-                            <span style="color: #64748b; margin-right: 4px;">$</span>
-                            <input type="number" id="addlMat_plywood" value="15.99" data-default="15.99" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Joint Sealant 10oz</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Tube</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$7.29</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-                          <div style="display: flex; align-items: center;">
-                            <span style="color: #64748b; margin-right: 4px;">$</span>
-                            <input type="number" id="addlMat_sealant" value="7.29" data-default="7.29" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Pipe Boot 2"</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Piece</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$12.00</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-                          <div style="display: flex; align-items: center;">
-                            <span style="color: #64748b; margin-right: 4px;">$</span>
-                            <input type="number" id="addlMat_pipeBoot2" value="12.00" data-default="12.00" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Pipe Boot 3"</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">Piece</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$14.00</td>
-                        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
-                          <div style="display: flex; align-items: center;">
-                            <span style="color: #64748b; margin-right: 4px;">$</span>
-                            <input type="number" id="addlMat_pipeBoot3" value="14.00" data-default="14.00" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 12px 16px;">Pipe Boot 4"</td>
-                        <td style="padding: 12px 16px;">Piece</td>
-                        <td style="padding: 12px 16px; color: #64748b;">$16.00</td>
-                        <td style="padding: 12px 16px;">
-                          <div style="display: flex; align-items: center;">
-                            <span style="color: #64748b; margin-right: 4px;">$</span>
-                            <input type="number" id="addlMat_pipeBoot4" value="16.00" data-default="16.00" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
-                          </div>
-                        </td>
-                      </tr>
+                    <tbody id="retailAdditionalMaterialsBody">
+                      <!-- Populated by JavaScript -->
                     </tbody>
                   </table>
+                  <div style="padding: 12px 16px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
+                    <button onclick="resetAdditionalMaterialsToDefault()" style="padding: 6px 12px; background: none; border: 1px solid #cbd5e0; color: #64748b; border-radius: 4px; cursor: pointer; font-size: 13px;">Reset to Default Items</button>
+                  </div>
                 </div>
                 
                 <!-- LABOR SECTION -->
@@ -882,6 +802,48 @@ function createModuleContainers() {
               <div id="retailPricingPlaceholder" style="text-align: center; padding: 60px 20px; color: #94a3b8;">
                 <div style="font-size: 48px; margin-bottom: 16px;">&#128176;</div>
                 <p style="font-size: 16px;">Select a manufacturer and shingle model to customize pricing</p>
+              </div>
+              
+              <!-- Add Additional Material Modal -->
+              <div id="addAdditionalMaterialModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+                <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 450px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #1e293b;">Add Additional Material</h3>
+                    <button onclick="closeAddAdditionalMaterialModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+                  </div>
+                  <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Item Name</label>
+                    <input type="text" id="addlMatName" placeholder="e.g., Chimney Flashing Kit" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div>
+                      <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Unit</label>
+                      <select id="addlMatUnit" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;">
+                        <option value="Piece">Piece</option>
+                        <option value="Bundle">Bundle</option>
+                        <option value="Roll">Roll</option>
+                        <option value="Box">Box</option>
+                        <option value="Sheet">Sheet</option>
+                        <option value="Tube">Tube</option>
+                        <option value="LF">LF</option>
+                        <option value="SQ">SQ</option>
+                        <option value="EA">EA</option>
+                        <option value="Gallon">Gallon</option>
+                        <option value="Bag">Bag</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase;">Default Price</label>
+                      <div style="display: flex; align-items: center;">
+                        <span style="color: #64748b; margin-right: 4px;">$</span>
+                        <input type="number" id="addlMatPrice" value="0.00" min="0" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px;">
+                      </div>
+                    </div>
+                  </div>
+                  <button onclick="addAdditionalMaterialItem()" style="width: 100%; padding: 12px; background: #f59e0b; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer;">
+                    Add Item
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1836,6 +1798,7 @@ function initRetailPricingTab() {
   populateRetailPricingManufacturerDropdown();
   updateRetailDefaultBanner();
   populateRetailLaborPricingTable();
+  renderAdditionalMaterialsTable();
 }
 
 function populateRetailPricingManufacturerDropdown() {
@@ -2008,6 +1971,9 @@ function handleRetailPricingShingleLineChange() {
   
   if (editorContainer) editorContainer.style.display = 'block';
   if (placeholder) placeholder.style.display = 'none';
+  
+  // Re-render additional materials with saved prices for this system
+  renderAdditionalMaterialsTable();
 }
 
 function saveRetailPricingTemplate() {
@@ -2017,6 +1983,16 @@ function saveRetailPricingTemplate() {
   }
   
   const pricingKey = `${window._retailPricingManufacturer}_${window._retailPricingShingleLine}`;
+  
+  // Build additional materials pricing dynamically
+  const additionalMaterials = {};
+  const addlMatItems = getAdditionalMaterials();
+  addlMatItems.forEach(item => {
+    const input = document.getElementById(`addlMat_${item.id}`);
+    if (input) {
+      additionalMaterials[item.id] = parseFloat(input.value) || item.defaultPrice;
+    }
+  });
   
   const pricing = {
     shingles: parseFloat(document.getElementById('retail_price_shingles')?.value) || 0,
@@ -2028,16 +2004,7 @@ function saveRetailPricingTemplate() {
     dripEdge: parseFloat(document.getElementById('retail_price_dripEdge')?.value) || 0,
     nails: parseFloat(document.getElementById('retail_price_nails')?.value) || 0,
     sealant: parseFloat(document.getElementById('retail_price_sealant')?.value) || 0,
-    additionalMaterials: {
-      lFlashing: parseFloat(document.getElementById('addlMat_lFlashing')?.value) || 134.50,
-      stepFlashing: parseFloat(document.getElementById('addlMat_stepFlashing')?.value) || 38.00,
-      buttonCaps: parseFloat(document.getElementById('addlMat_buttonCaps')?.value) || 19.50,
-      plywood: parseFloat(document.getElementById('addlMat_plywood')?.value) || 15.99,
-      sealant: parseFloat(document.getElementById('addlMat_sealant')?.value) || 7.29,
-      pipeBoot2: parseFloat(document.getElementById('addlMat_pipeBoot2')?.value) || 12.00,
-      pipeBoot3: parseFloat(document.getElementById('addlMat_pipeBoot3')?.value) || 14.00,
-      pipeBoot4: parseFloat(document.getElementById('addlMat_pipeBoot4')?.value) || 16.00
-    },
+    additionalMaterials: additionalMaterials,
     labor: {
       squares: parseFloat(document.getElementById('retail_laborRate_squares')?.value) || 90,
       starter: parseFloat(document.getElementById('retail_laborRate_starter')?.value) || 25,
@@ -2107,3 +2074,150 @@ function setAsDefaultSystemFromRetail() {
   updateRetailDefaultBanner();
 }
 
+
+// ==========================================
+// ADDITIONAL MATERIALS MANAGEMENT
+// ==========================================
+
+const ADDITIONAL_MATERIALS_KEY = 'quikbitz-additional-materials';
+
+// Default additional materials
+const defaultAdditionalMaterials = [
+  { id: 'lFlashing', name: 'L Flashing (Trim Coil)', unit: 'Roll', defaultPrice: 134.50, isDefault: true },
+  { id: 'stepFlashing', name: 'Step Flashing', unit: 'Bundle', defaultPrice: 38.00, isDefault: true },
+  { id: 'buttonCaps', name: 'Button Caps', unit: 'Box', defaultPrice: 19.50, isDefault: true },
+  { id: 'plywood', name: '7/16 OSB Plywood', unit: 'Sheet', defaultPrice: 15.99, isDefault: true },
+  { id: 'sealant', name: 'Joint Sealant 10oz', unit: 'Tube', defaultPrice: 7.29, isDefault: true },
+  { id: 'pipeBoot2', name: 'Pipe Boot 2"', unit: 'Piece', defaultPrice: 12.00, isDefault: true },
+  { id: 'pipeBoot3', name: 'Pipe Boot 3"', unit: 'Piece', defaultPrice: 14.00, isDefault: true },
+  { id: 'pipeBoot4', name: 'Pipe Boot 4"', unit: 'Piece', defaultPrice: 16.00, isDefault: true }
+];
+
+function getAdditionalMaterials() {
+  try {
+    const saved = localStorage.getItem(ADDITIONAL_MATERIALS_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('[ADDL MAT] Error loading:', e);
+  }
+  return [...defaultAdditionalMaterials];
+}
+
+function saveAdditionalMaterials(materials) {
+  localStorage.setItem(ADDITIONAL_MATERIALS_KEY, JSON.stringify(materials));
+}
+
+function renderAdditionalMaterialsTable() {
+  const tbody = document.getElementById('retailAdditionalMaterialsBody');
+  if (!tbody) return;
+  
+  const materials = getAdditionalMaterials();
+  
+  // Get saved custom prices if a system is selected
+  let savedPrices = {};
+  if (window._retailPricingManufacturer && window._retailPricingShingleLine) {
+    const pricingKey = `${window._retailPricingManufacturer}_${window._retailPricingShingleLine}`;
+    const allPricing = typeof loadCustomPricing === 'function' ? loadCustomPricing() : {};
+    savedPrices = allPricing[pricingKey]?.additionalMaterials || {};
+  }
+  
+  tbody.innerHTML = materials.map((item, index) => {
+    const savedPrice = savedPrices[item.id] ?? item.defaultPrice;
+    return `
+      <tr data-addl-mat-id="${item.id}">
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">${item.name}</td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">${item.unit}</td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #64748b;">$${item.defaultPrice.toFixed(2)}</td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+          <div style="display: flex; align-items: center;">
+            <span style="color: #64748b; margin-right: 4px;">$</span>
+            <input type="number" id="addlMat_${item.id}" value="${savedPrice.toFixed(2)}" data-default="${item.defaultPrice}" step="0.01" style="width: 100px; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+          </div>
+        </td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; text-align: center;">
+          <button onclick="deleteAdditionalMaterial('${item.id}', '${item.name}')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 4px 8px;" title="Delete item">×</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openAddAdditionalMaterialModal() {
+  const modal = document.getElementById('addAdditionalMaterialModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    // Clear inputs
+    document.getElementById('addlMatName').value = '';
+    document.getElementById('addlMatUnit').value = 'Piece';
+    document.getElementById('addlMatPrice').value = '0.00';
+  }
+}
+
+function closeAddAdditionalMaterialModal() {
+  const modal = document.getElementById('addAdditionalMaterialModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+function addAdditionalMaterialItem() {
+  const name = document.getElementById('addlMatName').value.trim();
+  const unit = document.getElementById('addlMatUnit').value;
+  const price = parseFloat(document.getElementById('addlMatPrice').value) || 0;
+  
+  if (!name) {
+    alert('Please enter an item name.');
+    return;
+  }
+  
+  // Generate unique ID from name
+  const id = 'custom_' + name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
+  
+  const materials = getAdditionalMaterials();
+  
+  // Check for duplicate names
+  if (materials.some(m => m.name.toLowerCase() === name.toLowerCase())) {
+    alert('An item with this name already exists.');
+    return;
+  }
+  
+  materials.push({
+    id: id,
+    name: name,
+    unit: unit,
+    defaultPrice: price,
+    isDefault: false
+  });
+  
+  saveAdditionalMaterials(materials);
+  renderAdditionalMaterialsTable();
+  closeAddAdditionalMaterialModal();
+  
+  console.log('[ADDL MAT] Added:', name);
+}
+
+function deleteAdditionalMaterial(id, name) {
+  if (!confirm(`Are you sure you want to delete "${name}" from the additional materials list?\n\nThis will remove it from pricing for all manufacturer systems.`)) {
+    return;
+  }
+  
+  let materials = getAdditionalMaterials();
+  materials = materials.filter(m => m.id !== id);
+  saveAdditionalMaterials(materials);
+  renderAdditionalMaterialsTable();
+  
+  console.log('[ADDL MAT] Deleted:', name);
+}
+
+function resetAdditionalMaterialsToDefault() {
+  if (!confirm('Reset additional materials to default list?\n\nThis will remove any custom items you have added.')) {
+    return;
+  }
+  
+  saveAdditionalMaterials([...defaultAdditionalMaterials]);
+  renderAdditionalMaterialsTable();
+  
+  console.log('[ADDL MAT] Reset to defaults');
+}
