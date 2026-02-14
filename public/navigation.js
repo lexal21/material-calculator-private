@@ -530,34 +530,85 @@ function createModuleContainers() {
               </div>
             </div>
 
-            <!-- Line Items Table -->
-            <div style="margin-bottom: 24px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h3 style="margin: 0; font-size: 14px; text-transform: uppercase; color: #64748b;">Line Items</h3>
+            <!-- Materials Section -->
+            <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden;">
+              <div style="background: linear-gradient(135deg, #0891b2, #0e7490); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Materials</h3>
+                  <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Roofing materials and supplies</p>
+                </div>
                 <div class="retail-internal-only">
-                  <button class="btn-secondary btn-sm" onclick="addRetailLineItem()">+ Add Item</button>
-                  <button class="btn-secondary btn-sm" onclick="refreshRetailFromSource()" style="margin-left: 8px;">↻ Reload from PDF</button>
+                  <button class="btn-secondary btn-sm" onclick="addRetailLineItem('Materials')" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer;">+ Add Material</button>
                 </div>
               </div>
-
-              <table class="materials-table">
+              <table class="materials-table" style="margin: 0;">
                 <thead>
                   <tr class="retail-internal-only">
-                    <th style="width:100px;">Category</th>
                     <th>Description</th>
-                    <th style="text-align:right;width:140px;white-space:nowrap;">Qty</th>
-                    <th style="text-align:right;width:110px;white-space:nowrap;">Unit Cost</th>
-                    <th style="text-align:right;width:80px;white-space:nowrap;">Markup</th>
+                    <th style="text-align:right;width:80px;">Qty</th>
+                    <th style="text-align:center;width:60px;">Unit</th>
+                    <th style="text-align:right;width:100px;" class="retail-internal-only">Unit Cost</th>
+                    <th style="text-align:right;width:80px;" class="retail-internal-only">Markup</th>
                     <th style="text-align:right;width:100px;">Total</th>
-                    <th style="width:40px;"></th>
+                    <th style="width:40px;" class="retail-internal-only"></th>
                   </tr>
                   <tr class="retail-customer-header" style="display: none;">
                     <th>Description</th>
                     <th style="text-align: center;">Quantity</th>
                   </tr>
                 </thead>
-                <tbody id="retailLineItemsTable"></tbody>
+                <tbody id="retailMaterialsTable"></tbody>
+                <tfoot>
+                  <tr style="background: #f8fafc; font-weight: 600;">
+                    <td colspan="5" style="padding: 12px 16px; text-align: right;">Materials Subtotal:</td>
+                    <td id="retailMaterialsSubtotal" style="padding: 12px 16px; text-align: right;">$0.00</td>
+                    <td class="retail-internal-only"></td>
+                  </tr>
+                </tfoot>
               </table>
+            </div>
+
+            <!-- Labor Section -->
+            <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden;">
+              <div style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Labor</h3>
+                  <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Installation and labor charges</p>
+                </div>
+                <div class="retail-internal-only">
+                  <button class="btn-secondary btn-sm" onclick="addRetailLineItem('Labor')" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer;">+ Add Labor</button>
+                </div>
+              </div>
+              <table class="materials-table" style="margin: 0;">
+                <thead>
+                  <tr class="retail-internal-only">
+                    <th>Description</th>
+                    <th style="text-align:right;width:80px;">Qty</th>
+                    <th style="text-align:center;width:60px;">Unit</th>
+                    <th style="text-align:right;width:100px;" class="retail-internal-only">Unit Cost</th>
+                    <th style="text-align:right;width:80px;" class="retail-internal-only">Markup</th>
+                    <th style="text-align:right;width:100px;">Total</th>
+                    <th style="width:40px;" class="retail-internal-only"></th>
+                  </tr>
+                  <tr class="retail-customer-header" style="display: none;">
+                    <th>Description</th>
+                    <th style="text-align: center;">Quantity</th>
+                  </tr>
+                </thead>
+                <tbody id="retailLaborTable"></tbody>
+                <tfoot>
+                  <tr style="background: #f8fafc; font-weight: 600;">
+                    <td colspan="5" style="padding: 12px 16px; text-align: right;">Labor Subtotal:</td>
+                    <td id="retailLaborSubtotal" style="padding: 12px 16px; text-align: right;">$0.00</td>
+                    <td class="retail-internal-only"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- Reload Button -->
+            <div class="retail-internal-only" style="margin-bottom: 24px;">
+              <button class="btn-secondary btn-sm" onclick="refreshRetailFromSource()" style="margin-right: 8px;">↻ Reload from PDF</button>
             </div>
 
             <!-- Fees Section (Internal Only) -->

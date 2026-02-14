@@ -188,9 +188,15 @@ function displayRetailEstimate() {
 
   document.querySelectorAll('.retail-internal-only').forEach(e => e.style.display = isCustomer ? 'none' : '');
 
-  const tableBody = el('retailLineItemsTable');
-  if (tableBody) {
-    tableBody.innerHTML = est.lineItems.map((item, idx) => {
+  // Split line items into materials and labor
+  const materials = est.lineItems.filter(item => item.category === 'Materials');
+  const labor = est.lineItems.filter(item => item.category === 'Labor');
+  
+  // Render materials table
+  const materialsBody = el('retailMaterialsTable');
+  if (materialsBody) {
+    materialsBody.innerHTML = materials.map((item, idx) => {
+      const globalIdx = est.lineItems.indexOf(item);
       const itemTotal = item.quantity * item.unitCost * (1 + item.markup / 100);
 
       if (isCustomer) {
@@ -199,20 +205,51 @@ function displayRetailEstimate() {
 
       return `
         <tr>
-          <td><select onchange="updateRetailItem(${idx},'category',this.value)" class="editable-input" style="width:auto;">
-            <option value="Materials" ${item.category==='Materials'?'selected':''}>Materials</option>
-            <option value="Labor" ${item.category==='Labor'?'selected':''}>Labor</option>
-            <option value="Other" ${item.category==='Other'?'selected':''}>Other</option>
-          </select></td>
-          <td><input type="text" value="${item.description}" onchange="updateRetailItem(${idx},'description',this.value)" class="editable-input" style="width:100%;"></td>
-          <td style="text-align:right;white-space:nowrap;"><input type="number" value="${item.quantity}" step="0.01" onchange="updateRetailItem(${idx},'quantity',this.value)" class="editable-input" style="width:70px;text-align:right;"><span style="display:inline-block;width:55px;text-align:left;padding-left:5px;">${pluralizeUnit(item.unit, item.quantity)}</span></td>
-          <td style="text-align:right;white-space:nowrap;">$<input type="number" value="${item.unitCost.toFixed(2)}" step="0.01" onchange="updateRetailItem(${idx},'unitCost',this.value)" class="editable-input" style="width:80px;text-align:right;"></td>
-          <td style="text-align:right;white-space:nowrap;"><input type="number" value="${item.markup}" step="1" onchange="updateRetailItem(${idx},'markup',this.value)" class="editable-input" style="width:55px;text-align:right;">%</td>
+          <td><input type="text" value="${item.description}" onchange="updateRetailItem(${globalIdx},'description',this.value)" class="editable-input" style="width:100%;"></td>
+          <td style="text-align:right;"><input type="number" value="${item.quantity}" step="0.01" onchange="updateRetailItem(${globalIdx},'quantity',this.value)" class="editable-input" style="width:70px;text-align:right;"></td>
+          <td style="text-align:center;">${pluralizeUnit(item.unit, item.quantity)}</td>
+          <td style="text-align:right;" class="retail-internal-only">$<input type="number" value="${item.unitCost.toFixed(2)}" step="0.01" onchange="updateRetailItem(${globalIdx},'unitCost',this.value)" class="editable-input" style="width:80px;text-align:right;"></td>
+          <td style="text-align:right;" class="retail-internal-only"><input type="number" value="${item.markup}" step="1" onchange="updateRetailItem(${globalIdx},'markup',this.value)" class="editable-input" style="width:55px;text-align:right;">%</td>
           <td style="text-align:right;font-weight:600;">$${itemTotal.toFixed(2)}</td>
-          <td class="delete-cell"><button class="delete-btn" onclick="deleteRetailItem(${idx})">×</button></td>
+          <td class="delete-cell retail-internal-only"><button class="delete-btn" onclick="deleteRetailItem(${globalIdx})">×</button></td>
         </tr>`;
     }).join('');
   }
+  
+  // Render labor table
+  const laborBody = el('retailLaborTable');
+  if (laborBody) {
+    laborBody.innerHTML = labor.map((item, idx) => {
+      const globalIdx = est.lineItems.indexOf(item);
+      const itemTotal = item.quantity * item.unitCost * (1 + item.markup / 100);
+
+      if (isCustomer) {
+        return `<tr><td>${item.description}</td><td style="text-align:center;">${item.quantity} ${pluralizeUnit(item.unit, item.quantity)}</td></tr>`;
+      }
+
+      return `
+        <tr>
+          <td><input type="text" value="${item.description}" onchange="updateRetailItem(${globalIdx},'description',this.value)" class="editable-input" style="width:100%;"></td>
+          <td style="text-align:right;"><input type="number" value="${item.quantity}" step="0.01" onchange="updateRetailItem(${globalIdx},'quantity',this.value)" class="editable-input" style="width:70px;text-align:right;"></td>
+          <td style="text-align:center;">${pluralizeUnit(item.unit, item.quantity)}</td>
+          <td style="text-align:right;" class="retail-internal-only">$<input type="number" value="${item.unitCost.toFixed(2)}" step="0.01" onchange="updateRetailItem(${globalIdx},'unitCost',this.value)" class="editable-input" style="width:80px;text-align:right;"></td>
+          <td style="text-align:right;" class="retail-internal-only"><input type="number" value="${item.markup}" step="1" onchange="updateRetailItem(${globalIdx},'markup',this.value)" class="editable-input" style="width:55px;text-align:right;">%</td>
+          <td style="text-align:right;font-weight:600;">$${itemTotal.toFixed(2)}</td>
+          <td class="delete-cell retail-internal-only"><button class="delete-btn" onclick="deleteRetailItem(${globalIdx})">×</button></td>
+        </tr>`;
+    }).join('');
+  }
+  
+  // Update subtotals
+  const materialsSubtotal = materials.reduce((sum, item) => {
+    return sum + (item.quantity * item.unitCost * (1 + item.markup / 100));
+  }, 0);
+  const laborSubtotal = labor.reduce((sum, item) => {
+    return sum + (item.quantity * item.unitCost * (1 + item.markup / 100));
+  }, 0);
+  
+  if (el('retailMaterialsSubtotal')) el('retailMaterialsSubtotal').textContent = '$' + materialsSubtotal.toFixed(2);
+  if (el('retailLaborSubtotal')) el('retailLaborSubtotal').textContent = '$' + laborSubtotal.toFixed(2);
 
   const feesBody = el('retailFeesTable');
   if (feesBody && !isCustomer) {
