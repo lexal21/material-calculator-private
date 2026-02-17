@@ -662,9 +662,10 @@ function buildRetailPDF() {
     });
     
     // Add materials notes if present
-    const retailMatNotes = window.retailData?.materialsNotes || document.getElementById('retailMaterialsNotes')?.value;
-    if (retailMatNotes) {
-      scopeContent.push({ text: 'Materials Notes: ' + retailMatNotes, fontSize: 10, margin: [0, 8, 0, 16], italics: true });
+    const retailMatNotes = window.retailData?.materialsNotes || document.getElementById('retailMaterialsNotes')?.value || '';
+    if (retailMatNotes.trim()) {
+      scopeContent.push({ text: 'Materials Notes:', bold: true, fontSize: 10, margin: [0, 10, 0, 4] });
+      scopeContent.push({ text: retailMatNotes, fontSize: 10, margin: [0, 0, 0, 16], italics: true });
     }
   }
 
@@ -682,9 +683,10 @@ function buildRetailPDF() {
     });
     
     // Add labor notes if present
-    const retailLabNotes = window.retailData?.laborNotes || document.getElementById('retailLaborNotes')?.value;
-    if (retailLabNotes) {
-      scopeContent.push({ text: 'Labor Notes: ' + retailLabNotes, fontSize: 10, margin: [0, 8, 0, 16], italics: true });
+    const retailLabNotes = window.retailData?.laborNotes || document.getElementById('retailLaborNotes')?.value || '';
+    if (retailLabNotes.trim()) {
+      scopeContent.push({ text: 'Labor Notes:', bold: true, fontSize: 10, margin: [0, 10, 0, 4] });
+      scopeContent.push({ text: retailLabNotes, fontSize: 10, margin: [0, 0, 0, 16], italics: true });
     }
   }
 

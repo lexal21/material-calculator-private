@@ -541,16 +541,17 @@ function createModuleContainers() {
                   <button class="btn-secondary btn-sm" onclick="addRetailLineItem('Materials')" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer;">+ Add Material</button>
                 </div>
               </div>
-              <table class="materials-table" style="width: 100%; margin: 0;">
+              <table class="materials-table" style="width: 100%; table-layout: fixed; margin: 0;">
                 <thead>
                   <tr class="retail-internal-only">
-                    <th>Description</th>
-                    <th style="text-align:right;width:80px;">Qty</th>
-                    <th style="text-align:center;width:60px;">Unit</th>
-                    <th style="text-align:right;width:100px;" class="retail-internal-only">Unit Cost</th>
-                    <th style="text-align:right;width:80px;" class="retail-internal-only">Markup</th>
-                    <th style="text-align:right;width:100px;">Total</th>
-                    <th style="width:40px;" class="retail-internal-only"></th>
+                    <th style="width: 5%;"></th>
+                    <th style="width: 30%;">Description</th>
+                    <th style="text-align: right; width: 10%;">Qty</th>
+                    <th style="text-align: center; width: 10%;">Unit</th>
+                    <th style="text-align: right; width: 15%;" class="retail-internal-only">Unit Cost</th>
+                    <th style="text-align: center; width: 10%;" class="retail-internal-only">Markup</th>
+                    <th style="text-align: right; width: 15%;">Total</th>
+                    <th style="width: 5%;" class="retail-internal-only"></th>
                   </tr>
                   <tr class="retail-customer-header" style="display: none;">
                     <th>Description</th>
@@ -560,7 +561,7 @@ function createModuleContainers() {
                 <tbody id="retailMaterialsTable"></tbody>
                 <tfoot>
                   <tr style="background: #f8fafc; font-weight: 600;">
-                    <td colspan="5" style="padding: 12px 16px; text-align: right;">Materials Subtotal:</td>
+                    <td colspan="6" style="padding: 12px 16px; text-align: right;">Materials Subtotal:</td>
                     <td id="retailMaterialsSubtotal" style="padding: 12px 16px; text-align: right;">$0.00</td>
                     <td class="retail-internal-only"></td>
                   </tr>
@@ -585,16 +586,17 @@ function createModuleContainers() {
                   <button class="btn-secondary btn-sm" onclick="addRetailLineItem('Labor')" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer;">+ Add Labor</button>
                 </div>
               </div>
-              <table class="materials-table" style="width: 100%; margin: 0;">
+              <table class="materials-table" style="width: 100%; table-layout: fixed; margin: 0;">
                 <thead>
                   <tr class="retail-internal-only">
-                    <th>Description</th>
-                    <th style="text-align:right;width:80px;">Qty</th>
-                    <th style="text-align:center;width:60px;">Unit</th>
-                    <th style="text-align:right;width:100px;" class="retail-internal-only">Unit Cost</th>
-                    <th style="text-align:right;width:80px;" class="retail-internal-only">Markup</th>
-                    <th style="text-align:right;width:100px;">Total</th>
-                    <th style="width:40px;" class="retail-internal-only"></th>
+                    <th style="width: 5%;"></th>
+                    <th style="width: 30%;">Description</th>
+                    <th style="text-align: right; width: 10%;">Qty</th>
+                    <th style="text-align: center; width: 10%;">Unit</th>
+                    <th style="text-align: right; width: 15%;" class="retail-internal-only">Unit Cost</th>
+                    <th style="text-align: center; width: 10%;" class="retail-internal-only">Markup</th>
+                    <th style="text-align: right; width: 15%;">Total</th>
+                    <th style="width: 5%;" class="retail-internal-only"></th>
                   </tr>
                   <tr class="retail-customer-header" style="display: none;">
                     <th>Description</th>
@@ -604,7 +606,7 @@ function createModuleContainers() {
                 <tbody id="retailLaborTable"></tbody>
                 <tfoot>
                   <tr style="background: #f8fafc; font-weight: 600;">
-                    <td colspan="5" style="padding: 12px 16px; text-align: right;">Labor Subtotal:</td>
+                    <td colspan="6" style="padding: 12px 16px; text-align: right;">Labor Subtotal:</td>
                     <td id="retailLaborSubtotal" style="padding: 12px 16px; text-align: right;">$0.00</td>
                     <td class="retail-internal-only"></td>
                   </tr>
