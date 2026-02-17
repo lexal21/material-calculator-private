@@ -397,11 +397,16 @@ function displayRetailFees() {
 }
 
 function updateRetailFee(feeId, field, value) {
-  if (!window.retailData?.fees) return;
+  if (!window.retailData || !window.retailData.fees) return;
   
+  // Find fee by ID, not index
   const fee = window.retailData.fees.find(f => f.id === feeId);
-  if (!fee) return;
+  if (!fee) {
+    console.error('[FEES] Fee not found:', feeId);
+    return;
+  }
   
+  // Update the field
   if (field === 'value') {
     fee.value = parseFloat(value) || 0;
   } else if (field === 'enabled') {
@@ -410,7 +415,9 @@ function updateRetailFee(feeId, field, value) {
     fee[field] = value;
   }
   
-  // Recalculate totals which will update fee.calculated values
+  console.log('[FEES] Updated', feeId, field, '=', fee[field]);
+  
+  // Recalculate totals
   calculateRetailTotals();
   
   // Re-render fees to show updated calculated amounts
