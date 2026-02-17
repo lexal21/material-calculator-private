@@ -314,6 +314,12 @@
           </table>
         </div>
 
+        <!-- Materials Delivery Notes -->
+        <div id="materialsNotesSection" class="notes-section" style="margin: 20px 0; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #334155;">Delivery Notes</h4>
+          <textarea id="materialsDeliveryNotes" placeholder="Enter delivery instructions, special requests, or notes for the supplier..." style="width: 100%; min-height: 80px; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; resize: vertical; box-sizing: border-box;" onchange="saveMaterialsNotes()"></textarea>
+        </div>
+
         <!-- Materials Photos Section -->
         <div id="materialsPhotoSection" class="photo-section no-print">
           <h3 style="margin-bottom: 12px;">Photos (<span id="materialsPhotoCount">0</span>)</h3>
@@ -411,6 +417,12 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Labor Delivery Notes -->
+          <div id="laborNotesSection" class="notes-section" style="margin: 20px 0; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #334155;">Labor Notes</h4>
+            <textarea id="laborDeliveryNotes" placeholder="Enter labor instructions, crew notes, or special requirements..." style="width: 100%; min-height: 80px; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; resize: vertical; box-sizing: border-box;" onchange="saveLaborNotes()"></textarea>
           </div>
 
           <!-- Labor Photos Section -->

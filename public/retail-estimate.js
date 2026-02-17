@@ -796,3 +796,15 @@ function toggleRetailItemSelection(itemId, isChecked) {
     }
   }
 }
+
+function saveRetailNotes() {
+  const materialsNotes = document.getElementById('retailMaterialsNotes')?.value || '';
+  const laborNotes = document.getElementById('retailLaborNotes')?.value || '';
+  
+  if (window.retailData) {
+    window.retailData.materialsNotes = materialsNotes;
+    window.retailData.laborNotes = laborNotes;
+  }
+  
+  console.log('[RETAIL] Saved notes');
+}

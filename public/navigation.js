@@ -541,7 +541,7 @@ function createModuleContainers() {
                   <button class="btn-secondary btn-sm" onclick="addRetailLineItem('Materials')" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer;">+ Add Material</button>
                 </div>
               </div>
-              <table class="materials-table" style="margin: 0;">
+              <table class="materials-table" style="width: 100%; margin: 0;">
                 <thead>
                   <tr class="retail-internal-only">
                     <th>Description</th>
@@ -568,6 +568,12 @@ function createModuleContainers() {
               </table>
             </div>
 
+            <!-- Materials Notes Section -->
+            <div id="retailMaterialsNotesSection" style="margin: 16px 0; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #334155;">Materials Notes</h4>
+              <textarea id="retailMaterialsNotes" placeholder="Enter notes about materials..." style="width: 100%; min-height: 80px; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; resize: vertical; box-sizing: border-box;" onchange="saveRetailNotes()"></textarea>
+            </div>
+
             <!-- Labor Section -->
             <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden;">
               <div style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
@@ -579,7 +585,7 @@ function createModuleContainers() {
                   <button class="btn-secondary btn-sm" onclick="addRetailLineItem('Labor')" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer;">+ Add Labor</button>
                 </div>
               </div>
-              <table class="materials-table" style="margin: 0;">
+              <table class="materials-table" style="width: 100%; margin: 0;">
                 <thead>
                   <tr class="retail-internal-only">
                     <th>Description</th>
@@ -604,6 +610,12 @@ function createModuleContainers() {
                   </tr>
                 </tfoot>
               </table>
+            </div>
+
+            <!-- Labor Notes Section -->
+            <div id="retailLaborNotesSection" style="margin: 16px 0; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #334155;">Labor Notes</h4>
+              <textarea id="retailLaborNotes" placeholder="Enter notes about labor..." style="width: 100%; min-height: 80px; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; resize: vertical; box-sizing: border-box;" onchange="saveRetailNotes()"></textarea>
             </div>
 
             <!-- Reload Button -->

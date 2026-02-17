@@ -2484,3 +2484,21 @@ function buildLaborPDF() {
     }
   };
 }
+
+// ==================== NOTES SAVE FUNCTIONS ====================
+
+function saveMaterialsNotes() {
+  const notes = document.getElementById('materialsDeliveryNotes')?.value || '';
+  if (window.materialsData) {
+    window.materialsData.deliveryNotes = notes;
+  }
+  console.log('[MATERIALS] Saved delivery notes');
+}
+
+function saveLaborNotes() {
+  const notes = document.getElementById('laborDeliveryNotes')?.value || '';
+  if (window.laborData) {
+    window.laborData.deliveryNotes = notes;
+  }
+  console.log('[LABOR] Saved delivery notes');
+}
