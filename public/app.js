@@ -2132,6 +2132,9 @@ function buildMaterialsPDF() {
   const tax = subtotal * taxRate;
   const grandTotal = subtotal + tax;
   
+  // Check for cover photo
+  const coverPhoto = window.currentPhotos?.materials?.find(p => p.isCover);
+  
   // Build materials table
   const tableBody = [
     [
@@ -2193,8 +2196,23 @@ function buildMaterialsPDF() {
     }
   ];
   
-  // Build content
-  const content = [
+  // Build content array
+  const content = [];
+  
+  // Add cover page if cover photo exists
+  if (coverPhoto && coverPhoto.data) {
+    content.push(
+      { text: 'MATERIAL LIST', style: 'coverTitle', alignment: 'center', margin: [0, 0, 0, 20] },
+      { text: raw.customer_name || raw.customerName || '', style: 'coverCustomer', alignment: 'center', margin: [0, 0, 0, 8] },
+      { text: raw.address || '', style: 'coverAddress', alignment: 'center', margin: [0, 0, 0, 8] },
+      { text: 'Job #: ' + (raw.order_number || 'N/A'), style: 'coverJob', alignment: 'center', margin: [0, 0, 0, 30] },
+      { image: coverPhoto.data, width: 450, alignment: 'center', margin: [0, 0, 0, 0] },
+      { text: '', pageBreak: 'after' }
+    );
+  }
+  
+  // Add main content
+  content.push(
     { text: 'MATERIAL LIST', style: 'header' },
     { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 8, 0, 20] },
     {
@@ -2238,27 +2256,21 @@ function buildMaterialsPDF() {
         { width: 250, stack: totalsStack }
       ]
     }
-  ];
+  );
   
-  // Add photos if available
-  if (window.currentPhotos && window.currentPhotos.materials && window.currentPhotos.materials.length > 0) {
-    content.push({
-      text: 'PHOTOS',
-      style: 'sectionHeader',
-      margin: [0, 30, 0, 12],
-      pageBreak: 'before'
-    });
+  // Add photos section if there are photos (excluding cover photo from grid)
+  const otherPhotos = window.currentPhotos?.materials?.filter(p => !p.isCover) || [];
+  if (otherPhotos.length > 0) {
+    content.push({ text: 'PHOTOS', style: 'sectionHeader', margin: [0, 30, 0, 12], pageBreak: 'before' });
     
-    const photoRows = [];
-    for (let i = 0; i < window.currentPhotos.materials.length; i += 2) {
+    for (let i = 0; i < otherPhotos.length; i += 2) {
       const row = [];
-      row.push({ image: window.currentPhotos.materials[i].data, width: 240, margin: [0, 0, 10, 10] });
-      if (window.currentPhotos.materials[i + 1]) {
-        row.push({ image: window.currentPhotos.materials[i + 1].data, width: 240, margin: [0, 0, 0, 10] });
+      row.push({ image: otherPhotos[i].data, width: 240, margin: [0, 0, 10, 10] });
+      if (otherPhotos[i + 1]) {
+        row.push({ image: otherPhotos[i + 1].data, width: 240, margin: [0, 0, 0, 10] });
       }
-      photoRows.push({ columns: row });
+      content.push({ columns: row });
     }
-    content.push(...photoRows);
   }
   
   return {
@@ -2267,6 +2279,10 @@ function buildMaterialsPDF() {
     content: content,
     styles: {
       header: { fontSize: 24, bold: true, color: '#0891b2' },
+      coverTitle: { fontSize: 32, bold: true, color: '#0891b2' },
+      coverCustomer: { fontSize: 18, bold: true },
+      coverAddress: { fontSize: 14 },
+      coverJob: { fontSize: 12, color: '#64748b' },
       label: { fontSize: 10, bold: true, color: '#64748b' },
       customerName: { fontSize: 14, bold: true },
       sectionHeader: { fontSize: 12, bold: true, color: '#0891b2' },
@@ -2283,6 +2299,9 @@ function buildLaborPDF() {
   
   // Calculate totals
   const subtotal = laborItems.reduce((sum, item) => sum + (item.total || 0), 0);
+  
+  // Check for cover photo
+  const coverPhoto = window.currentPhotos?.labor?.find(p => p.isCover);
   
   // Build labor table
   const tableBody = [
@@ -2331,8 +2350,23 @@ function buildLaborPDF() {
     }
   ];
   
-  // Build content
-  const content = [
+  // Build content array
+  const content = [];
+  
+  // Add cover page if cover photo exists
+  if (coverPhoto && coverPhoto.data) {
+    content.push(
+      { text: 'LABOR INVOICE', style: 'coverTitle', alignment: 'center', margin: [0, 0, 0, 20] },
+      { text: raw.customer_name || raw.customerName || '', style: 'coverCustomer', alignment: 'center', margin: [0, 0, 0, 8] },
+      { text: raw.address || '', style: 'coverAddress', alignment: 'center', margin: [0, 0, 0, 8] },
+      { text: 'Job #: ' + (raw.order_number || 'N/A'), style: 'coverJob', alignment: 'center', margin: [0, 0, 0, 30] },
+      { image: coverPhoto.data, width: 450, alignment: 'center', margin: [0, 0, 0, 0] },
+      { text: '', pageBreak: 'after' }
+    );
+  }
+  
+  // Add main content
+  content.push(
     { text: 'LABOR INVOICE', style: 'header' },
     { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 8, 0, 20] },
     {
@@ -2376,27 +2410,21 @@ function buildLaborPDF() {
         { width: 250, stack: totalsStack }
       ]
     }
-  ];
+  );
   
-  // Add photos if available
-  if (window.currentPhotos && window.currentPhotos.labor && window.currentPhotos.labor.length > 0) {
-    content.push({
-      text: 'PHOTOS',
-      style: 'sectionHeader',
-      margin: [0, 30, 0, 12],
-      pageBreak: 'before'
-    });
+  // Add photos section if there are photos (excluding cover photo from grid)
+  const otherPhotos = window.currentPhotos?.labor?.filter(p => !p.isCover) || [];
+  if (otherPhotos.length > 0) {
+    content.push({ text: 'PHOTOS', style: 'sectionHeader', margin: [0, 30, 0, 12], pageBreak: 'before' });
     
-    const photoRows = [];
-    for (let i = 0; i < window.currentPhotos.labor.length; i += 2) {
+    for (let i = 0; i < otherPhotos.length; i += 2) {
       const row = [];
-      row.push({ image: window.currentPhotos.labor[i].data, width: 240, margin: [0, 0, 10, 10] });
-      if (window.currentPhotos.labor[i + 1]) {
-        row.push({ image: window.currentPhotos.labor[i + 1].data, width: 240, margin: [0, 0, 0, 10] });
+      row.push({ image: otherPhotos[i].data, width: 240, margin: [0, 0, 10, 10] });
+      if (otherPhotos[i + 1]) {
+        row.push({ image: otherPhotos[i + 1].data, width: 240, margin: [0, 0, 0, 10] });
       }
-      photoRows.push({ columns: row });
+      content.push({ columns: row });
     }
-    content.push(...photoRows);
   }
   
   return {
@@ -2405,6 +2433,10 @@ function buildLaborPDF() {
     content: content,
     styles: {
       header: { fontSize: 24, bold: true, color: '#7c3aed' },
+      coverTitle: { fontSize: 32, bold: true, color: '#7c3aed' },
+      coverCustomer: { fontSize: 18, bold: true },
+      coverAddress: { fontSize: 14 },
+      coverJob: { fontSize: 12, color: '#64748b' },
       label: { fontSize: 10, bold: true, color: '#64748b' },
       customerName: { fontSize: 14, bold: true },
       sectionHeader: { fontSize: 12, bold: true, color: '#7c3aed' },
