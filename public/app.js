@@ -2297,6 +2297,13 @@ function buildMaterialsPDF() {
     }
   );
   
+  // Add delivery notes if present
+  const materialsNotes = document.getElementById('materialsDeliveryNotes')?.value || window.currentJobData?.materialsNotes;
+  if (materialsNotes) {
+    content.push({ text: 'DELIVERY NOTES', style: 'sectionHeader', margin: [0, 20, 0, 8] });
+    content.push({ text: materialsNotes, margin: [0, 0, 0, 20], fontSize: 11 });
+  }
+  
   // Add photos section if there are photos (excluding cover photo from grid)
   const otherPhotos = window.currentPhotos?.materials?.filter(p => !p.isCover) || [];
   if (otherPhotos.length > 0) {
@@ -2451,6 +2458,13 @@ function buildLaborPDF() {
     }
   );
   
+  // Add labor notes if present
+  const laborNotes = document.getElementById('laborDeliveryNotes')?.value || window.currentJobData?.laborNotes;
+  if (laborNotes) {
+    content.push({ text: 'LABOR NOTES', style: 'sectionHeader', margin: [0, 20, 0, 8] });
+    content.push({ text: laborNotes, margin: [0, 0, 0, 20], fontSize: 11 });
+  }
+  
   // Add photos section if there are photos (excluding cover photo from grid)
   const otherPhotos = window.currentPhotos?.labor?.filter(p => !p.isCover) || [];
   if (otherPhotos.length > 0) {
@@ -2489,16 +2503,14 @@ function buildLaborPDF() {
 
 function saveMaterialsNotes() {
   const notes = document.getElementById('materialsDeliveryNotes')?.value || '';
-  if (window.materialsData) {
-    window.materialsData.deliveryNotes = notes;
-  }
-  console.log('[MATERIALS] Saved delivery notes');
+  if (!window.currentJobData) window.currentJobData = {};
+  window.currentJobData.materialsNotes = notes;
+  console.log('[NOTES] Materials notes saved');
 }
 
 function saveLaborNotes() {
   const notes = document.getElementById('laborDeliveryNotes')?.value || '';
-  if (window.laborData) {
-    window.laborData.deliveryNotes = notes;
-  }
-  console.log('[LABOR] Saved delivery notes');
+  if (!window.currentJobData) window.currentJobData = {};
+  window.currentJobData.laborNotes = notes;
+  console.log('[NOTES] Labor notes saved');
 }

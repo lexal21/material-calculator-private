@@ -660,6 +660,12 @@ function buildRetailPDF() {
       layout: tableLayout,
       margin: [0, 0, 0, 20]
     });
+    
+    // Add materials notes if present
+    const retailMatNotes = window.retailData?.materialsNotes || document.getElementById('retailMaterialsNotes')?.value;
+    if (retailMatNotes) {
+      scopeContent.push({ text: 'Materials Notes: ' + retailMatNotes, fontSize: 10, margin: [0, 8, 0, 16], italics: true });
+    }
   }
 
   // Labor section
@@ -674,6 +680,12 @@ function buildRetailPDF() {
       layout: tableLayout,
       margin: [0, 0, 0, 20]
     });
+    
+    // Add labor notes if present
+    const retailLabNotes = window.retailData?.laborNotes || document.getElementById('retailLaborNotes')?.value;
+    if (retailLabNotes) {
+      scopeContent.push({ text: 'Labor Notes: ' + retailLabNotes, fontSize: 10, margin: [0, 8, 0, 16], italics: true });
+    }
   }
 
   // Other section (if any)
@@ -798,13 +810,13 @@ function toggleRetailItemSelection(itemId, isChecked) {
 }
 
 function saveRetailNotes() {
-  const materialsNotes = document.getElementById('retailMaterialsNotes')?.value || '';
-  const laborNotes = document.getElementById('retailLaborNotes')?.value || '';
+  if (!window.retailData) window.retailData = {};
+  window.retailData.materialsNotes = document.getElementById('retailMaterialsNotes')?.value || '';
+  window.retailData.laborNotes = document.getElementById('retailLaborNotes')?.value || '';
   
-  if (window.retailData) {
-    window.retailData.materialsNotes = materialsNotes;
-    window.retailData.laborNotes = laborNotes;
+  if (typeof saveRetailToStorage === 'function') {
+    saveRetailToStorage();
   }
   
-  console.log('[RETAIL] Saved notes');
+  console.log('[RETAIL] Notes saved');
 }
