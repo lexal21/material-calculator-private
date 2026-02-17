@@ -816,53 +816,39 @@ function updateMiscRow(miscNum) {
 
 function updateMaterialRow(rowIndex) {
   const row = document.querySelector(`tr[data-row="${rowIndex}"]`);
-  const qtyInput = row.querySelector('[data-field="quantity"]');
-  const priceInput = row.querySelector('[data-field="unitPrice"]');
-  const totalCell = row.querySelector('.row-total');
-  const unitLabels = row.querySelectorAll('.unit-label');
-  
-  const quantity = parseFloat(qtyInput.value) || 0;
-  const unitPrice = parseFloat(priceInput.value) || 0;
-  
-  // Validate inputs (allow 0 quantity)
-  let qtyValid = true;
-  let priceValid = true;
-  
-  if (quantity > 0) {
-    qtyValid = validateQuantity(qtyInput, quantity);
-  } else {
-    qtyInput.classList.remove('error', 'success');
-    removeErrorMessage(qtyInput);
-  }
-  
-  if (unitPrice > 0) {
-    priceValid = validatePrice(priceInput, unitPrice);
-  } else {
-    priceInput.classList.remove('error', 'success');
-    removeErrorMessage(priceInput);
-  }
-  
-  // If invalid, don't update calculations
-  if (!qtyValid || !priceValid) {
+  if (!row) {
+    console.error('[MATERIALS] Row not found:', rowIndex);
     return;
   }
   
+  const qtyInput = row.querySelector('[data-field="quantity"]');
+  const priceInput = row.querySelector('[data-field="unitPrice"]');
+  const totalCell = row.querySelector('.row-total');
+  const unitCell = row.querySelector('td[data-label="Unit"]');
+  
+  if (!qtyInput || !priceInput || !totalCell) {
+    console.error('[MATERIALS] Missing elements in row:', rowIndex);
+    return;
+  }
+  
+  const quantity = parseFloat(qtyInput.value) || 0;
+  const unitPrice = parseFloat(priceInput.value) || 0;
   const total = quantity * unitPrice;
   
   // Update row total
   totalCell.textContent = '$' + total.toFixed(2);
   
-  // Update unit labels with pluralization
-  const baseUnit = row.getAttribute('data-unit') || window.materialsData[rowIndex].unit;
-  const pluralUnit = pluralizeUnit(quantity, baseUnit);
-  unitLabels.forEach(label => {
-    label.textContent = pluralUnit;
-  });
+  // Update unit with pluralization if unitCell exists
+  if (unitCell && typeof pluralizeUnit === 'function') {
+    const baseUnit = row.getAttribute('data-unit') || window.materialsData[rowIndex]?.unit || 'Piece';
+    unitCell.textContent = pluralizeUnit(quantity, baseUnit);
+  }
   
   // Update data-print-value for print rendering
-  const quantityCell = row.querySelector('td:nth-child(2)');
+  const quantityCell = row.querySelector('td[data-label="Quantity"]');
   if (quantityCell) {
-    quantityCell.setAttribute('data-print-value', `${quantity} ${pluralUnit}`);
+    const unit = unitCell?.textContent || window.materialsData[rowIndex]?.unit || '';
+    quantityCell.setAttribute('data-print-value', `${quantity} ${unit}`);
   }
   
   // Toggle zero-quantity class for print hiding
@@ -872,13 +858,19 @@ function updateMaterialRow(rowIndex) {
     row.classList.remove('zero-quantity');
   }
   
-  // Update stored data (round quantity to 2 decimals)
-  window.materialsData[rowIndex].quantity = parseFloat(quantity.toFixed(2));
-  window.materialsData[rowIndex].unitPrice = unitPrice;
-  window.materialsData[rowIndex].total = total;
+  // Update stored data
+  if (window.materialsData && window.materialsData[rowIndex]) {
+    window.materialsData[rowIndex].quantity = parseFloat(quantity.toFixed(2));
+    window.materialsData[rowIndex].unitPrice = unitPrice;
+    window.materialsData[rowIndex].total = total;
+  }
   
   // Recalculate subtotal, tax, and grand total
-  recalculateTotals();
+  if (typeof recalculateTotals === 'function') {
+    recalculateTotals();
+  }
+  
+  console.log('[MATERIALS] Updated row', rowIndex, ':', window.materialsData[rowIndex]?.name, '= $' + total.toFixed(2));
 }
 
 function updateMaterialsTotals() {
