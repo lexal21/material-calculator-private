@@ -291,41 +291,27 @@ function displayLaborPhotos() {
 }
 
 // Toggle photo selection
-function togglePhotoSelection(tab, idx, selected) {
-  let set;
-  if (tab === 'materials') {
-    set = selectedMaterialsPhotos;
-  } else if (tab === 'labor') {
-    set = selectedLaborPhotos;
-  } else if (tab === 'retail') {
-    set = selectedRetailPhotos;
+function togglePhotoSelection(type, index, isChecked) {
+  let deleteBtnId;
+  let checkboxSelector;
+  
+  if (type === 'materials') {
+    deleteBtnId = 'deleteMaterialsPhotosBtn';
+    checkboxSelector = '.photo-checkbox[data-photo-type="materials"]:checked';
+  } else if (type === 'labor') {
+    deleteBtnId = 'deleteLaborPhotosBtn';
+    checkboxSelector = '.photo-checkbox[data-photo-type="labor"]:checked';
+  } else if (type === 'retail') {
+    deleteBtnId = 'deleteRetailPhotosBtn';
+    checkboxSelector = '.photo-checkbox[data-photo-type="retail"]:checked';
   }
   
-  console.log('[PhotoSelection] ' + tab + ' photo ' + idx + ': ' + (selected ? 'selected' : 'deselected'));
+  const deleteBtn = document.getElementById(deleteBtnId);
+  const anyChecked = document.querySelectorAll(checkboxSelector).length > 0;
   
-  if (selected) {
-    set.add(idx);
-  } else {
-    set.delete(idx);
-  }
-  
-  console.log('[PhotoSelection] ' + tab + ' total selected:', set.size);
-  
-  // Update delete button
-  let btnId;
-  if (tab === 'materials') {
-    btnId = 'deleteMaterialsPhotosBtn';
-  } else if (tab === 'labor') {
-    btnId = 'deleteLaborPhotosBtn';
-  } else if (tab === 'retail') {
-    btnId = 'deleteRetailPhotosBtn';
-  }
-  
-  const btn = document.getElementById(btnId);
-  if (btn) {
-    btn.disabled = set.size === 0;
-    btn.style.display = set.size === 0 ? 'none' : 'inline-block';
-    console.log('[PhotoSelection] Delete button "' + btnId + '" ' + (set.size === 0 ? 'hidden' : 'visible'));
+  if (deleteBtn) {
+    deleteBtn.style.display = anyChecked ? 'inline-block' : 'none';
+    deleteBtn.disabled = !anyChecked;
   }
 }
 

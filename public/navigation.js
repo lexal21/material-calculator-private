@@ -1342,9 +1342,10 @@ function initializeRetailFromParsedData(data) {
   // Initialize manufacturer selector
   initRetailManufacturerSelector();
 
-  // Initialize retail photos array
+  // Initialize retail photos array and display
   if (!window.currentPhotos) window.currentPhotos = {};
   if (!window.currentPhotos.retail) window.currentPhotos.retail = [];
+  displayRetailPhotos();
 }
 
 function updateRetailCustomerInfo(field, value) {
