@@ -710,7 +710,7 @@ function createModuleContainers() {
                 <button class="btn-secondary btn-sm" id="selectAllRetailPhotosBtn" onclick="selectAllPhotos('retail')" style="padding: 8px 16px; border: 1px solid #cbd5e0; background: white; border-radius: 6px; cursor: pointer; font-size: 14px;">
                   Select All
                 </button>
-                <button class="btn-danger btn-sm" id="deleteRetailPhotosBtn" onclick="deleteSelectedPhotos('retail')" disabled>
+                <button class="btn-danger btn-sm" id="deleteRetailPhotosBtn" onclick="deleteSelectedPhotos('retail')" disabled style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: not-allowed; font-size: 14px; opacity: 0.5;">
                   Delete Selected
                 </button>
               </div>
@@ -2580,10 +2580,11 @@ function displayRetailPhotos() {
     section.style.display = 'block';
   }
 
-  // Hide delete button when no photos selected
+  // Reset delete button to disabled state
   if (deleteBtn) {
-    deleteBtn.style.display = 'none';
     deleteBtn.disabled = true;
+    deleteBtn.style.opacity = '0.5';
+    deleteBtn.style.cursor = 'not-allowed';
   }
 
   // Build grid or show empty state

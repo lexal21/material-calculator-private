@@ -205,6 +205,8 @@ function displayMaterialsPhotos() {
       <input type="checkbox" 
              class="photo-checkbox" 
              id="materials-photo-${idx}"
+             data-photo-index="${idx}"
+             data-photo-type="materials"
              onchange="togglePhotoSelection('materials', ${idx}, this.checked)">
       <img src="${photo.data}" alt="${photo.name}">
       <div class="photo-item-name" title="${photo.name}">
@@ -259,6 +261,8 @@ function displayLaborPhotos() {
       <input type="checkbox" 
              class="photo-checkbox" 
              id="labor-photo-${idx}"
+             data-photo-index="${idx}"
+             data-photo-type="labor"
              onchange="togglePhotoSelection('labor', ${idx}, this.checked)">
       <img src="${photo.data}" alt="${photo.name}">
       <div class="photo-item-name" title="${photo.name}">
@@ -297,24 +301,25 @@ function togglePhotoSelection(type, index, isChecked) {
   
   if (type === 'materials') {
     deleteBtnId = 'deleteMaterialsPhotosBtn';
-    checkboxSelector = '.photo-checkbox[data-photo-type="materials"]:checked';
+    checkboxSelector = '#materialsPhotoGrid .photo-checkbox:checked';
   } else if (type === 'labor') {
     deleteBtnId = 'deleteLaborPhotosBtn';
-    checkboxSelector = '.photo-checkbox[data-photo-type="labor"]:checked';
+    checkboxSelector = '#laborPhotoGrid .photo-checkbox:checked';
   } else if (type === 'retail') {
     deleteBtnId = 'deleteRetailPhotosBtn';
-    checkboxSelector = '.photo-checkbox[data-photo-type="retail"]:checked';
+    checkboxSelector = '#retailPhotoGrid .photo-checkbox:checked';
   }
   
   const deleteBtn = document.getElementById(deleteBtnId);
-  const anyChecked = document.querySelectorAll(checkboxSelector).length > 0;
+  const checkedCount = document.querySelectorAll(checkboxSelector).length;
   
   if (deleteBtn) {
-    deleteBtn.style.display = anyChecked ? 'inline-block' : 'none';
-    deleteBtn.disabled = !anyChecked;
+    deleteBtn.disabled = checkedCount === 0;
+    deleteBtn.style.opacity = checkedCount === 0 ? '0.5' : '1';
+    deleteBtn.style.cursor = checkedCount === 0 ? 'not-allowed' : 'pointer';
   }
   
-  // Update Select All button text based on selection state
+  // Update Select All button text
   let allCheckboxSelector;
   let selectAllBtnId;
   
@@ -331,7 +336,7 @@ function togglePhotoSelection(type, index, isChecked) {
   
   if (allCheckboxSelector && selectAllBtnId) {
     const allCheckboxes = document.querySelectorAll(allCheckboxSelector);
-    const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+    const allChecked = allCheckboxes.length > 0 && Array.from(allCheckboxes).every(cb => cb.checked);
     const selectAllBtn = document.getElementById(selectAllBtnId);
     
     if (selectAllBtn) {
@@ -463,13 +468,14 @@ function selectAllPhotos(type) {
     cb.checked = !allChecked;
   });
   
-  // Update delete button visibility
+  // Update delete button
   const deleteBtn = document.getElementById(deleteBtnId);
   const anyChecked = document.querySelectorAll(checkboxSelector + ':checked').length > 0;
   
   if (deleteBtn) {
-    deleteBtn.style.display = anyChecked ? 'inline-block' : 'none';
     deleteBtn.disabled = !anyChecked;
+    deleteBtn.style.opacity = anyChecked ? '1' : '0.5';
+    deleteBtn.style.cursor = anyChecked ? 'pointer' : 'not-allowed';
   }
   
   // Update button text
