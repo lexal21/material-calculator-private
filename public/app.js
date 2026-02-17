@@ -475,7 +475,7 @@ function displayResults(data) {
   ).join('');
   
   tableBody.innerHTML = data.materials.map((item, index) => {
-    const pluralUnit = pluralizeUnit(item.quantity, item.unit);
+    const pluralUnit = pluralizeUnit(item.unit, item.quantity);
     // Format quantity: whole numbers if no decimal, otherwise 2 decimals
     const qtyDisplay = item.quantity % 1 === 0 ? item.quantity.toString() : item.quantity.toFixed(2);
     const qtyForPrint = item.quantity % 1 === 0 ? item.quantity.toString() : item.quantity.toFixed(2);
@@ -906,7 +906,7 @@ function updateMaterialRow(rowIndex) {
   // Update unit with pluralization if unitCell exists
   if (unitCell && typeof pluralizeUnit === 'function') {
     const baseUnit = row.getAttribute('data-unit') || window.materialsData[rowIndex]?.unit || 'Piece';
-    unitCell.textContent = pluralizeUnit(quantity, baseUnit);
+    unitCell.textContent = pluralizeUnit(baseUnit, quantity);
   }
   
   // Update data-print-value for print rendering
@@ -1064,7 +1064,7 @@ function addMoreAdditionalItems() {
 }
 
 // Pluralize unit names based on quantity
-function pluralizeUnit(quantity, unit) {
+function pluralizeUnit(unit, quantity) {
   if (!unit) return '';
   const qty = parseFloat(quantity) || 0;
   
@@ -1267,7 +1267,7 @@ function createLaborRow(item, index) {
   const unit = item.unit || '';
   let pluralUnit = unit;
   if (quantity !== 1 && unit && typeof pluralizeUnit === 'function') {
-    pluralUnit = pluralizeUnit(quantity, unit);
+    pluralUnit = pluralizeUnit(unit, quantity);
   }
   
   return `
@@ -2190,7 +2190,7 @@ function buildMaterialsPDF() {
       tableBody.push([
         item.name,
         { text: String(item.quantity), alignment: 'center' },
-        { text: pluralizeUnit(item.quantity, item.unit), alignment: 'center' },
+        { text: pluralizeUnit(item.unit, item.quantity), alignment: 'center' },
         { text: '$' + (item.unitPrice || 0).toFixed(2), alignment: 'right' },
         { text: '$' + (item.total || 0).toFixed(2), alignment: 'right' }
       ]);
