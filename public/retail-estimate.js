@@ -378,9 +378,9 @@ function displayRetailFees() {
         </select>
       </td>
       <td style="padding: 12px 16px; text-align: center;">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-          <input type="number" value="${fee.value}" min="0" step="0.01" onchange="updateRetailFee('${fee.id}', 'value', parseFloat(this.value))" style="width: 80px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: right;">
-          <span>${fee.type === 'percent' ? '%' : ''}</span>
+        <div style="position: relative; display: inline-block;">
+          <input type="number" value="${fee.value}" min="0" step="0.01" onchange="updateRetailFee('${fee.id}', 'value', parseFloat(this.value))" style="width: 100px; padding: 8px; padding-right: ${fee.type === 'percent' ? '24px' : '8px'}; border: 1px solid #cbd5e0; border-radius: 4px; text-align: right;">
+          ${fee.type === 'percent' ? '<span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none;">%</span>' : ''}
         </div>
       </td>
       <td style="padding: 12px 16px; text-align: right; font-weight: 600;">
