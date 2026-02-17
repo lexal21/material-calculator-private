@@ -592,6 +592,21 @@ input[type="file"] {
   opacity: 1;
 }
 
+/* Selected row highlighting - Materials/Labor module */
+tr.row-selected {
+  background-color: rgba(8, 145, 178, 0.1) !important;
+}
+
+tr.row-selected td {
+  background-color: rgba(8, 145, 178, 0.1) !important;
+}
+
+/* Selected photo highlighting */
+.photo-item.selected {
+  border-color: #0891b2;
+  box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.3);
+}
+
 /* Checkbox column */
 .checkbox-cell {
   width: 40px;

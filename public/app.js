@@ -758,6 +758,18 @@ function deleteMaterialRow(rowIndex) {
 }
 
 function toggleMaterialSelection(rowIndex) {
+  const checkbox = document.querySelector(`.material-checkbox[data-row="${rowIndex}"]`);
+  const row = document.querySelector(`tr[data-row="${rowIndex}"]`);
+  
+  if (row && checkbox) {
+    if (checkbox.checked) {
+      row.classList.add('row-selected');
+    } else {
+      row.classList.remove('row-selected');
+    }
+  }
+  
+  // Update delete button visibility
   const anyChecked = document.querySelectorAll('.material-checkbox:checked').length > 0;
   const deleteBtn = document.getElementById('deleteSelectedMaterialsBtn');
   if (deleteBtn) {
@@ -1053,17 +1065,32 @@ function addMoreAdditionalItems() {
 
 // Pluralize unit names based on quantity
 function pluralizeUnit(quantity, unit) {
-  const qty = parseFloat(quantity);
-  if (qty === 1) return unit;
+  if (!unit) return '';
+  const qty = parseFloat(quantity) || 0;
+  
+  // Don't pluralize abbreviations
+  if (['SQ', 'EA', 'LF', 'BD'].includes(unit.toUpperCase())) {
+    return unit;
+  }
+  
+  // Pluralize if quantity is not 1
+  if (qty === 1) {
+    return unit;
+  }
   
   // Handle special cases
-  const lowerUnit = unit.toLowerCase();
-  if (lowerUnit.endsWith('piece')) return unit.replace(/piece$/i, 'pieces');
-  if (lowerUnit.endsWith('box')) return unit.replace(/box$/i, 'boxes');
-  if (lowerUnit.endsWith('sh')) return unit.replace(/sh$/i, 'shes'); // for "ash" -> "ashes"
+  const pluralMap = {
+    'Bundle': 'Bundles',
+    'Piece': 'Pieces',
+    'Roll': 'Rolls',
+    'Sheet': 'Sheets',
+    'Box': 'Boxes',
+    'Tube': 'Tubes',
+    'Gallon': 'Gallons',
+    'Bag': 'Bags'
+  };
   
-  // Default: just add 's'
-  return unit + 's';
+  return pluralMap[unit] || unit + 's';
 }
 
 // ============================================
@@ -1344,6 +1371,18 @@ function updateLaborTotals() {
 }
 
 function toggleLaborSelection(rowIndex) {
+  const checkbox = document.querySelector(`.labor-checkbox[data-labor-row="${rowIndex}"]`);
+  const row = document.querySelector(`tr[data-labor-row="${rowIndex}"]`);
+  
+  if (row && checkbox) {
+    if (checkbox.checked) {
+      row.classList.add('row-selected');
+    } else {
+      row.classList.remove('row-selected');
+    }
+  }
+  
+  // Update delete button visibility
   const anyChecked = document.querySelectorAll('.labor-checkbox:checked').length > 0;
   const deleteBtn = document.getElementById('deleteSelectedLaborBtn');
   if (deleteBtn) {
