@@ -2307,16 +2307,19 @@ function buildMaterialsPDF() {
   // Add photos section if there are photos (excluding cover photo from grid)
   const otherPhotos = window.currentPhotos?.materials?.filter(p => !p.isCover) || [];
   if (otherPhotos.length > 0) {
-    content.push({ text: 'PHOTOS', style: 'sectionHeader', margin: [0, 30, 0, 12], pageBreak: 'before' });
+    content.push({ text: 'PHOTOS', style: 'sectionHeader', margin: [0, 30, 0, 16], pageBreak: 'before' });
     
-    for (let i = 0; i < otherPhotos.length; i += 2) {
-      const row = [];
-      row.push({ image: otherPhotos[i].data, width: 240, margin: [0, 0, 10, 10] });
-      if (otherPhotos[i + 1]) {
-        row.push({ image: otherPhotos[i + 1].data, width: 240, margin: [0, 0, 0, 10] });
+    otherPhotos.forEach((photo, index) => {
+      // Add photo
+      content.push({ image: photo.data, width: 400, alignment: 'center', margin: [0, 0, 0, 8] });
+      
+      // Add photo label/caption if exists
+      if (photo.label || photo.name) {
+        content.push({ text: photo.label || photo.name, alignment: 'center', fontSize: 10, color: '#64748b', margin: [0, 0, 0, 24] });
+      } else {
+        content.push({ text: '', margin: [0, 0, 0, 24] }); // Spacing between photos
       }
-      content.push({ columns: row });
-    }
+    });
   }
   
   return {
@@ -2468,16 +2471,19 @@ function buildLaborPDF() {
   // Add photos section if there are photos (excluding cover photo from grid)
   const otherPhotos = window.currentPhotos?.labor?.filter(p => !p.isCover) || [];
   if (otherPhotos.length > 0) {
-    content.push({ text: 'PHOTOS', style: 'sectionHeader', margin: [0, 30, 0, 12], pageBreak: 'before' });
+    content.push({ text: 'PHOTOS', style: 'sectionHeader', margin: [0, 30, 0, 16], pageBreak: 'before' });
     
-    for (let i = 0; i < otherPhotos.length; i += 2) {
-      const row = [];
-      row.push({ image: otherPhotos[i].data, width: 240, margin: [0, 0, 10, 10] });
-      if (otherPhotos[i + 1]) {
-        row.push({ image: otherPhotos[i + 1].data, width: 240, margin: [0, 0, 0, 10] });
+    otherPhotos.forEach((photo, index) => {
+      // Add photo
+      content.push({ image: photo.data, width: 400, alignment: 'center', margin: [0, 0, 0, 8] });
+      
+      // Add photo label/caption if exists
+      if (photo.label || photo.name) {
+        content.push({ text: photo.label || photo.name, alignment: 'center', fontSize: 10, color: '#64748b', margin: [0, 0, 0, 24] });
+      } else {
+        content.push({ text: '', margin: [0, 0, 0, 24] }); // Spacing between photos
       }
-      content.push({ columns: row });
-    }
+    });
   }
   
   return {
