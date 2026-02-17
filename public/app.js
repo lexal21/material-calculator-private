@@ -505,7 +505,7 @@ function displayResults(data) {
           aria-label="Quantity for ${item.name}"
         />
       </td>
-      <td data-label="Unit">${item.unit || ''}</td>
+      <td data-label="Unit">${pluralUnit}</td>
       <td data-label="Unit Price" class="editable-cell">
         $<input 
           type="number" 
@@ -1289,7 +1289,7 @@ function createLaborRow(item, index) {
           aria-label="Quantity for ${item.name}"
         />
       </td>
-      <td data-label="Unit">${item.unit || ''}</td>
+      <td data-label="Unit">${pluralUnit}</td>
       <td data-label="Unit Price" class="editable-cell">
         $<input 
           type="number" 
