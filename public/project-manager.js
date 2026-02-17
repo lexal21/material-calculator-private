@@ -509,28 +509,40 @@ window.onProjectDropdownChange = onProjectDropdownChange;
 // Set up auto-save on changes
 function setupAutoSave() {
   // Save on material changes
-  if (typeof updateMaterialRow !== 'undefined') {
+  if (typeof window.updateMaterialRow === 'function') {
     const originalUpdateMaterialRow = window.updateMaterialRow;
     window.updateMaterialRow = function(...args) {
-      originalUpdateMaterialRow.apply(this, args);
+      try {
+        originalUpdateMaterialRow.apply(this, args);
+      } catch (e) {
+        console.error('[AUTO-SAVE] Error in updateMaterialRow:', e);
+      }
       saveCurrentSession();
     };
   }
   
   // Save on misc changes
-  if (typeof updateMiscRow !== 'undefined') {
+  if (typeof window.updateMiscRow === 'function') {
     const originalUpdateMiscRow = window.updateMiscRow;
     window.updateMiscRow = function(...args) {
-      originalUpdateMiscRow.apply(this, args);
+      try {
+        originalUpdateMiscRow.apply(this, args);
+      } catch (e) {
+        console.error('[AUTO-SAVE] Error in updateMiscRow:', e);
+      }
       saveCurrentSession();
     };
   }
   
   // Save on labor changes
-  if (typeof updateLaborRow !== 'undefined') {
+  if (typeof window.updateLaborRow === 'function') {
     const originalUpdateLaborRow = window.updateLaborRow;
     window.updateLaborRow = function(...args) {
-      originalUpdateLaborRow.apply(this, args);
+      try {
+        originalUpdateLaborRow.apply(this, args);
+      } catch (e) {
+        console.error('[AUTO-SAVE] Error in updateLaborRow:', e);
+      }
       saveCurrentSession();
     };
   }
