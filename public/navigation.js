@@ -681,6 +681,24 @@ function createModuleContainers() {
               <button class="btn-primary" onclick="printRetailEstimate()">Print Estimate</button>
               <button class="btn-primary" onclick="saveRetailEstimate()">Save as PDF</button>
             </div>
+
+            <!-- Retail Photo Section -->
+            <div id="retailPhotoSection" class="photo-section no-print" style="margin-top: 24px; display: none;">
+              <h3 style="margin-bottom: 12px;">Photos (<span id="retailPhotoCount">0</span>)</h3>
+              <div style="margin-bottom: 12px;">
+                <input type="file" id="retailPhotoInput" accept="image/*" multiple onchange="handleRetailPhotos(event)" style="display: none;">
+                <button class="btn-secondary btn-sm" onclick="document.getElementById('retailPhotoInput').click()">
+                  + Upload Photos
+                </button>
+                <button class="btn-primary btn-sm" onclick="openCompanyCamModal('retail')" style="background: #0891b2;">
+                  &#128247; Import from CompanyCam
+                </button>
+                <button class="btn-danger btn-sm" id="deleteRetailPhotosBtn" onclick="deleteSelectedPhotos('retail')" disabled>
+                  Delete Selected
+                </button>
+              </div>
+              <div id="retailPhotoGrid" class="photo-grid"></div>
+            </div>
             </div>
             
             <!-- Pricing Tab Content -->
@@ -1309,6 +1327,16 @@ function initializeRetailFromParsedData(data) {
 
   // Initialize manufacturer selector
   initRetailManufacturerSelector();
+
+  // Show photo section
+  const photoSection = document.getElementById('retailPhotoSection');
+  if (photoSection) {
+    photoSection.style.display = 'block';
+  }
+
+  // Initialize retail photos array
+  if (!window.currentPhotos) window.currentPhotos = {};
+  if (!window.currentPhotos.retail) window.currentPhotos.retail = [];
 }
 
 function updateRetailCustomerInfo(field, value) {
@@ -2488,4 +2516,76 @@ function resetFeesToDefault() {
   renderMiscFeesTable();
   
   console.log('[MISC FEES] Reset to defaults');
+}
+
+// ==================== RETAIL PHOTO FUNCTIONS ====================
+
+function handleRetailPhotos(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  // Initialize retail photos array if needed
+  if (!window.currentPhotos) window.currentPhotos = {};
+  if (!window.currentPhotos.retail) window.currentPhotos.retail = [];
+
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      window.currentPhotos.retail.push({
+        data: e.target.result,
+        name: file.name,
+        timestamp: Date.now(),
+        label: '',
+        source: 'upload',
+        isCover: window.currentPhotos.retail.length === 0 // First photo is cover by default
+      });
+      displayRetailPhotos();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Clear input
+  event.target.value = '';
+}
+
+function displayRetailPhotos() {
+  const grid = document.getElementById('retailPhotoGrid');
+  const countEl = document.getElementById('retailPhotoCount');
+  const section = document.getElementById('retailPhotoSection');
+  
+  if (!grid) return;
+
+  const photos = window.currentPhotos?.retail || [];
+
+  // Update count
+  if (countEl) {
+    countEl.textContent = photos.length + (photos.length === 1 ? ' photo' : ' photos');
+  }
+
+  // Show/hide section
+  if (section) {
+    section.style.display = photos.length > 0 ? 'block' : 'none';
+  }
+
+  // Build grid
+  grid.innerHTML = photos.map((photo, index) => `
+    <div class="photo-item ${photo.isCover ? 'cover-photo' : ''}">
+      <input type="checkbox" class="photo-checkbox" id="retail-photo-${index}" onchange="togglePhotoSelection('retail', ${index}, this.checked)">
+      <img src="${photo.data}" alt="${photo.name || 'Photo ' + (index + 1)}" onclick="openPhotoPreview('${photo.data}')">
+      <div class="photo-actions">
+        <button class="btn-sm ${photo.isCover ? 'btn-primary' : 'btn-secondary'}" onclick="setCoverPhoto('retail', ${index})" title="${photo.isCover ? 'Cover Photo' : 'Set as Cover'}">
+          ${photo.isCover ? '★ Cover' : '☆ Set Cover'}
+        </button>
+      </div>
+      <div class="photo-label">
+        <input type="text" placeholder="Add label..." value="${photo.label || ''}" onchange="updatePhotoLabel('retail', ${index}, this.value)">
+      </div>
+    </div>
+  `).join('');
+}
+
+function updatePhotoLabel(type, index, label) {
+  if (window.currentPhotos && window.currentPhotos[type] && window.currentPhotos[type][index]) {
+    window.currentPhotos[type][index].label = label;
+  }
 }

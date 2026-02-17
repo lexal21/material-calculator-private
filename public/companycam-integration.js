@@ -33,7 +33,13 @@ async function openCompanyCamModal(tab) {
   hasMoreProjects = true;
   projectSearchQuery = '';
   
-  modalTab.textContent = tab === 'materials' ? 'Materials' : 'Labor';
+  if (tab === 'materials') {
+    modalTab.textContent = 'Materials';
+  } else if (tab === 'labor') {
+    modalTab.textContent = 'Labor';
+  } else if (tab === 'retail') {
+    modalTab.textContent = 'Retail';
+  }
   modal.dataset.tab = tab;
   modal.style.display = 'flex';
   
@@ -500,7 +506,12 @@ async function importCompanyCamPhotos() {
           companycamId: photo.id
         };
         
-        if (tab === 'materials') {
+        if (tab === 'retail') {
+          // Retail uses window.currentPhotos instead of projectManager
+          if (!window.currentPhotos) window.currentPhotos = {};
+          if (!window.currentPhotos.retail) window.currentPhotos.retail = [];
+          window.currentPhotos.retail.push(photoData);
+        } else if (tab === 'materials') {
           project.photos.materials.push(photoData);
         } else {
           project.photos.labor.push(photoData);
@@ -516,22 +527,27 @@ async function importCompanyCamPhotos() {
     
     console.log(`[CompanyCam] Import complete: ${successCount} success, ${errorCount} failed`);
     
-    // Save project
-    projectManager.saveCurrentProject();
+    // Save project (only for materials/labor)
+    if (tab !== 'retail') {
+      projectManager.saveCurrentProject();
+    }
     
-    // Clear any existing selections
+    // Clear any existing selections and refresh display
     if (tab === 'materials') {
       if (window.selectedMaterialsPhotos) {
         window.selectedMaterialsPhotos.clear();
       }
-      // Refresh display
       displayMaterialsPhotos();
-    } else {
+    } else if (tab === 'labor') {
       if (window.selectedLaborPhotos) {
         window.selectedLaborPhotos.clear();
       }
-      // Refresh display
       displayLaborPhotos();
+    } else if (tab === 'retail') {
+      if (window.selectedRetailPhotos) {
+        window.selectedRetailPhotos.clear();
+      }
+      displayRetailPhotos();
     }
     
     // Close modal

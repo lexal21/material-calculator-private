@@ -581,6 +581,9 @@ function buildRetailPDF() {
   const totals = calculateRetailTotals();
   const isCustomer = window.retailViewMode === 'customer';
 
+  // Check for cover photo
+  const coverPhoto = window.currentPhotos?.retail?.find(p => p.isCover);
+
   // Separate items by category
   const materialItems = est.lineItems.filter(item => item.category === 'Materials');
   const laborItems = est.lineItems.filter(item => item.category === 'Labor');
@@ -698,22 +701,49 @@ function buildRetailPDF() {
 
   totalsStack.push({ columns: [{ text: 'TOTAL:', width: '*', alignment: 'right', bold: true, fontSize: 14 }, { text: '$' + totals.grandTotal.toFixed(2), width: 100, alignment: 'right', bold: true, fontSize: 14, color: '#0891b2' }] });
 
+  // Build main content
+  const content = [
+    { text: isCustomer ? 'ROOFING ESTIMATE' : 'INTERNAL ESTIMATE', style: 'header' },
+    { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 8, 0, 20] },
+    { columns: [
+      { width: '50%', stack: [{ text: 'PREPARED FOR:', style: 'label' }, { text: est.customerName || 'Customer', style: 'customerName', margin: [0, 4, 0, 0] }, { text: est.jobAddress || '', margin: [0, 4, 0, 0] }, { text: 'Job #: ' + (est.jobNumber || 'N/A'), margin: [0, 4, 0, 0] }] },
+      { width: '50%', stack: [{ text: 'PROJECT DETAILS:', style: 'label' }, { text: 'Roof Size: ' + est.measurements.squares.toFixed(1) + ' squares', margin: [0, 4, 0, 0] }, { text: 'Shingle: ' + (est.shingleColor || 'TBD'), margin: [0, 4, 0, 0] }] }
+    ], margin: [0, 0, 0, 30] },
+    { text: 'SCOPE OF WORK', style: 'sectionHeader', margin: [0, 0, 0, 16] },
+    ...scopeContent,
+    { columns: [{ width: '*', text: '' }, { width: 250, stack: totalsStack }] },
+    { text: ' This estimate is valid for 30 days.', style: 'terms' },
+    { columns: [{ width: '45%', stack: [{ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1 }], margin: [0, 50, 0, 4] }, { text: 'Customer Signature / Date', fontSize: 9, color: '#64748b' }] }, { width: '10%', text: '' }, { width: '45%', stack: [{ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1 }], margin: [0, 50, 0, 4] }, { text: 'Contractor Signature / Date', fontSize: 9, color: '#64748b' }] }] }
+  ];
+
+  // Add cover photo if exists
+  if (coverPhoto && coverPhoto.data) {
+    content.unshift({ text: '', pageBreak: 'after' });
+    content.unshift({ image: coverPhoto.data, width: 350, alignment: 'center', margin: [0, 0, 0, 0] });
+    content.unshift({ text: 'Job #: ' + (est.jobNumber || 'N/A'), style: 'coverJob', alignment: 'center', margin: [0, 0, 0, 30] });
+    content.unshift({ text: est.jobAddress || '', style: 'coverAddress', alignment: 'center', margin: [0, 0, 0, 8] });
+    content.unshift({ text: est.customerName || '', style: 'coverCustomer', alignment: 'center', margin: [0, 0, 0, 8] });
+    content.unshift({ text: isCustomer ? 'ROOFING ESTIMATE' : 'INTERNAL ESTIMATE', style: 'coverTitle', alignment: 'center', margin: [0, 0, 0, 20] });
+  }
+
+  // Add photos section
+  const otherPhotos = window.currentPhotos?.retail?.filter(p => !p.isCover) || [];
+  if (otherPhotos.length > 0) {
+    content.push({ text: 'PHOTOS', style: 'sectionHeader', margin: [0, 30, 0, 12], pageBreak: 'before' });
+    for (let i = 0; i < otherPhotos.length; i += 2) {
+      const row = [];
+      row.push({ image: otherPhotos[i].data, width: 240, margin: [0, 0, 10, 10] });
+      if (otherPhotos[i + 1]) {
+        row.push({ image: otherPhotos[i + 1].data, width: 240, margin: [0, 0, 0, 10] });
+      }
+      content.push({ columns: row });
+    }
+  }
+
   return {
     pageSize: 'LETTER',
     pageMargins: [72, 72, 72, 72],
-    content: [
-      { text: isCustomer ? 'ROOFING ESTIMATE' : 'INTERNAL ESTIMATE', style: 'header' },
-      { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 8, 0, 20] },
-      { columns: [
-        { width: '50%', stack: [{ text: 'PREPARED FOR:', style: 'label' }, { text: est.customerName || 'Customer', style: 'customerName', margin: [0, 4, 0, 0] }, { text: est.jobAddress || '', margin: [0, 4, 0, 0] }, { text: 'Job #: ' + (est.jobNumber || 'N/A'), margin: [0, 4, 0, 0] }] },
-        { width: '50%', stack: [{ text: 'PROJECT DETAILS:', style: 'label' }, { text: 'Roof Size: ' + est.measurements.squares.toFixed(1) + ' squares', margin: [0, 4, 0, 0] }, { text: 'Shingle: ' + (est.shingleColor || 'TBD'), margin: [0, 4, 0, 0] }] }
-      ], margin: [0, 0, 0, 30] },
-      { text: 'SCOPE OF WORK', style: 'sectionHeader', margin: [0, 0, 0, 16] },
-      ...scopeContent,
-      { columns: [{ width: '*', text: '' }, { width: 250, stack: totalsStack }] },
-      { text: ' This estimate is valid for 30 days.', style: 'terms' },
-      { columns: [{ width: '45%', stack: [{ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1 }], margin: [0, 50, 0, 4] }, { text: 'Customer Signature / Date', fontSize: 9, color: '#64748b' }] }, { width: '10%', text: '' }, { width: '45%', stack: [{ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1 }], margin: [0, 50, 0, 4] }, { text: 'Contractor Signature / Date', fontSize: 9, color: '#64748b' }] }] }
-    ],
+    content: content,
     styles: {
       header: { fontSize: 24, bold: true, color: '#0891b2' },
       label: { fontSize: 10, bold: true, color: '#64748b' },
@@ -721,7 +751,11 @@ function buildRetailPDF() {
       sectionHeader: { fontSize: 12, bold: true },
       categoryHeader: { fontSize: 11, bold: true, color: '#0891b2' },
       tableHeader: { bold: true, fontSize: 9, fillColor: '#f8fafc' },
-      terms: { fontSize: 9, color: '#64748b' }
+      terms: { fontSize: 9, color: '#64748b' },
+      coverTitle: { fontSize: 32, bold: true, color: '#0891b2' },
+      coverCustomer: { fontSize: 18, bold: true },
+      coverAddress: { fontSize: 14 },
+      coverJob: { fontSize: 12, color: '#64748b' }
     }
   };
 }

@@ -5,6 +5,7 @@
 // Global state for photo selection
 let selectedMaterialsPhotos = new Set();
 let selectedLaborPhotos = new Set();
+let selectedRetailPhotos = new Set();
 
 // Compress and convert image to base64
 async function compressAndStoreImage(file, maxWidth = 1200, maxHeight = 800, quality = 0.8) {
@@ -291,7 +292,14 @@ function displayLaborPhotos() {
 
 // Toggle photo selection
 function togglePhotoSelection(tab, idx, selected) {
-  const set = tab === 'materials' ? selectedMaterialsPhotos : selectedLaborPhotos;
+  let set;
+  if (tab === 'materials') {
+    set = selectedMaterialsPhotos;
+  } else if (tab === 'labor') {
+    set = selectedLaborPhotos;
+  } else if (tab === 'retail') {
+    set = selectedRetailPhotos;
+  }
   
   console.log('[PhotoSelection] ' + tab + ' photo ' + idx + ': ' + (selected ? 'selected' : 'deselected'));
   
@@ -304,7 +312,15 @@ function togglePhotoSelection(tab, idx, selected) {
   console.log('[PhotoSelection] ' + tab + ' total selected:', set.size);
   
   // Update delete button
-  const btnId = tab === 'materials' ? 'deleteMaterialsPhotosBtn' : 'deleteLaborPhotosBtn';
+  let btnId;
+  if (tab === 'materials') {
+    btnId = 'deleteMaterialsPhotosBtn';
+  } else if (tab === 'labor') {
+    btnId = 'deleteLaborPhotosBtn';
+  } else if (tab === 'retail') {
+    btnId = 'deleteRetailPhotosBtn';
+  }
+  
   const btn = document.getElementById(btnId);
   if (btn) {
     btn.disabled = set.size === 0;
@@ -316,7 +332,15 @@ function togglePhotoSelection(tab, idx, selected) {
 function deleteSelectedPhotos(tab) {
   console.log('[DeletePhotos] DELETE BUTTON CLICKED for tab:', tab);
   
-  const set = tab === 'materials' ? selectedMaterialsPhotos : selectedLaborPhotos;
+  let set;
+  if (tab === 'materials') {
+    set = selectedMaterialsPhotos;
+  } else if (tab === 'labor') {
+    set = selectedLaborPhotos;
+  } else if (tab === 'retail') {
+    set = selectedRetailPhotos;
+  }
+  
   console.log('[DeletePhotos] Selected photos count:', set.size);
   console.log('[DeletePhotos] Selected photo indices:', Array.from(set));
   
@@ -331,22 +355,34 @@ function deleteSelectedPhotos(tab) {
   
   if (!confirm) return;
   
-  const project = projectManager.getCurrentProject();
-  const key = tab === 'materials' ? 'materials' : 'labor';
-  
-  // Remove selected photos (iterate backwards to preserve indices)
-  const photos = project.photos[key];
-  const toDelete = Array.from(set).sort((a, b) => b - a);
-  toDelete.forEach(idx => photos.splice(idx, 1));
-  
-  projectManager.saveCurrentProject();
-  set.clear();
-  
-  // Refresh display
-  if (tab === 'materials') {
-    displayMaterialsPhotos();
+  // Handle retail differently (uses window.currentPhotos, not projectManager)
+  if (tab === 'retail') {
+    if (!window.currentPhotos || !window.currentPhotos.retail) return;
+    
+    const toDelete = Array.from(set).sort((a, b) => b - a);
+    toDelete.forEach(idx => window.currentPhotos.retail.splice(idx, 1));
+    
+    set.clear();
+    displayRetailPhotos();
   } else {
-    displayLaborPhotos();
+    // Materials and Labor tabs use projectManager
+    const project = projectManager.getCurrentProject();
+    const key = tab === 'materials' ? 'materials' : 'labor';
+    
+    // Remove selected photos (iterate backwards to preserve indices)
+    const photos = project.photos[key];
+    const toDelete = Array.from(set).sort((a, b) => b - a);
+    toDelete.forEach(idx => photos.splice(idx, 1));
+    
+    projectManager.saveCurrentProject();
+    set.clear();
+    
+    // Refresh display
+    if (tab === 'materials') {
+      displayMaterialsPhotos();
+    } else {
+      displayLaborPhotos();
+    }
   }
 }
 
@@ -383,8 +419,10 @@ function setCoverPhoto(tab, idx) {
   // Refresh display
   if (tab === 'materials') {
     displayMaterialsPhotos();
-  } else {
+  } else if (tab === 'labor') {
     displayLaborPhotos();
+  } else if (tab === 'retail') {
+    displayRetailPhotos();
   }
   
   console.log('Set cover photo:', tab, idx, window.currentPhotos[tab][idx]?.isCover);
