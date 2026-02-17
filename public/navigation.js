@@ -697,7 +697,7 @@ function createModuleContainers() {
             </div>
 
             <!-- Retail Photo Section -->
-            <div id="retailPhotoSection" class="photo-section no-print" style="margin-top: 24px; display: none;">
+            <div id="retailPhotoSection" class="photo-section no-print">
               <h3 style="margin-bottom: 12px;">Photos (<span id="retailPhotoCount">0</span>)</h3>
               <div style="margin-bottom: 12px;">
                 <input type="file" id="retailPhotoInput" accept="image/*" multiple onchange="handleRetailPhotos(event)" style="display: none;">
@@ -1341,12 +1341,6 @@ function initializeRetailFromParsedData(data) {
 
   // Initialize manufacturer selector
   initRetailManufacturerSelector();
-
-  // Show photo section
-  const photoSection = document.getElementById('retailPhotoSection');
-  if (photoSection) {
-    photoSection.style.display = 'block';
-  }
 
   // Initialize retail photos array
   if (!window.currentPhotos) window.currentPhotos = {};
@@ -2565,7 +2559,6 @@ function handleRetailPhotos(event) {
 function displayRetailPhotos() {
   const grid = document.getElementById('retailPhotoGrid');
   const countEl = document.getElementById('retailPhotoCount');
-  const section = document.getElementById('retailPhotoSection');
   
   if (!grid) return;
 
@@ -2573,12 +2566,7 @@ function displayRetailPhotos() {
 
   // Update count
   if (countEl) {
-    countEl.textContent = photos.length + (photos.length === 1 ? ' photo' : ' photos');
-  }
-
-  // Show/hide section
-  if (section) {
-    section.style.display = photos.length > 0 ? 'block' : 'none';
+    countEl.textContent = photos.length;
   }
 
   // Build grid - matching Materials/Labor structure
