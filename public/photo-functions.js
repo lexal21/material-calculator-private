@@ -313,6 +313,31 @@ function togglePhotoSelection(type, index, isChecked) {
     deleteBtn.style.display = anyChecked ? 'inline-block' : 'none';
     deleteBtn.disabled = !anyChecked;
   }
+  
+  // Update Select All button text based on selection state
+  let allCheckboxSelector;
+  let selectAllBtnId;
+  
+  if (type === 'materials') {
+    allCheckboxSelector = '#materialsPhotoGrid .photo-checkbox';
+    selectAllBtnId = 'selectAllMaterialsPhotosBtn';
+  } else if (type === 'labor') {
+    allCheckboxSelector = '#laborPhotoGrid .photo-checkbox';
+    selectAllBtnId = 'selectAllLaborPhotosBtn';
+  } else if (type === 'retail') {
+    allCheckboxSelector = '#retailPhotoGrid .photo-checkbox';
+    selectAllBtnId = 'selectAllRetailPhotosBtn';
+  }
+  
+  if (allCheckboxSelector && selectAllBtnId) {
+    const allCheckboxes = document.querySelectorAll(allCheckboxSelector);
+    const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+    const selectAllBtn = document.getElementById(selectAllBtnId);
+    
+    if (selectAllBtn) {
+      selectAllBtn.textContent = allChecked ? 'Deselect All' : 'Select All';
+    }
+  }
 }
 
 // Delete selected photos
@@ -414,22 +439,46 @@ function setCoverPhoto(tab, idx) {
 
 // Select all photos in a section
 function selectAllPhotos(type) {
-  const checkboxes = document.querySelectorAll('.photo-checkbox[data-photo-type="' + type + '"]');
+  let checkboxSelector;
+  let deleteBtnId;
   
-  if (checkboxes.length === 0) {
-    console.log('[SelectAll] No photos to select for type:', type);
+  if (type === 'materials') {
+    checkboxSelector = '#materialsPhotoGrid .photo-checkbox';
+    deleteBtnId = 'deleteMaterialsPhotosBtn';
+  } else if (type === 'labor') {
+    checkboxSelector = '#laborPhotoGrid .photo-checkbox';
+    deleteBtnId = 'deleteLaborPhotosBtn';
+  } else if (type === 'retail') {
+    checkboxSelector = '#retailPhotoGrid .photo-checkbox';
+    deleteBtnId = 'deleteRetailPhotosBtn';
+  } else {
     return;
   }
   
-  // Check all checkboxes
-  checkboxes.forEach(checkbox => {
-    checkbox.checked = true;
+  const checkboxes = document.querySelectorAll(checkboxSelector);
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+  
+  // Toggle: if all are checked, uncheck all; otherwise check all
+  checkboxes.forEach(cb => {
+    cb.checked = !allChecked;
   });
   
-  // Trigger the selection update (this will show the delete button)
-  togglePhotoSelection(type, 0, true);
+  // Update delete button visibility
+  const deleteBtn = document.getElementById(deleteBtnId);
+  const anyChecked = document.querySelectorAll(checkboxSelector + ':checked').length > 0;
   
-  console.log('[SelectAll] Selected all', checkboxes.length, 'photos for type:', type);
+  if (deleteBtn) {
+    deleteBtn.style.display = anyChecked ? 'inline-block' : 'none';
+    deleteBtn.disabled = !anyChecked;
+  }
+  
+  // Update button text
+  const selectAllBtn = document.getElementById('selectAll' + type.charAt(0).toUpperCase() + type.slice(1) + 'PhotosBtn');
+  if (selectAllBtn) {
+    selectAllBtn.textContent = anyChecked ? 'Deselect All' : 'Select All';
+  }
+  
+  console.log('[PHOTOS] ' + (anyChecked ? 'Selected' : 'Deselected') + ' all photos in', type);
 }
 
 // Expose functions globally
