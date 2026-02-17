@@ -217,7 +217,7 @@ function displayRetailEstimate() {
         <td style="padding: 12px 16px; text-align: right;">
           <input type="number" class="editable-input" value="${item.quantity}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'quantity', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
         </td>
-        <td style="padding: 12px 16px; text-align: center;">${item.unit || 'EA'}</td>
+        <td style="padding: 12px 16px; text-align: center;">${pluralizeUnit(item.unit || 'EA', item.quantity)}</td>
         <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
           <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
             <span>$</span>
@@ -249,7 +249,7 @@ function displayRetailEstimate() {
         <td style="padding: 12px 16px; text-align: right;">
           <input type="number" class="editable-input" value="${item.quantity}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'quantity', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
         </td>
-        <td style="padding: 12px 16px; text-align: center;">${item.unit || 'EA'}</td>
+        <td style="padding: 12px 16px; text-align: center;">${pluralizeUnit(item.unit || 'EA', item.quantity)}</td>
         <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
           <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
             <span>$</span>
