@@ -134,19 +134,53 @@ function calculateRetailTotals() {
   if (laborSubtotalEl) laborSubtotalEl.textContent = '$' + laborSubtotal.toFixed(2);
   if (subtotalEl) subtotalEl.innerHTML = '<strong>$' + subtotal.toFixed(2) + '</strong>';
   
-  // Calculate fees
+  // Calculate fees - Profit should be based on (subtotal + overhead)
   let feesTotal = 0;
+  let overheadAmount = 0;
+  
   if (window.retailData.fees) {
-    window.retailData.fees.forEach(fee => {
-      if (fee.enabled) {
-        if (fee.type === 'percent') {
-          fee.calculated = subtotal * (fee.value / 100);
-        } else {
-          fee.calculated = fee.value;
-        }
-        feesTotal += fee.calculated;
+    // First pass: calculate overhead
+    const overheadFee = window.retailData.fees.find(f => f.id === 'overhead');
+    if (overheadFee && overheadFee.enabled) {
+      if (overheadFee.type === 'percent') {
+        overheadFee.calculated = subtotal * (overheadFee.value / 100);
       } else {
-        fee.calculated = 0;
+        overheadFee.calculated = overheadFee.value;
+      }
+      overheadAmount = overheadFee.calculated;
+    } else if (overheadFee) {
+      overheadFee.calculated = 0;
+    }
+    
+    // Second pass: calculate all fees (profit based on subtotal + overhead)
+    window.retailData.fees.forEach(fee => {
+      if (fee.id === 'overhead') {
+        // Already calculated
+        if (fee.enabled) feesTotal += fee.calculated;
+      } else if (fee.id === 'profit') {
+        // Profit is based on subtotal + overhead
+        if (fee.enabled) {
+          if (fee.type === 'percent') {
+            fee.calculated = (subtotal + overheadAmount) * (fee.value / 100);
+          } else {
+            fee.calculated = fee.value;
+          }
+          feesTotal += fee.calculated;
+        } else {
+          fee.calculated = 0;
+        }
+      } else {
+        // Other fees based on subtotal only
+        if (fee.enabled) {
+          if (fee.type === 'percent') {
+            fee.calculated = subtotal * (fee.value / 100);
+          } else {
+            fee.calculated = fee.value;
+          }
+          feesTotal += fee.calculated;
+        } else {
+          fee.calculated = 0;
+        }
       }
     });
   }
@@ -335,19 +369,21 @@ function displayRetailFees() {
   feesTable.innerHTML = window.retailData.fees.map((fee, index) => `
     <tr data-fee-id="${fee.id}">
       <td style="padding: 12px 16px;">
-        <input type="text" value="${fee.description}" onchange="updateRetailFee('${fee.id}', 'description', this.value)" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+        <input type="text" value="${fee.description}" onchange="updateRetailFee('${fee.id}', 'description', this.value)" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box;">
       </td>
       <td style="padding: 12px 16px; text-align: center;">
-        <select onchange="updateRetailFee('${fee.id}', 'type', this.value)" style="padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+        <select onchange="updateRetailFee('${fee.id}', 'type', this.value)" style="padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 4px; min-width: 100px;">
           <option value="flat" ${fee.type === 'flat' ? 'selected' : ''}>Flat $</option>
           <option value="percent" ${fee.type === 'percent' ? 'selected' : ''}>Percent %</option>
         </select>
       </td>
-      <td style="padding: 12px 16px; text-align: right;">
-        <input type="number" value="${fee.value}" min="0" step="0.01" onchange="updateRetailFee('${fee.id}', 'value', this.value)" style="width: 80px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: right;">
-        ${fee.type === 'percent' ? '%' : ''}
+      <td style="padding: 12px 16px; text-align: center;">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <input type="number" value="${fee.value}" min="0" step="0.01" onchange="updateRetailFee('${fee.id}', 'value', parseFloat(this.value))" style="width: 80px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: right;">
+          <span>${fee.type === 'percent' ? '%' : ''}</span>
+        </div>
       </td>
-      <td style="padding: 12px 16px; text-align: right;">
+      <td style="padding: 12px 16px; text-align: right; font-weight: 600;">
         $${(fee.calculated || 0).toFixed(2)}
       </td>
       <td style="padding: 12px 16px; text-align: center;">
