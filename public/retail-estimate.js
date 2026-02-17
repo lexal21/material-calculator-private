@@ -210,6 +210,9 @@ function displayRetailEstimate() {
   if (materialsTable) {
     materialsTable.innerHTML = materials.map((item, idx) => `
       <tr data-item-id="${item.id}">
+        <td style="padding: 8px; width: 40px;" class="retail-internal-only">
+          <input type="checkbox" class="retail-material-checkbox" data-item-id="${item.id}" onchange="toggleRetailItemSelection('${item.id}', this.checked)">
+        </td>
         <td style="padding: 12px 16px;">${item.description}</td>
         <td style="padding: 12px 16px; text-align: right;">
           <input type="number" class="editable-input" value="${item.quantity}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'quantity', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
@@ -239,6 +242,9 @@ function displayRetailEstimate() {
   if (laborTable) {
     laborTable.innerHTML = labor.map((item, idx) => `
       <tr data-item-id="${item.id}">
+        <td style="padding: 8px; width: 40px;" class="retail-internal-only">
+          <input type="checkbox" class="retail-labor-checkbox" data-item-id="${item.id}" onchange="toggleRetailItemSelection('${item.id}', this.checked)">
+        </td>
         <td style="padding: 12px 16px;">${item.description}</td>
         <td style="padding: 12px 16px; text-align: right;">
           <input type="number" class="editable-input" value="${item.quantity}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'quantity', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
@@ -778,4 +784,15 @@ function resetRetailEstimate() {
   const results = document.getElementById('retailResults');
   if (notReady) notReady.style.display = 'block';
   if (results) results.style.display = 'none';
+}
+
+function toggleRetailItemSelection(itemId, isChecked) {
+  const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+  if (row) {
+    if (isChecked) {
+      row.classList.add('row-selected');
+    } else {
+      row.classList.remove('row-selected');
+    }
+  }
 }
