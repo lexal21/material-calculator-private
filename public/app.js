@@ -105,7 +105,10 @@ async function loadCurrentUser() {
     const response = await fetch('/api/user');
     const data = await response.json();
     if (data.success && data.user) {
-      document.getElementById('userName').textContent = data.user.name || data.user.email;
+      const userNameEl = document.getElementById('userName');
+      if (userNameEl) {
+        userNameEl.textContent = data.user.name || data.user.email;
+      }
     } else {
       window.location.href = '/login.html';
     }
