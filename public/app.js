@@ -18,6 +18,15 @@ function validatePrice(value) {
   return !isNaN(num) && num >= 0;
 }
 
+function applyZeroQuantityClasses(row, quantity) {
+  if (!row) return;
+  if (quantity === 0) {
+    row.classList.add('zero-quantity');
+  } else {
+    row.classList.remove('zero-quantity');
+  }
+}
+
 function removeErrorMessage(element) {
   if (element && element.classList) {
     element.classList.remove('error');
