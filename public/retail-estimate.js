@@ -274,6 +274,43 @@ function calculateRetailItemTotal(item) {
   return base * (1 + markup / 100);
 }
 
+function updateRetailLineItem(itemId, field, value) {
+  if (!window.retailData || !window.retailData.lineItems) return;
+  
+  const item = window.retailData.lineItems.find(i => i.id === itemId);
+  if (!item) {
+    console.error('[RETAIL] Item not found:', itemId);
+    return;
+  }
+  
+  // Update the field
+  if (field === 'quantity' || field === 'unitCost' || field === 'markup') {
+    item[field] = parseFloat(value) || 0;
+  } else {
+    item[field] = value;
+  }
+  
+  // Update the row total display
+  const row = document.querySelector(`tr[data-item-id="${itemId}"]`);
+  if (row) {
+    const totalCell = row.querySelector('td:nth-last-child(2)'); // Total is second to last column
+    if (totalCell) {
+      const itemTotal = calculateRetailItemTotal(item);
+      totalCell.innerHTML = '$' + itemTotal.toFixed(2);
+    }
+  }
+  
+  // Recalculate all totals
+  calculateRetailTotals();
+  
+  // Save to storage
+  if (typeof saveRetailToStorage === 'function') {
+    saveRetailToStorage();
+  }
+  
+  console.log('[RETAIL] Updated', itemId, field, '=', value);
+}
+
 function updateRetailItem(idx, field, value) {
   if (!window.retailData) return;
   const item = window.retailData.lineItems[idx];

@@ -7,6 +7,22 @@ const loading = document.getElementById('loading');
 const results = document.getElementById('results');
 const error = document.getElementById('error');
 
+// Helper functions
+function validateQuantity(value) {
+  const num = parseFloat(value);
+  return !isNaN(num) && num >= 0;
+}
+
+function removeErrorMessage(element) {
+  if (element && element.classList) {
+    element.classList.remove('error');
+  }
+  const errorMsg = element?.parentElement?.querySelector('.error-message');
+  if (errorMsg) {
+    errorMsg.remove();
+  }
+}
+
 // Get current pricing based on default system
 function getCurrentPricing() {
   // Try to get custom pricing from localStorage based on default system
@@ -851,6 +867,28 @@ function updateMaterialRow(rowIndex) {
   recalculateTotals();
 }
 
+function updateMaterialsTotals() {
+  if (!window.materialsData) return;
+  
+  const subtotal = window.materialsData.reduce((sum, item) => sum + (item.total || 0), 0);
+  
+  const subtotalEl = document.getElementById('materialsSubtotal');
+  if (subtotalEl) {
+    subtotalEl.textContent = '$' + subtotal.toFixed(2);
+  }
+  
+  // Update grand total
+  const taxRate = 0.09; // 9% tax
+  const tax = subtotal * taxRate;
+  const grandTotal = subtotal + tax;
+  
+  const taxEl = document.getElementById('materialsTax');
+  const grandTotalEl = document.getElementById('materialsGrandTotal');
+  
+  if (taxEl) taxEl.textContent = '$' + tax.toFixed(2);
+  if (grandTotalEl) grandTotalEl.textContent = '$' + grandTotal.toFixed(2);
+}
+
 function recalculateTotals() {
   const materialsTotal = window.materialsData.reduce((sum, item) => sum + item.total, 0);
   const miscTotal = (window.miscTotals || []).reduce((sum, val) => sum + val, 0);
@@ -1187,6 +1225,42 @@ function createLaborRow(item, index) {
       </td>
     </tr>
   `;
+}
+
+// Update labor row
+function updateLaborRow(rowIndex) {
+  if (!window.laborData || !window.laborData.items) return;
+  
+  const item = window.laborData.items[rowIndex];
+  if (!item) return;
+  
+  // Get input values from the row
+  const qtyInput = document.querySelector(`[data-labor-row="${rowIndex}"][data-field="quantity"]`);
+  const priceInput = document.querySelector(`[data-labor-row="${rowIndex}"][data-field="unitPrice"]`);
+  
+  if (qtyInput) {
+    item.quantity = parseFloat(qtyInput.value) || 0;
+  }
+  if (priceInput) {
+    item.unitPrice = parseFloat(priceInput.value) || 0;
+  }
+  
+  // Recalculate total
+  item.total = item.quantity * item.unitPrice;
+  
+  // Update the total cell in the row
+  const row = document.querySelector(`tr[data-labor-row="${rowIndex}"]`);
+  if (row) {
+    const totalCell = row.querySelector('.row-total');
+    if (totalCell) {
+      totalCell.textContent = '$' + item.total.toFixed(2);
+    }
+  }
+  
+  // Update labor totals
+  updateLaborTotals();
+  
+  console.log('[LABOR] Updated row', rowIndex, ':', item.name, '=', item.total);
 }
 
 // Update labor totals
