@@ -183,7 +183,7 @@
     <div id="calculatorTab" class="tab-content">
     
     <!-- Manufacturer Selection for Materials/Labor -->
-    <div id="materialsManufacturerSelector" style="display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 20px 0;">
+    <div id="materialsManufacturerSelector" style="display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 20px auto; max-width: 1200px;">
       <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #1e293b;">Select Roofing System</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
         <div>
@@ -216,9 +216,9 @@
       </button>
     </div>
     
-    <div id="results" style="display: none;">
+    <div id="results" style="display: none; max-width: 1200px; margin: 0 auto; padding: 0 20px;">
       <!-- Measurements Section -->
-      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden;">
+      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden; width: 100%;">
         <div style="background: linear-gradient(135deg, #475569, #334155); color: white; padding: 16px 20px;">
           <h3 style="margin: 0; font-size: 18px; font-weight: 600;">&#128207; Measurements</h3>
           <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Project dimensions and roof measurements</p>
@@ -229,7 +229,7 @@
       </div>
 
       <!-- Materials Section -->
-      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden;">
+      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden; width: 100%;">
         <div style="background: linear-gradient(135deg, #0891b2, #0e7490); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
           <div>
             <h3 style="margin: 0; font-size: 18px; font-weight: 600;">&#128203; Materials</h3>
@@ -287,7 +287,7 @@
       </div>
 
       <!-- Materials Photos Section -->
-      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; padding: 20px;">
+      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; padding: 20px; width: 100%;">
         <div id="materialsPhotoSection" class="photo-section no-print">
           <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #1e293b;">Photos (<span id="materialsPhotoCount">0</span>)</h3>
           <div style="margin-bottom: 12px;">
@@ -327,15 +327,15 @@
     </div>
 
     <div id="laborTab" class="tab-content">
-      <div style="padding: 20px 0;">
-        <div id="laborNotReady" style="display: block; padding: 40px; text-align: center; color: #718096; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+        <div id="laborNotReady" style="display: block; padding: 40px; text-align: center; color: #718096; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 20px 0;">
           <h2 style="margin: 0 0 12px 0;">&#128176; Labor Invoice Generator</h2>
           <p>&#128220; Upload a PDF in the Calculator tab to generate labor invoice</p>
         </div>
         
         <div id="laborResults" style="display: none;">
           <!-- Labor Section -->
-          <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden;">
+          <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden; width: 100%;">
             <div style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
               <div>
                 <h3 style="margin: 0; font-size: 18px; font-weight: 600;">&#128176; Labor</h3>
@@ -404,7 +404,7 @@
           </div>
 
           <!-- Labor Photos Section -->
-          <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; padding: 20px;">
+          <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; padding: 20px; width: 100%;">
             <div id="laborPhotoSection" class="photo-section no-print">
               <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #1e293b;">Photos (<span id="laborPhotoCount">0</span>)</h3>
             <div style="margin-bottom: 12px;">
