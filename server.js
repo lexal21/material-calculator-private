@@ -497,32 +497,6 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
       });
     }
     
-    // Step Flashing Labor - find step flashing in materials
-    const stepFlashingMat = result.materials.find(m => m.name && m.name.toLowerCase().includes('step flashing'));
-    if (stepFlashingMat && stepFlashingMat.quantity > 0) {
-      laborItems.push({
-        name: 'Step Flashing Install',
-        quantity: stepFlashingMat.quantity,
-        unit: 'BD',
-        unitPrice: 25,
-        total: parseFloat((stepFlashingMat.quantity * 25).toFixed(2))
-      });
-    }
-    
-    // L Flashing / Trim Coil Labor - find in materials
-    const lFlashingMat = result.materials.find(m => 
-      m.name && (m.name.toLowerCase().includes('l flashing') || m.name.toLowerCase().includes('trim coil'))
-    );
-    if (lFlashingMat && lFlashingMat.quantity > 0) {
-      laborItems.push({
-        name: 'L Flashing (Trim Coil) Install',
-        quantity: lFlashingMat.quantity,
-        unit: 'Roll',
-        unitPrice: 50,
-        total: parseFloat((lFlashingMat.quantity * 50).toFixed(2))
-      });
-    }
-    
     // Step Flashing Install Labor
     const stepFlashingLength = parseFloat(result.raw.step_flashing) || 0;
     if (stepFlashingLength > 0) {
