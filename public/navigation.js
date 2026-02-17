@@ -2567,19 +2567,18 @@ function displayRetailPhotos() {
     section.style.display = photos.length > 0 ? 'block' : 'none';
   }
 
-  // Build grid
+  // Build grid - matching Materials/Labor structure
   grid.innerHTML = photos.map((photo, index) => `
-    <div class="photo-item ${photo.isCover ? 'cover-photo' : ''}">
+    <div class="photo-item">
       <input type="checkbox" class="photo-checkbox" id="retail-photo-${index}" onchange="togglePhotoSelection('retail', ${index}, this.checked)">
-      <img src="${photo.data}" alt="${photo.name || 'Photo ' + (index + 1)}" onclick="openPhotoPreview('${photo.data}')">
-      <div class="photo-actions">
-        <button class="btn-sm ${photo.isCover ? 'btn-primary' : 'btn-secondary'}" onclick="setCoverPhoto('retail', ${index})" title="${photo.isCover ? 'Cover Photo' : 'Set as Cover'}">
-          ${photo.isCover ? '★ Cover' : '☆ Set Cover'}
-        </button>
-      </div>
-      <div class="photo-label">
+      <img src="${photo.data}" alt="${photo.name || 'Photo ' + (index + 1)}">
+      <div class="photo-filename">${photo.name || 'Photo ' + (index + 1)}</div>
+      <div class="photo-label-input">
         <input type="text" placeholder="Add label..." value="${photo.label || ''}" onchange="updatePhotoLabel('retail', ${index}, this.value)">
       </div>
+      <button class="set-cover-btn ${photo.isCover ? 'is-cover' : ''}" onclick="setCoverPhoto('retail', ${index})">
+        ${photo.isCover ? '★ Cover' : 'Set as Cover'}
+      </button>
     </div>
   `).join('');
 }
