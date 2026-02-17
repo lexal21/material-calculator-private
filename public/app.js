@@ -13,6 +13,11 @@ function validateQuantity(value) {
   return !isNaN(num) && num >= 0;
 }
 
+function validatePrice(value) {
+  const num = parseFloat(value);
+  return !isNaN(num) && num >= 0;
+}
+
 function removeErrorMessage(element) {
   if (element && element.classList) {
     element.classList.remove('error');
@@ -320,7 +325,7 @@ function createAdditionalItemRow(rowNumber) {
       <td data-label="Total" class="row-total" id="miscTotal${rowNumber}">$0.00</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMiscRow(${rowNumber})" aria-label="Delete additional item ${rowNumber}">
-          �
+          &#215;
         </button>
       </td>
     </tr>
@@ -496,7 +501,7 @@ function displayResults(data) {
       <td data-label="Total" class="row-total">$${item.total.toFixed(2)}</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMaterialRow(${index})" aria-label="Delete ${item.name}">
-          �
+          &#215;
         </button>
       </td>
     </tr>
@@ -559,7 +564,7 @@ function displayResults(data) {
         <td data-label="Total" class="row-total" id="miscTotal${i}">$0.00</td>
         <td class="delete-cell no-print">
           <button class="delete-btn" onclick="deleteMiscRow(${i})" aria-label="Delete additional item ${i}">
-            �
+            &#215;
           </button>
         </td>
       </tr>
@@ -981,7 +986,7 @@ function addMoreAdditionalItems() {
       <td data-label="Total" class="row-total" id="miscTotal${i}">$0.00</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteMiscRow(${i})" aria-label="Delete additional item ${i}">
-          �
+          &#215;
         </button>
       </td>
     `;
@@ -1220,7 +1225,7 @@ function createLaborRow(item, index) {
       <td data-label="Total" class="row-total">$${total.toFixed(2)}</td>
       <td class="delete-cell no-print">
         <button class="delete-btn" onclick="deleteLaborItem(${index})" aria-label="Delete ${item.name}">
-          ×
+          &#215;
         </button>
       </td>
     </tr>
