@@ -523,17 +523,27 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
       });
     }
     
-    // Flashing Install - combines all flashing measurements
-    const flashingLength = parseFloat(result.raw.flashing_length) || 0;
+    // Step Flashing Install Labor
     const stepFlashingLength = parseFloat(result.raw.step_flashing) || 0;
-    const totalFlashingLF = flashingLength + stepFlashingLength;
-    if (totalFlashingLF > 0) {
+    if (stepFlashingLength > 0) {
       laborItems.push({
-        name: 'Flashing Install',
-        quantity: parseFloat(totalFlashingLF.toFixed(2)),
+        name: 'Step Flashing Install',
+        quantity: parseFloat(stepFlashingLength.toFixed(2)),
         unit: 'LF',
         unitPrice: 2,
-        total: parseFloat((totalFlashingLF * 2).toFixed(2))
+        total: parseFloat((stepFlashingLength * 2).toFixed(2))
+      });
+    }
+    
+    // L Flashing (Trim Coil) Install Labor
+    const wallFlashingLength = parseFloat(result.raw.flashing_length) || 0;
+    if (wallFlashingLength > 0) {
+      laborItems.push({
+        name: 'L Flashing (Trim Coil) Install',
+        quantity: parseFloat(wallFlashingLength.toFixed(2)),
+        unit: 'LF',
+        unitPrice: 2,
+        total: parseFloat((wallFlashingLength * 2).toFixed(2))
       });
     }
     

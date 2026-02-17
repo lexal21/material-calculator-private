@@ -1242,6 +1242,34 @@ function initializeRetailFromParsedData(data) {
       markup: 0
     });
   }
+  
+  // Step Flashing Install Labor
+  const stepFlashingLength = parseFloat(raw.step_flashing) || 0;
+  if (stepFlashingLength > 0) {
+    lineItems.push({
+      id: 'labor-step-flashing',
+      category: 'Labor',
+      description: 'Step Flashing Install',
+      quantity: parseFloat(stepFlashingLength.toFixed(2)),
+      unit: 'LF',
+      unitCost: 2,
+      markup: 0
+    });
+  }
+  
+  // L Flashing (Trim Coil) Install Labor
+  const wallFlashingLength = parseFloat(raw.flashing_length) || 0;
+  if (wallFlashingLength > 0) {
+    lineItems.push({
+      id: 'labor-wall-flashing',
+      category: 'Labor',
+      description: 'L Flashing (Trim Coil) Install',
+      quantity: parseFloat(wallFlashingLength.toFixed(2)),
+      unit: 'LF',
+      unitCost: 2,
+      markup: 0
+    });
+  }
 
   // Extract customer info from raw - check multiple possible field names
   const customerName = raw.customer_name || raw.customerName || raw.name || '';
@@ -1711,6 +1739,34 @@ function applyRetailManufacturerSystem() {
     });
   }
   
+  // Step Flashing Install Labor
+  const stepFlashingLengthApply = parseFloat(rawMeasurements.step_flashing) || parseFloat(raw.step_flashing) || 0;
+  if (stepFlashingLengthApply > 0) {
+    lineItems.push({
+      id: 'labor-step-flashing',
+      category: 'Labor',
+      description: 'Step Flashing Install',
+      quantity: parseFloat(stepFlashingLengthApply.toFixed(2)),
+      unit: 'LF',
+      unitCost: 2,
+      markup: 0
+    });
+  }
+  
+  // L Flashing (Trim Coil) Install Labor
+  const wallFlashingLengthApply = parseFloat(rawMeasurements.flashing_length) || parseFloat(raw.flashing_length) || 0;
+  if (wallFlashingLengthApply > 0) {
+    lineItems.push({
+      id: 'labor-wall-flashing',
+      category: 'Labor',
+      description: 'L Flashing (Trim Coil) Install',
+      quantity: parseFloat(wallFlashingLengthApply.toFixed(2)),
+      unit: 'LF',
+      unitCost: 2,
+      markup: 0
+    });
+  }
+  
   // Update retailData
   if (window.retailData) {
     window.retailData.lineItems = lineItems;
@@ -1879,7 +1935,8 @@ function populateRetailLaborPricingTable() {
     { id: 'plywood', name: 'Plywood Replacement', unit: 'SH', default: 30 },
     { id: 'tearoff1', name: 'Tear Off - 1 Layer', unit: 'SQ', default: 25 },
     { id: 'tearoff2', name: 'Tear Off - 2 Layers', unit: 'SQ', default: 40 },
-    { id: 'flashing', name: 'Flashing Install', unit: 'LF', default: 2 },
+    { id: 'stepFlashing', name: 'Step Flashing Install', unit: 'LF', default: 2 },
+    { id: 'wallFlashing', name: 'L Flashing (Trim Coil) Install', unit: 'LF', default: 2 },
     { id: 'pipeBoot', name: 'Pipe Boot Install', unit: 'EA', default: 15 },
     { id: 'skylight', name: 'Skylight Flash/Reseal', unit: 'EA', default: 75 }
   ];
@@ -2084,7 +2141,8 @@ function saveRetailPricingTemplate() {
       plywood: parseFloat(document.getElementById('retail_laborRate_plywood')?.value) || 30,
       tearoff1: parseFloat(document.getElementById('retail_laborRate_tearoff1')?.value) || 25,
       tearoff2: parseFloat(document.getElementById('retail_laborRate_tearoff2')?.value) || 40,
-      flashing: parseFloat(document.getElementById('retail_laborRate_flashing')?.value) || 2,
+      stepFlashing: parseFloat(document.getElementById('retail_laborRate_stepFlashing')?.value) || 2,
+      wallFlashing: parseFloat(document.getElementById('retail_laborRate_wallFlashing')?.value) || 2,
       pipeBoot: parseFloat(document.getElementById('retail_laborRate_pipeBoot')?.value) || 15,
       skylight: parseFloat(document.getElementById('retail_laborRate_skylight')?.value) || 75
     },
