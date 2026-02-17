@@ -107,7 +107,14 @@ function initializeRetailEstimate() {
 }
 
 function calculateRetailTotals() {
-  if (!window.retailData) return;
+  if (!window.retailData) return {
+    subtotal: 0,
+    materialsSubtotal: 0,
+    laborSubtotal: 0,
+    feesTotal: 0,
+    taxAmount: 0,
+    grandTotal: 0
+  };
   
   // Separate line items
   const materials = window.retailData.lineItems.filter(item => item.category === 'Materials');
@@ -153,7 +160,7 @@ function calculateRetailTotals() {
     taxableAmount = materialsSubtotal;
   } else if (taxSettings.applyTo === 'all') {
     taxableAmount = subtotal + feesTotal;
-  } // 'none' = 0
+  }
   
   const taxAmount = taxableAmount * (taxSettings.rate / 100);
   const taxAmountEl = document.getElementById('retailTaxAmount');
@@ -168,6 +175,16 @@ function calculateRetailTotals() {
   if (typeof saveRetailToStorage === 'function') {
     saveRetailToStorage();
   }
+  
+  // RETURN the totals object for PDF generation
+  return {
+    subtotal: subtotal,
+    materialsSubtotal: materialsSubtotal,
+    laborSubtotal: laborSubtotal,
+    feesTotal: feesTotal,
+    taxAmount: taxAmount,
+    grandTotal: grandTotal
+  };
 }
 
 function toggleRetailView(mode) {
