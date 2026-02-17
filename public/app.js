@@ -432,15 +432,27 @@ function displayResults(data) {
     <div class="measurements-grid">
       <div class="measurement-item no-print">
         <div class="measurement-label">Roof Squares</div>
-        <div class="measurement-value">${data.measurements.roofSquares} sq</div>
-      </div>
-      <div class="measurement-item no-print">
-        <div class="measurement-label">Hip Length</div>
-        <div class="measurement-value">${data.measurements.hipLength} ft</div>
+        <div class="measurement-value">${parseFloat(data.measurements.roofSquares || 0).toFixed(2)} sq</div>
       </div>
       <div class="measurement-item no-print">
         <div class="measurement-label">Ridge Length</div>
-        <div class="measurement-value">${data.measurements.ridgeLength} ft</div>
+        <div class="measurement-value">${parseFloat(data.measurements.ridgeLength || 0).toFixed(2)} ft</div>
+      </div>
+      <div class="measurement-item no-print">
+        <div class="measurement-label">Hip Length</div>
+        <div class="measurement-value">${parseFloat(data.measurements.hipLength || 0).toFixed(2)} ft</div>
+      </div>
+      <div class="measurement-item no-print">
+        <div class="measurement-label">Valley Length</div>
+        <div class="measurement-value">${parseFloat(data.measurements.valleyLength || 0).toFixed(2)} ft</div>
+      </div>
+      <div class="measurement-item no-print">
+        <div class="measurement-label">Eave Length</div>
+        <div class="measurement-value">${parseFloat(data.measurements.eaveLength || 0).toFixed(2)} ft</div>
+      </div>
+      <div class="measurement-item no-print">
+        <div class="measurement-label">Rake Length</div>
+        <div class="measurement-value">${parseFloat(data.measurements.rakeLength || 0).toFixed(2)} ft</div>
       </div>
       <div class="measurement-item no-print">
         <div class="measurement-label">
@@ -2199,9 +2211,12 @@ function buildMaterialsPDF() {
           width: '50%',
           stack: [
             { text: 'ROOF DETAILS:', style: 'label' },
-            { text: 'Size: ' + (raw.roof_sq || '0') + ' squares', margin: [0, 4, 0, 0] },
-            { text: 'Ridge: ' + (raw.ridge_length || '0') + ' LF', margin: [0, 4, 0, 0] },
-            { text: 'Valley: ' + (raw.valley_length || '0') + ' LF', margin: [0, 4, 0, 0] }
+            { text: 'Size: ' + parseFloat(raw.roof_sq || 0).toFixed(2) + ' squares', margin: [0, 4, 0, 0] },
+            { text: 'Ridge: ' + parseFloat(raw.ridge_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] },
+            { text: 'Hip: ' + parseFloat(raw.hip_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] },
+            { text: 'Valley: ' + parseFloat(raw.valley_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] },
+            { text: 'Eave: ' + parseFloat(raw.eave_edge_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] },
+            { text: 'Rake: ' + parseFloat(raw.rake_edge_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] }
           ]
         }
       ],
@@ -2334,7 +2349,12 @@ function buildLaborPDF() {
           width: '50%',
           stack: [
             { text: 'ROOF DETAILS:', style: 'label' },
-            { text: 'Size: ' + (raw.roof_sq || '0') + ' squares', margin: [0, 4, 0, 0] }
+            { text: 'Size: ' + parseFloat(raw.roof_sq || 0).toFixed(2) + ' squares', margin: [0, 4, 0, 0] },
+            { text: 'Ridge: ' + parseFloat(raw.ridge_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] },
+            { text: 'Hip: ' + parseFloat(raw.hip_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] },
+            { text: 'Valley: ' + parseFloat(raw.valley_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] },
+            { text: 'Eave: ' + parseFloat(raw.eave_edge_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] },
+            { text: 'Rake: ' + parseFloat(raw.rake_edge_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] }
           ]
         }
       ],
