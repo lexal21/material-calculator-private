@@ -272,8 +272,12 @@ function injectNavStyles() {
       }
 
       /* Adjust main container for hamburger */
+      body {
+        padding-left: 70px;
+      }
+      
       .container {
-        margin-left: 70px;
+        margin: 0 auto;
       }
 
       /* Hide retail tab from main tabs */
@@ -394,7 +398,7 @@ function createModuleContainers() {
 
     <!-- Retail Module - Independent -->
     <div id="moduleRetail" class="module-container">
-      <div style="max-width: 1200px; margin: 0 auto; padding: 20px 20px 20px 70px;">
+      <div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
         <div class="section">
           <h2>💰 Retail Estimate Generator</h2>
           <p class="pricing-note">Upload a measurement PDF to generate customer-facing retail estimates.</p>
