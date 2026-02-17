@@ -2083,3 +2083,313 @@ function addLaborFromModal() {
   
   closeAddLaborModal();
 }
+
+// ==========================================
+// PRINT/PDF FUNCTIONS - MATERIALS/LABOR
+// ==========================================
+
+function printResults() {
+  const pdfDoc = buildMaterialsPDF();
+  pdfMake.createPdf(pdfDoc).print();
+}
+
+function saveAsPDF() {
+  const pdfDoc = buildMaterialsPDF();
+  const filename = 'Materials_' + (window.currentRawMeasurements?.address || 'Quote').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
+  pdfMake.createPdf(pdfDoc).download(filename);
+}
+
+function printLabor() {
+  const pdfDoc = buildLaborPDF();
+  pdfMake.createPdf(pdfDoc).print();
+}
+
+function saveLaborPDF() {
+  const pdfDoc = buildLaborPDF();
+  const filename = 'Labor_' + (window.currentRawMeasurements?.address || 'Invoice').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
+  pdfMake.createPdf(pdfDoc).download(filename);
+}
+
+function buildMaterialsPDF() {
+  const raw = window.currentRawMeasurements || {};
+  const materials = window.materialsData || [];
+  
+  // Calculate totals
+  const subtotal = materials.reduce((sum, item) => sum + (item.total || 0), 0);
+  const taxRate = 0.09;
+  const tax = subtotal * taxRate;
+  const grandTotal = subtotal + tax;
+  
+  // Build materials table
+  const tableBody = [
+    [
+      { text: 'Item', style: 'tableHeader' },
+      { text: 'Qty', style: 'tableHeader', alignment: 'center' },
+      { text: 'Unit', style: 'tableHeader', alignment: 'center' },
+      { text: 'Unit Price', style: 'tableHeader', alignment: 'right' },
+      { text: 'Total', style: 'tableHeader', alignment: 'right' }
+    ]
+  ];
+  
+  materials.forEach(item => {
+    if (item.quantity > 0) {
+      tableBody.push([
+        item.name,
+        { text: String(item.quantity), alignment: 'center' },
+        { text: pluralizeUnit(item.quantity, item.unit), alignment: 'center' },
+        { text: '$' + (item.unitPrice || 0).toFixed(2), alignment: 'right' },
+        { text: '$' + (item.total || 0).toFixed(2), alignment: 'right' }
+      ]);
+    }
+  });
+  
+  const tableLayout = {
+    hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0.5,
+    vLineWidth: () => 0,
+    hLineColor: () => '#E5E7EB',
+    paddingLeft: () => 8,
+    paddingRight: () => 8,
+    paddingTop: () => 6,
+    paddingBottom: () => 6
+  };
+  
+  // Build totals section
+  const totalsStack = [
+    {
+      columns: [
+        { text: 'Subtotal:', width: '*', alignment: 'right' },
+        { text: '$' + subtotal.toFixed(2), width: 100, alignment: 'right' }
+      ],
+      margin: [0, 4, 0, 4]
+    },
+    {
+      columns: [
+        { text: 'Tax (9%):', width: '*', alignment: 'right' },
+        { text: '$' + tax.toFixed(2), width: 100, alignment: 'right' }
+      ],
+      margin: [0, 4, 0, 4]
+    },
+    {
+      canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 2, lineColor: '#0891b2' }],
+      margin: [0, 8, 0, 8]
+    },
+    {
+      columns: [
+        { text: 'TOTAL:', width: '*', alignment: 'right', bold: true, fontSize: 14 },
+        { text: '$' + grandTotal.toFixed(2), width: 100, alignment: 'right', bold: true, fontSize: 14, color: '#0891b2' }
+      ]
+    }
+  ];
+  
+  // Build content
+  const content = [
+    { text: 'MATERIAL LIST', style: 'header' },
+    { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 8, 0, 20] },
+    {
+      columns: [
+        {
+          width: '50%',
+          stack: [
+            { text: 'JOB INFORMATION:', style: 'label' },
+            { text: raw.address || 'Address N/A', style: 'customerName', margin: [0, 4, 0, 0] },
+            { text: 'Order #: ' + (raw.order_number || 'N/A'), margin: [0, 4, 0, 0] }
+          ]
+        },
+        {
+          width: '50%',
+          stack: [
+            { text: 'ROOF DETAILS:', style: 'label' },
+            { text: 'Size: ' + (raw.roof_sq || '0') + ' squares', margin: [0, 4, 0, 0] },
+            { text: 'Ridge: ' + (raw.ridge_length || '0') + ' LF', margin: [0, 4, 0, 0] },
+            { text: 'Valley: ' + (raw.valley_length || '0') + ' LF', margin: [0, 4, 0, 0] }
+          ]
+        }
+      ],
+      margin: [0, 0, 0, 30]
+    },
+    { text: 'MATERIALS', style: 'sectionHeader', margin: [0, 0, 0, 12] },
+    {
+      table: {
+        headerRows: 1,
+        widths: ['*', 50, 60, 70, 70],
+        body: tableBody
+      },
+      layout: tableLayout,
+      margin: [0, 0, 0, 20]
+    },
+    {
+      columns: [
+        { width: '*', text: '' },
+        { width: 250, stack: totalsStack }
+      ]
+    }
+  ];
+  
+  // Add photos if available
+  if (window.currentPhotos && window.currentPhotos.materials && window.currentPhotos.materials.length > 0) {
+    content.push({
+      text: 'PHOTOS',
+      style: 'sectionHeader',
+      margin: [0, 30, 0, 12],
+      pageBreak: 'before'
+    });
+    
+    const photoRows = [];
+    for (let i = 0; i < window.currentPhotos.materials.length; i += 2) {
+      const row = [];
+      row.push({ image: window.currentPhotos.materials[i].data, width: 240, margin: [0, 0, 10, 10] });
+      if (window.currentPhotos.materials[i + 1]) {
+        row.push({ image: window.currentPhotos.materials[i + 1].data, width: 240, margin: [0, 0, 0, 10] });
+      }
+      photoRows.push({ columns: row });
+    }
+    content.push(...photoRows);
+  }
+  
+  return {
+    pageSize: 'LETTER',
+    pageMargins: [72, 72, 72, 72],
+    content: content,
+    styles: {
+      header: { fontSize: 24, bold: true, color: '#0891b2' },
+      label: { fontSize: 10, bold: true, color: '#64748b' },
+      customerName: { fontSize: 14, bold: true },
+      sectionHeader: { fontSize: 12, bold: true, color: '#0891b2' },
+      tableHeader: { bold: true, fontSize: 9, fillColor: '#f8fafc' },
+      terms: { fontSize: 9, color: '#64748b' }
+    }
+  };
+}
+
+function buildLaborPDF() {
+  const raw = window.currentRawMeasurements || {};
+  const laborData = window.laborData || { items: [] };
+  const laborItems = laborData.items || [];
+  
+  // Calculate totals
+  const subtotal = laborItems.reduce((sum, item) => sum + (item.total || 0), 0);
+  
+  // Build labor table
+  const tableBody = [
+    [
+      { text: 'Description', style: 'tableHeader' },
+      { text: 'Qty', style: 'tableHeader', alignment: 'center' },
+      { text: 'Unit', style: 'tableHeader', alignment: 'center' },
+      { text: 'Rate', style: 'tableHeader', alignment: 'right' },
+      { text: 'Total', style: 'tableHeader', alignment: 'right' }
+    ]
+  ];
+  
+  laborItems.forEach(item => {
+    if (item.quantity > 0) {
+      tableBody.push([
+        item.name,
+        { text: String(item.quantity), alignment: 'center' },
+        { text: item.unit || 'EA', alignment: 'center' },
+        { text: '$' + (item.unitPrice || 0).toFixed(2), alignment: 'right' },
+        { text: '$' + (item.total || 0).toFixed(2), alignment: 'right' }
+      ]);
+    }
+  });
+  
+  const tableLayout = {
+    hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0.5,
+    vLineWidth: () => 0,
+    hLineColor: () => '#E5E7EB',
+    paddingLeft: () => 8,
+    paddingRight: () => 8,
+    paddingTop: () => 6,
+    paddingBottom: () => 6
+  };
+  
+  // Build totals section
+  const totalsStack = [
+    {
+      canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 2, lineColor: '#7c3aed' }],
+      margin: [0, 8, 0, 8]
+    },
+    {
+      columns: [
+        { text: 'LABOR TOTAL:', width: '*', alignment: 'right', bold: true, fontSize: 14 },
+        { text: '$' + subtotal.toFixed(2), width: 100, alignment: 'right', bold: true, fontSize: 14, color: '#7c3aed' }
+      ]
+    }
+  ];
+  
+  // Build content
+  const content = [
+    { text: 'LABOR INVOICE', style: 'header' },
+    { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 8, 0, 20] },
+    {
+      columns: [
+        {
+          width: '50%',
+          stack: [
+            { text: 'JOB INFORMATION:', style: 'label' },
+            { text: raw.address || 'Address N/A', style: 'customerName', margin: [0, 4, 0, 0] },
+            { text: 'Order #: ' + (raw.order_number || 'N/A'), margin: [0, 4, 0, 0] }
+          ]
+        },
+        {
+          width: '50%',
+          stack: [
+            { text: 'ROOF DETAILS:', style: 'label' },
+            { text: 'Size: ' + (raw.roof_sq || '0') + ' squares', margin: [0, 4, 0, 0] }
+          ]
+        }
+      ],
+      margin: [0, 0, 0, 30]
+    },
+    { text: 'LABOR BREAKDOWN', style: 'sectionHeader', margin: [0, 0, 0, 12] },
+    {
+      table: {
+        headerRows: 1,
+        widths: ['*', 50, 50, 70, 70],
+        body: tableBody
+      },
+      layout: tableLayout,
+      margin: [0, 0, 0, 20]
+    },
+    {
+      columns: [
+        { width: '*', text: '' },
+        { width: 250, stack: totalsStack }
+      ]
+    }
+  ];
+  
+  // Add photos if available
+  if (window.currentPhotos && window.currentPhotos.labor && window.currentPhotos.labor.length > 0) {
+    content.push({
+      text: 'PHOTOS',
+      style: 'sectionHeader',
+      margin: [0, 30, 0, 12],
+      pageBreak: 'before'
+    });
+    
+    const photoRows = [];
+    for (let i = 0; i < window.currentPhotos.labor.length; i += 2) {
+      const row = [];
+      row.push({ image: window.currentPhotos.labor[i].data, width: 240, margin: [0, 0, 10, 10] });
+      if (window.currentPhotos.labor[i + 1]) {
+        row.push({ image: window.currentPhotos.labor[i + 1].data, width: 240, margin: [0, 0, 0, 10] });
+      }
+      photoRows.push({ columns: row });
+    }
+    content.push(...photoRows);
+  }
+  
+  return {
+    pageSize: 'LETTER',
+    pageMargins: [72, 72, 72, 72],
+    content: content,
+    styles: {
+      header: { fontSize: 24, bold: true, color: '#7c3aed' },
+      label: { fontSize: 10, bold: true, color: '#64748b' },
+      customerName: { fontSize: 14, bold: true },
+      sectionHeader: { fontSize: 12, bold: true, color: '#7c3aed' },
+      tableHeader: { bold: true, fontSize: 9, fillColor: '#f8fafc' },
+      terms: { fontSize: 9, color: '#64748b' }
+    }
+  };
+}
