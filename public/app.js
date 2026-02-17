@@ -2307,18 +2307,37 @@ function buildMaterialsPDF() {
   // Add photos section if there are photos (excluding cover photo from grid)
   const otherPhotos = window.currentPhotos?.materials?.filter(p => !p.isCover) || [];
   if (otherPhotos.length > 0) {
-    content.push({ text: 'PHOTOS', style: 'sectionHeader', margin: [0, 30, 0, 16], pageBreak: 'before' });
+    content.push({
+      text: 'PHOTOS',
+      style: 'sectionHeader',
+      margin: [0, 30, 0, 16],
+      pageBreak: 'before'
+    });
     
     otherPhotos.forEach((photo, index) => {
-      // Add photo
-      content.push({ image: photo.data, width: 400, alignment: 'center', margin: [0, 0, 0, 8] });
+      // Container for photo and caption
+      const photoBlock = {
+        stack: [
+          {
+            image: photo.data,
+            width: 250,
+            margin: [0, 0, 0, 6]
+          }
+        ],
+        margin: [0, 0, 0, 20]
+      };
       
-      // Add photo label/caption if exists
-      if (photo.label || photo.name) {
-        content.push({ text: photo.label || photo.name, alignment: 'center', fontSize: 10, color: '#64748b', margin: [0, 0, 0, 24] });
-      } else {
-        content.push({ text: '', margin: [0, 0, 0, 24] }); // Spacing between photos
+      // Add caption if exists
+      if (photo.label) {
+        photoBlock.stack.push({
+          text: photo.label,
+          fontSize: 10,
+          color: '#334155',
+          margin: [0, 0, 0, 0]
+        });
       }
+      
+      content.push(photoBlock);
     });
   }
   
@@ -2471,18 +2490,35 @@ function buildLaborPDF() {
   // Add photos section if there are photos (excluding cover photo from grid)
   const otherPhotos = window.currentPhotos?.labor?.filter(p => !p.isCover) || [];
   if (otherPhotos.length > 0) {
-    content.push({ text: 'PHOTOS', style: 'sectionHeader', margin: [0, 30, 0, 16], pageBreak: 'before' });
+    content.push({
+      text: 'PHOTOS',
+      style: 'sectionHeader',
+      margin: [0, 30, 0, 16],
+      pageBreak: 'before'
+    });
     
     otherPhotos.forEach((photo, index) => {
-      // Add photo
-      content.push({ image: photo.data, width: 400, alignment: 'center', margin: [0, 0, 0, 8] });
+      const photoBlock = {
+        stack: [
+          {
+            image: photo.data,
+            width: 250,
+            margin: [0, 0, 0, 6]
+          }
+        ],
+        margin: [0, 0, 0, 20]
+      };
       
-      // Add photo label/caption if exists
-      if (photo.label || photo.name) {
-        content.push({ text: photo.label || photo.name, alignment: 'center', fontSize: 10, color: '#64748b', margin: [0, 0, 0, 24] });
-      } else {
-        content.push({ text: '', margin: [0, 0, 0, 24] }); // Spacing between photos
+      if (photo.label) {
+        photoBlock.stack.push({
+          text: photo.label,
+          fontSize: 10,
+          color: '#334155',
+          margin: [0, 0, 0, 0]
+        });
       }
+      
+      content.push(photoBlock);
     });
   }
   
