@@ -728,19 +728,6 @@ function deleteRetailLineItem(itemId) {
   console.log('[RETAIL] Deleted item:', itemId);
 }
 
-function updateRetailFee(idx, field, value) {
-  if (!window.retailData) return;
-  const fee = window.retailData.fees[idx];
-  fee[field] = field === 'value' ? parseFloat(value) || 0 : value;
-  displayRetailEstimate();
-}
-
-function toggleRetailFee(idx, enabled) {
-  if (!window.retailData) return;
-  window.retailData.fees[idx].enabled = enabled;
-  displayRetailEstimate();
-}
-
 function addRetailFee() {
   if (!window.retailData) return;
   window.retailData.fees.push({
