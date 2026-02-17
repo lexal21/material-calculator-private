@@ -412,10 +412,31 @@ function setCoverPhoto(tab, idx) {
   console.log('Set cover photo:', tab, idx, window.currentPhotos[tab][idx]?.isCover);
 }
 
+// Select all photos in a section
+function selectAllPhotos(type) {
+  const checkboxes = document.querySelectorAll('.photo-checkbox[data-photo-type="' + type + '"]');
+  
+  if (checkboxes.length === 0) {
+    console.log('[SelectAll] No photos to select for type:', type);
+    return;
+  }
+  
+  // Check all checkboxes
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = true;
+  });
+  
+  // Trigger the selection update (this will show the delete button)
+  togglePhotoSelection(type, 0, true);
+  
+  console.log('[SelectAll] Selected all', checkboxes.length, 'photos for type:', type);
+}
+
 // Expose functions globally
 if (typeof window !== 'undefined') {
   window.updatePhotoLabel = updatePhotoLabel;
   window.setCoverPhoto = setCoverPhoto;
+  window.selectAllPhotos = selectAllPhotos;
 }
 
 // Initialize photo displays on page load

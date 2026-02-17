@@ -2315,16 +2315,17 @@ function buildMaterialsPDF() {
     });
     
     otherPhotos.forEach((photo, index) => {
-      // Container for photo and caption
+      // Determine if portrait or landscape based on aspect ratio
+      // Default to landscape sizing, but use fit to constrain both dimensions
       const photoBlock = {
         stack: [
           {
             image: photo.data,
-            width: 250,
+            fit: [200, 150], // Max width 200, max height 150 - will maintain aspect ratio
             margin: [0, 0, 0, 6]
           }
         ],
-        margin: [0, 0, 0, 20]
+        margin: [0, 0, 0, 16]
       };
       
       // Add caption if exists
@@ -2502,11 +2503,11 @@ function buildLaborPDF() {
         stack: [
           {
             image: photo.data,
-            width: 250,
+            fit: [200, 150],
             margin: [0, 0, 0, 6]
           }
         ],
-        margin: [0, 0, 0, 20]
+        margin: [0, 0, 0, 16]
       };
       
       if (photo.label) {

@@ -761,11 +761,11 @@ function buildRetailPDF() {
         stack: [
           {
             image: photo.data,
-            width: 250,
+            fit: [200, 150],
             margin: [0, 0, 0, 6]
           }
         ],
-        margin: [0, 0, 0, 20]
+        margin: [0, 0, 0, 16]
       };
       
       if (photo.label) {

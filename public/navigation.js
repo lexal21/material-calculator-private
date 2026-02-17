@@ -707,6 +707,9 @@ function createModuleContainers() {
                 <button class="btn-primary btn-sm" onclick="openCompanyCamModal('retail')" style="background: #0891b2;">
                   &#128247; Import from CompanyCam
                 </button>
+                <button class="btn-secondary btn-sm" id="selectAllRetailPhotosBtn" onclick="selectAllPhotos('retail')" style="padding: 8px 16px; border: 1px solid #cbd5e0; background: white; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                  Select All
+                </button>
                 <button class="btn-danger btn-sm" id="deleteRetailPhotosBtn" onclick="deleteSelectedPhotos('retail')" disabled>
                   Delete Selected
                 </button>
