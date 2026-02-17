@@ -183,8 +183,8 @@
     <div id="calculatorTab" class="tab-content">
     
     <!-- Manufacturer Selection for Materials/Labor -->
-    <div id="materialsManufacturerSelector" style="display: none; background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-      <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #334155;">Select Roofing System</h3>
+    <div id="materialsManufacturerSelector" style="display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 20px 0;">
+      <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #1e293b;">Select Roofing System</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
         <div>
           <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Manufacturer</label>
@@ -217,13 +217,29 @@
     </div>
     
     <div id="results" style="display: none;">
-      <div class="section">
-        <h2>&#128207; Measurements</h2>
-        <div class="measurements-grid" id="measurements"></div>
+      <!-- Measurements Section -->
+      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #475569, #334155); color: white; padding: 16px 20px;">
+          <h3 style="margin: 0; font-size: 18px; font-weight: 600;">&#128207; Measurements</h3>
+          <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Project dimensions and roof measurements</p>
+        </div>
+        <div style="padding: 20px;">
+          <div class="measurements-grid" id="measurements"></div>
+        </div>
       </div>
 
-      <div class="section">
-        <h2>&#128203; Material List</h2>
+      <!-- Materials Section -->
+      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #0891b2, #0e7490); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600;">&#128203; Materials</h3>
+            <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Roofing materials and supplies</p>
+          </div>
+          <div class="no-print">
+            <button onclick="openAddMaterialModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">+ Add Material</button>
+          </div>
+        </div>
+        <div style="padding: 0 20px 20px 20px;">
         
         <div class="template-selector-materials no-print" style="margin-bottom: 16px; display: none;" id="materialTemplateSelector">
           <label for="materialTemplateSelect" style="font-weight: 600; margin-right: 8px;">Price List:</label>
@@ -256,27 +272,24 @@
           <tbody id="materialsTable"></tbody>
         </table>
         
-        <div style="margin: 16px 0; text-align: center;">
-          <button class="btn-secondary" onclick="openAddMaterialModal()" style="display: inline-block;" id="addMoreItemsBtn">
-            + Add Item
-          </button>
-        </div>
-        
         <div class="totals-section">
           <table class="totals-table">
             <tbody id="totalsTable"></tbody>
           </table>
         </div>
-
-        <!-- Materials Delivery Notes -->
-        <div id="materialsNotesSection" class="notes-section" style="margin: 20px 0; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-          <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #334155;">Delivery Notes</h4>
-          <textarea id="materialsDeliveryNotes" placeholder="Enter delivery instructions, special requests, or notes for the supplier..." style="width: 100%; min-height: 80px; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; resize: vertical; box-sizing: border-box;" onchange="saveMaterialsNotes()"></textarea>
         </div>
+      </div>
 
-        <!-- Materials Photos Section -->
+      <!-- Materials Delivery Notes -->
+      <div id="materialsNotesSection" class="notes-section" style="margin: 16px 0 24px 0; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #334155;">Materials Notes</h4>
+        <textarea id="materialsDeliveryNotes" placeholder="Enter delivery instructions, special requests, or notes for the supplier..." style="width: 100%; min-height: 80px; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; resize: vertical; box-sizing: border-box;" onchange="saveMaterialsNotes()"></textarea>
+      </div>
+
+      <!-- Materials Photos Section -->
+      <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; padding: 20px;">
         <div id="materialsPhotoSection" class="photo-section no-print">
-          <h3 style="margin-bottom: 12px;">Photos (<span id="materialsPhotoCount">0</span>)</h3>
+          <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #1e293b;">Photos (<span id="materialsPhotoCount">0</span>)</h3>
           <div style="margin-bottom: 12px;">
             <input type="file" id="materialsPhotoInput" accept="image/*" multiple onchange="handleMaterialsPhotos(event)" style="display: none;">
             <button class="btn-secondary btn-sm" onclick="document.getElementById('materialsPhotoInput').click()">
@@ -301,6 +314,7 @@
           <div id="materialsPrintPhotos" class="print-photo-grid"></div>
         </div>
       </div>
+      </div>
 
       <div class="actions">
         <button class="btn-secondary" onclick="location.reload()">Upload Another</button>
@@ -313,17 +327,28 @@
     </div>
 
     <div id="laborTab" class="tab-content">
-      <div class="section">
-        <h2>&#128176; Labor Invoice Generator</h2>
-        <p class="pricing-note">Upload a Ridge Top PDF in the Calculator tab first, then view auto-calculated labor costs here.</p>
-        
-        <div id="laborNotReady" style="display: block; padding: 40px; text-align: center; color: #718096;">
+      <div style="padding: 20px 0;">
+        <div id="laborNotReady" style="display: block; padding: 40px; text-align: center; color: #718096; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          <h2 style="margin: 0 0 12px 0;">&#128176; Labor Invoice Generator</h2>
           <p>&#128220; Upload a PDF in the Calculator tab to generate labor invoice</p>
         </div>
         
         <div id="laborResults" style="display: none;">
-          <div class="location-select" style="margin-bottom: 24px;">
-            <label for="laborLocation">Labor Location:</label>
+          <!-- Labor Section -->
+          <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600;">&#128176; Labor</h3>
+                <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Installation and labor charges</p>
+              </div>
+              <div class="no-print">
+                <button onclick="openAddLaborModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">+ Add Labor</button>
+              </div>
+            </div>
+            <div style="padding: 0 20px 20px 20px;">
+          
+          <div class="location-select" style="margin: 16px 0 24px 0;">
+            <label for="laborLocation" style="font-weight: 600; margin-right: 8px;">Labor Location:</label>
             <select id="laborLocation" onchange="updateLaborLocation(this.value)" style="padding: 8px 12px; border: 2px solid #cbd5e0; border-radius: 4px;">
               <option value="Greater Charleston">Greater Charleston ($80/sq)</option>
               <option value="Out of Area" selected>Out of Area ($90/sq)</option>
@@ -355,12 +380,6 @@
             <tbody id="laborTable"></tbody>
           </table>
           
-          <div style="margin: 16px 0; text-align: center;">
-            <button class="btn-secondary" onclick="openAddLaborModal()" style="display: inline-block;" id="addMoreLaborItemsBtn">
-              + Add Item
-            </button>
-          </div>
-          
           <div class="totals-section">
             <table class="totals-table">
               <tbody>
@@ -370,21 +389,24 @@
                 </tr>
                 <tr class="grand-total-row">
                   <td colspan="2"><strong style="font-size: 1.2em;">TOTAL LABOR</strong></td>
-                  <td id="laborGrandTotal" style="text-align: right; font-size: 1.2em; color: #2B7BA3;"><strong>$0.00</strong></td>
+                  <td id="laborGrandTotal" style="text-align: right; font-size: 1.2em; color: #7c3aed;"><strong>$0.00</strong></td>
                 </tr>
               </tbody>
             </table>
           </div>
+          </div>
+          </div>
 
-          <!-- Labor Delivery Notes -->
-          <div id="laborNotesSection" class="notes-section" style="margin: 20px 0; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <!-- Labor Notes -->
+          <div id="laborNotesSection" class="notes-section" style="margin: 16px 0 24px 0; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
             <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #334155;">Labor Notes</h4>
             <textarea id="laborDeliveryNotes" placeholder="Enter labor instructions, crew notes, or special requirements..." style="width: 100%; min-height: 80px; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; resize: vertical; box-sizing: border-box;" onchange="saveLaborNotes()"></textarea>
           </div>
 
           <!-- Labor Photos Section -->
-          <div id="laborPhotoSection" class="photo-section no-print">
-            <h3 style="margin-bottom: 12px;">Photos (<span id="laborPhotoCount">0</span>)</h3>
+          <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; padding: 20px;">
+            <div id="laborPhotoSection" class="photo-section no-print">
+              <h3 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #1e293b;">Photos (<span id="laborPhotoCount">0</span>)</h3>
             <div style="margin-bottom: 12px;">
               <input type="file" id="laborPhotoInput" accept="image/*" multiple onchange="handleLaborPhotos(event)" style="display: none;">
               <button class="btn-secondary btn-sm" onclick="document.getElementById('laborPhotoInput').click()">
@@ -400,13 +422,15 @@
                 Delete Selected
               </button>
             </div>
-            <div id="laborPhotoGrid" class="photo-grid"></div>
-          </div>
+              <div id="laborPhotoGrid" class="photo-grid"></div>
+            </div>
 
-          <!-- Labor Print Photos Section -->
-          <div id="laborPrintPhotoSection" class="photo-section print-only" style="display: none;">
-            <h3 style="margin-bottom: 12px;">Photos</h3>
-            <div id="laborPrintPhotos" class="print-photo-grid"></div>
+            <!-- Labor Print Photos Section -->
+            <div id="laborPrintPhotoSection" class="photo-section print-only" style="display: none;">
+              <h3 style="margin-bottom: 12px;">Photos</h3>
+              <div id="laborPrintPhotos" class="print-photo-grid"></div>
+            </div>
+          </div>
           </div>
           
           <div class="actions">
