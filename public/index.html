@@ -7,45 +7,6 @@
   <title>Roofing Material Calculator</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .user-bar {
-      position: fixed;
-      top: 0;
-      right: 0;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 12px 24px;
-      border-bottom-left-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      z-index: 1000;
-    }
-    
-    .user-info {
-      font-size: 14px;
-      color: #1a1a1a;
-    }
-    
-    .user-name {
-      font-weight: 600;
-    }
-    
-    .btn-logout {
-      background: #ef4444;
-      color: white;
-      border: none;
-      padding: 6px 16px;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    
-    .btn-logout:hover {
-      background: #dc2626;
-    }
-    
     /* Project Management Toolbar */
     .project-toolbar {
       display: flex;
@@ -127,13 +88,6 @@
   </style>
 </head>
 <body>
-  <div class="user-bar">
-    <div class="user-info">
-      <span class="user-name" id="userName">Loading...</span>
-    </div>
-    <button class="btn-logout" onclick="logout()">Logout</button>
-  </div>
-  
   <div class="container">
     <header>
       <img src="logo.jpg" alt="Ashley River Roofing" class="logo">
