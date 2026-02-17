@@ -27,6 +27,12 @@ async function openCompanyCamModal(tab) {
     return;
   }
   
+  // Move modal to document.body if it's not already there
+  if (modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+    console.log('[CompanyCam] Moved modal to document.body');
+  }
+  
   // Reset state
   currentPage = 1;
   companyCamProjects = [];
