@@ -2206,7 +2206,7 @@ function buildMaterialsPDF() {
       { text: raw.customer_name || raw.customerName || '', style: 'coverCustomer', alignment: 'center', margin: [0, 0, 0, 8] },
       { text: raw.address || '', style: 'coverAddress', alignment: 'center', margin: [0, 0, 0, 8] },
       { text: 'Job #: ' + (raw.order_number || 'N/A'), style: 'coverJob', alignment: 'center', margin: [0, 0, 0, 30] },
-      { image: coverPhoto.data, width: 450, alignment: 'center', margin: [0, 0, 0, 0] },
+      { image: coverPhoto.data, width: 350, alignment: 'center', margin: [0, 0, 0, 0] },
       { text: '', pageBreak: 'after' }
     );
   }
@@ -2360,7 +2360,7 @@ function buildLaborPDF() {
       { text: raw.customer_name || raw.customerName || '', style: 'coverCustomer', alignment: 'center', margin: [0, 0, 0, 8] },
       { text: raw.address || '', style: 'coverAddress', alignment: 'center', margin: [0, 0, 0, 8] },
       { text: 'Job #: ' + (raw.order_number || 'N/A'), style: 'coverJob', alignment: 'center', margin: [0, 0, 0, 30] },
-      { image: coverPhoto.data, width: 450, alignment: 'center', margin: [0, 0, 0, 0] },
+      { image: coverPhoto.data, width: 350, alignment: 'center', margin: [0, 0, 0, 0] },
       { text: '', pageBreak: 'after' }
     );
   }
