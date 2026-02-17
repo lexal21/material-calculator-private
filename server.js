@@ -523,29 +523,17 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
       });
     }
     
-    // Drip Edge Install Labor - calculate from eave + rake length
-    const eaveLength = parseFloat(result.raw.eave_edge_length) || result.measurements.eaveLength || 0;
-    const rakeLength = parseFloat(result.raw.rake_edge_length) || result.measurements.rakeLength || 0;
-    const dripEdgeLF = eaveLength + rakeLength;
-    if (dripEdgeLF > 0) {
+    // Flashing Install - combines all flashing measurements
+    const flashingLength = parseFloat(result.raw.flashing_length) || 0;
+    const stepFlashingLength = parseFloat(result.raw.step_flashing) || 0;
+    const totalFlashingLF = flashingLength + stepFlashingLength;
+    if (totalFlashingLF > 0) {
       laborItems.push({
-        name: 'Drip Edge Install',
-        quantity: parseFloat(dripEdgeLF.toFixed(2)),
+        name: 'Flashing Install',
+        quantity: parseFloat(totalFlashingLF.toFixed(2)),
         unit: 'LF',
         unitPrice: 2,
-        total: parseFloat((dripEdgeLF * 2).toFixed(2))
-      });
-    }
-    
-    // Valley Install Labor - from valley length
-    const valleyLength = parseFloat(result.raw.valley_length) || result.measurements.valleyLength || 0;
-    if (valleyLength > 0) {
-      laborItems.push({
-        name: 'Valley Install',
-        quantity: parseFloat(valleyLength.toFixed(2)),
-        unit: 'LF',
-        unitPrice: 5,
-        total: parseFloat((valleyLength * 5).toFixed(2))
+        total: parseFloat((totalFlashingLF * 2).toFixed(2))
       });
     }
     

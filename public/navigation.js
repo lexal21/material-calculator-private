@@ -1879,8 +1879,7 @@ function populateRetailLaborPricingTable() {
     { id: 'plywood', name: 'Plywood Replacement', unit: 'SH', default: 30 },
     { id: 'tearoff1', name: 'Tear Off - 1 Layer', unit: 'SQ', default: 25 },
     { id: 'tearoff2', name: 'Tear Off - 2 Layers', unit: 'SQ', default: 40 },
-    { id: 'dripEdge', name: 'Drip Edge Install', unit: 'LF', default: 2 },
-    { id: 'valley', name: 'Valley Install', unit: 'LF', default: 5 },
+    { id: 'flashing', name: 'Flashing Install', unit: 'LF', default: 2 },
     { id: 'pipeBoot', name: 'Pipe Boot Install', unit: 'EA', default: 15 },
     { id: 'skylight', name: 'Skylight Flash/Reseal', unit: 'EA', default: 75 }
   ];
@@ -2085,8 +2084,7 @@ function saveRetailPricingTemplate() {
       plywood: parseFloat(document.getElementById('retail_laborRate_plywood')?.value) || 30,
       tearoff1: parseFloat(document.getElementById('retail_laborRate_tearoff1')?.value) || 25,
       tearoff2: parseFloat(document.getElementById('retail_laborRate_tearoff2')?.value) || 40,
-      dripEdge: parseFloat(document.getElementById('retail_laborRate_dripEdge')?.value) || 2,
-      valley: parseFloat(document.getElementById('retail_laborRate_valley')?.value) || 5,
+      flashing: parseFloat(document.getElementById('retail_laborRate_flashing')?.value) || 2,
       pipeBoot: parseFloat(document.getElementById('retail_laborRate_pipeBoot')?.value) || 15,
       skylight: parseFloat(document.getElementById('retail_laborRate_skylight')?.value) || 75
     },
