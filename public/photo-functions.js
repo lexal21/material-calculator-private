@@ -324,66 +324,64 @@ function togglePhotoSelection(tab, idx, selected) {
   const btn = document.getElementById(btnId);
   if (btn) {
     btn.disabled = set.size === 0;
-    console.log('[PhotoSelection] Delete button "' + btnId + '" ' + (set.size === 0 ? 'disabled' : 'enabled'));
+    btn.style.display = set.size === 0 ? 'none' : 'inline-block';
+    console.log('[PhotoSelection] Delete button "' + btnId + '" ' + (set.size === 0 ? 'hidden' : 'visible'));
   }
 }
 
 // Delete selected photos
-function deleteSelectedPhotos(tab) {
-  console.log('[DeletePhotos] DELETE BUTTON CLICKED for tab:', tab);
+function deleteSelectedPhotos(type) {
+  const checkboxes = document.querySelectorAll('.photo-checkbox[data-photo-type="' + type + '"]:checked');
   
-  let set;
-  if (tab === 'materials') {
-    set = selectedMaterialsPhotos;
-  } else if (tab === 'labor') {
-    set = selectedLaborPhotos;
-  } else if (tab === 'retail') {
-    set = selectedRetailPhotos;
-  }
-  
-  console.log('[DeletePhotos] Selected photos count:', set.size);
-  console.log('[DeletePhotos] Selected photo indices:', Array.from(set));
-  
-  if (set.size === 0) {
-    console.log('[DeletePhotos] No photos selected, aborting');
+  if (checkboxes.length === 0) {
+    alert('No photos selected.');
     return;
   }
   
-  const confirm = window.confirm(
-    `Delete ${set.size} selected photo${set.size > 1 ? 's' : ''}?`
-  );
+  if (!confirm('Delete ' + checkboxes.length + ' selected photo(s)?')) {
+    return;
+  }
   
-  if (!confirm) return;
+  // Get indices in reverse order to avoid index shifting
+  const indices = Array.from(checkboxes)
+    .map(cb => parseInt(cb.dataset.photoIndex))
+    .sort((a, b) => b - a);
   
-  // Handle retail differently (uses window.currentPhotos, not projectManager)
-  if (tab === 'retail') {
-    if (!window.currentPhotos || !window.currentPhotos.retail) return;
-    
-    const toDelete = Array.from(set).sort((a, b) => b - a);
-    toDelete.forEach(idx => window.currentPhotos.retail.splice(idx, 1));
-    
-    set.clear();
+  // Remove from array
+  if (type === 'retail') {
+    if (window.currentPhotos && window.currentPhotos[type]) {
+      indices.forEach(index => {
+        window.currentPhotos[type].splice(index, 1);
+      });
+    }
+    // Clear selection set
+    selectedRetailPhotos.clear();
+    // Re-render
     displayRetailPhotos();
   } else {
-    // Materials and Labor tabs use projectManager
+    // Materials and Labor use projectManager
     const project = projectManager.getCurrentProject();
-    const key = tab === 'materials' ? 'materials' : 'labor';
+    const key = type === 'materials' ? 'materials' : 'labor';
     
-    // Remove selected photos (iterate backwards to preserve indices)
-    const photos = project.photos[key];
-    const toDelete = Array.from(set).sort((a, b) => b - a);
-    toDelete.forEach(idx => photos.splice(idx, 1));
+    if (project.photos && project.photos[key]) {
+      indices.forEach(index => {
+        project.photos[key].splice(index, 1);
+      });
+    }
     
     projectManager.saveCurrentProject();
-    set.clear();
     
-    // Refresh display
-    if (tab === 'materials') {
+    // Clear selection sets
+    if (type === 'materials') {
+      selectedMaterialsPhotos.clear();
       displayMaterialsPhotos();
-    } else {
+    } else if (type === 'labor') {
+      selectedLaborPhotos.clear();
       displayLaborPhotos();
     }
   }
+  
+  console.log('[PHOTOS] Deleted', indices.length, 'photos from', type);
 }
 
 // Update photo label

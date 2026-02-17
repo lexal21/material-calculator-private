@@ -2559,6 +2559,8 @@ function handleRetailPhotos(event) {
 function displayRetailPhotos() {
   const grid = document.getElementById('retailPhotoGrid');
   const countEl = document.getElementById('retailPhotoCount');
+  const section = document.getElementById('retailPhotoSection');
+  const deleteBtn = document.getElementById('deleteRetailPhotosBtn');
   
   if (!grid) return;
 
@@ -2569,16 +2571,32 @@ function displayRetailPhotos() {
     countEl.textContent = photos.length;
   }
 
-  // Build grid - matching Materials/Labor structure
+  // Always show the section (don't hide it when empty)
+  if (section) {
+    section.style.display = 'block';
+  }
+
+  // Hide delete button when no photos selected
+  if (deleteBtn) {
+    deleteBtn.style.display = 'none';
+    deleteBtn.disabled = true;
+  }
+
+  // Build grid or show empty state
+  if (photos.length === 0) {
+    grid.innerHTML = '<p style="color: #64748b; font-size: 14px; margin: 0;">No photos added yet. Upload photos or import from CompanyCam.</p>';
+    return;
+  }
+
   grid.innerHTML = photos.map((photo, index) => `
-    <div class="photo-item">
-      <input type="checkbox" class="photo-checkbox" id="retail-photo-${index}" onchange="togglePhotoSelection('retail', ${index}, this.checked)">
-      <img src="${photo.data}" alt="${photo.name || 'Photo ' + (index + 1)}">
-      <div class="photo-filename">${photo.name || 'Photo ' + (index + 1)}</div>
-      <div class="photo-label-input">
-        <input type="text" placeholder="Add label..." value="${photo.label || ''}" onchange="updatePhotoLabel('retail', ${index}, this.value)">
+    <div class="photo-item" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; position: relative;">
+      <input type="checkbox" class="photo-checkbox" data-photo-index="${index}" data-photo-type="retail" style="position: absolute; top: 16px; left: 16px; width: 18px; height: 18px; cursor: pointer; z-index: 1;" onchange="togglePhotoSelection('retail', ${index}, this.checked)">
+      <img src="${photo.data}" alt="${photo.name || 'Photo ' + (index + 1)}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; cursor: pointer;">
+      <div style="font-size: 12px; color: #64748b; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        ${photo.name || 'Photo ' + (index + 1)}
       </div>
-      <button class="set-cover-btn ${photo.isCover ? 'is-cover' : ''}" onclick="setCoverPhoto('retail', ${index})">
+      <input type="text" placeholder="Add label..." value="${photo.label || ''}" onchange="updatePhotoLabel('retail', ${index}, this.value)" style="width: 100%; padding: 6px 8px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px; margin-top: 8px; box-sizing: border-box;">
+      <button onclick="setCoverPhoto('retail', ${index})" style="width: 100%; padding: 8px; margin-top: 8px; border: 1px solid ${photo.isCover ? '#0891b2' : '#e2e8f0'}; background: ${photo.isCover ? '#0891b2' : '#f8fafc'}; color: ${photo.isCover ? 'white' : '#334155'}; border-radius: 4px; cursor: pointer; font-size: 12px;">
         ${photo.isCover ? '★ Cover' : 'Set as Cover'}
       </button>
     </div>
