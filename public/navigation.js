@@ -1361,6 +1361,29 @@ function updateRetailCustomerInfo(field, value) {
   }
 }
 
+function toggleRetailView() {
+  // Toggle the view mode
+  if (window.retailViewMode === 'customer') {
+    window.retailViewMode = 'internal';
+  } else {
+    window.retailViewMode = 'customer';
+  }
+
+  // Update button text
+  const toggleBtn = document.getElementById('retailToggleBtn');
+  if (toggleBtn) {
+    toggleBtn.textContent = window.retailViewMode === 'customer' ? 'Switch to Internal View' : 'Switch to Customer View';
+  }
+
+  // Re-render the estimate to reflect the view change
+  displayRetailEstimate();
+  
+  // Save view mode
+  saveRetailProject();
+
+  console.log('[RETAIL] View mode changed to:', window.retailViewMode);
+}
+
 function clearRetailProject() {
   if (!confirm('Start a new retail project? Current data will be cleared.')) return;
 

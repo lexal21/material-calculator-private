@@ -199,6 +199,7 @@ function toggleRetailView(mode) {
 function displayRetailEstimate() {
   if (!window.retailData) return;
   
+  const isCustomerView = window.retailViewMode === 'customer';
   const materialsTable = document.getElementById('retailMaterialsTable');
   const laborTable = document.getElementById('retailLaborTable');
   
@@ -208,67 +209,98 @@ function displayRetailEstimate() {
   
   // Render materials
   if (materialsTable) {
-    materialsTable.innerHTML = materials.map((item, idx) => `
-      <tr data-item-id="${item.id}">
-        <td style="padding: 8px; width: 40px;" class="retail-internal-only">
-          <input type="checkbox" class="retail-material-checkbox" data-item-id="${item.id}" onchange="toggleRetailItemSelection('${item.id}', this.checked)">
-        </td>
-        <td style="padding: 12px 16px;">${item.description}</td>
-        <td style="padding: 12px 16px; text-align: right;">
-          <input type="number" class="editable-input" value="${item.quantity}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'quantity', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
-        </td>
-        <td style="padding: 12px 16px; text-align: center;">${pluralizeUnit(item.unit || 'EA', item.quantity)}</td>
-        <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
-          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
-            <span>$</span>
-            <input type="number" class="editable-input" value="${item.unitCost.toFixed(2)}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'unitCost', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
-          </div>
-        </td>
-        <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
-          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
-            <input type="number" class="editable-input" value="${item.markup || 0}" min="0" step="1" onchange="updateRetailLineItem('${item.id}', 'markup', this.value)" style="width: 50px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
-            <span>%</span>
-          </div>
-        </td>
-        <td style="padding: 12px 16px; text-align: right; font-weight: 600;">$${calculateRetailItemTotal(item).toFixed(2)}</td>
-        <td style="padding: 12px 16px;" class="retail-internal-only">
-          <button onclick="deleteRetailLineItem('${item.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px;">×</button>
-        </td>
-      </tr>
-    `).join('');
+    materialsTable.innerHTML = materials.map((item, idx) => {
+      const itemTotal = calculateRetailItemTotal(item);
+      
+      if (isCustomerView) {
+        // Customer view - only show Description and Quantity
+        return `
+          <tr data-item-id="${item.id}">
+            <td style="padding: 12px 16px;">${item.description}</td>
+            <td style="padding: 12px 16px; text-align: center;">${item.quantity} ${pluralizeUnit(item.unit || 'EA', item.quantity)}</td>
+          </tr>
+        `;
+      } else {
+        // Internal view - show all columns
+        return `
+          <tr data-item-id="${item.id}">
+            <td style="padding: 8px;">
+              <input type="checkbox" class="retail-material-checkbox" data-item-id="${item.id}" onchange="toggleRetailItemSelection('${item.id}', this.checked)">
+            </td>
+            <td style="padding: 12px 16px;">${item.description}</td>
+            <td style="padding: 12px 16px; text-align: right;">
+              <input type="number" class="editable-input" value="${item.quantity}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'quantity', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+            </td>
+            <td style="padding: 12px 16px; text-align: center;">${pluralizeUnit(item.unit || 'EA', item.quantity)}</td>
+            <td style="padding: 12px 16px; text-align: right;">
+              <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
+                <span>$</span>
+                <input type="number" class="editable-input" value="${item.unitCost.toFixed(2)}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'unitCost', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+              </div>
+            </td>
+            <td style="padding: 12px 16px; text-align: right;">
+              <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
+                <input type="number" class="editable-input" value="${item.markup || 0}" min="0" step="1" onchange="updateRetailLineItem('${item.id}', 'markup', this.value)" style="width: 50px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                <span>%</span>
+              </div>
+            </td>
+            <td style="padding: 12px 16px; text-align: right; font-weight: 600;">$${itemTotal.toFixed(2)}</td>
+            <td style="padding: 12px 16px;">
+              <button onclick="deleteRetailLineItem('${item.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px;">×</button>
+            </td>
+          </tr>
+        `;
+      }
+    }).join('');
   }
   
   // Render labor
   if (laborTable) {
-    laborTable.innerHTML = labor.map((item, idx) => `
-      <tr data-item-id="${item.id}">
-        <td style="padding: 8px; width: 40px;" class="retail-internal-only">
-          <input type="checkbox" class="retail-labor-checkbox" data-item-id="${item.id}" onchange="toggleRetailItemSelection('${item.id}', this.checked)">
-        </td>
-        <td style="padding: 12px 16px;">${item.description}</td>
-        <td style="padding: 12px 16px; text-align: right;">
-          <input type="number" class="editable-input" value="${item.quantity}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'quantity', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
-        </td>
-        <td style="padding: 12px 16px; text-align: center;">${pluralizeUnit(item.unit || 'EA', item.quantity)}</td>
-        <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
-          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
-            <span>$</span>
-            <input type="number" class="editable-input" value="${item.unitCost.toFixed(2)}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'unitCost', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
-          </div>
-        </td>
-        <td style="padding: 12px 16px; text-align: right;" class="retail-internal-only">
-          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
-            <input type="number" class="editable-input" value="${item.markup || 0}" min="0" step="1" onchange="updateRetailLineItem('${item.id}', 'markup', this.value)" style="width: 50px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
-            <span>%</span>
-          </div>
-        </td>
-        <td style="padding: 12px 16px; text-align: right; font-weight: 600;">$${calculateRetailItemTotal(item).toFixed(2)}</td>
-        <td style="padding: 12px 16px;" class="retail-internal-only">
-          <button onclick="deleteRetailLineItem('${item.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px;">×</button>
-        </td>
-      </tr>
-    `).join('');
+    laborTable.innerHTML = labor.map((item, idx) => {
+      const itemTotal = calculateRetailItemTotal(item);
+      
+      if (isCustomerView) {
+        return `
+          <tr data-item-id="${item.id}">
+            <td style="padding: 12px 16px;">${item.description}</td>
+            <td style="padding: 12px 16px; text-align: center;">${item.quantity} ${pluralizeUnit(item.unit || 'EA', item.quantity)}</td>
+          </tr>
+        `;
+      } else {
+        return `
+          <tr data-item-id="${item.id}">
+            <td style="padding: 8px;">
+              <input type="checkbox" class="retail-labor-checkbox" data-item-id="${item.id}" onchange="toggleRetailItemSelection('${item.id}', this.checked)">
+            </td>
+            <td style="padding: 12px 16px;">${item.description}</td>
+            <td style="padding: 12px 16px; text-align: right;">
+              <input type="number" class="editable-input" value="${item.quantity}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'quantity', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+            </td>
+            <td style="padding: 12px 16px; text-align: center;">${pluralizeUnit(item.unit || 'EA', item.quantity)}</td>
+            <td style="padding: 12px 16px; text-align: right;">
+              <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
+                <span>$</span>
+                <input type="number" class="editable-input" value="${item.unitCost.toFixed(2)}" min="0" step="0.01" onchange="updateRetailLineItem('${item.id}', 'unitCost', this.value)" style="width: 70px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+              </div>
+            </td>
+            <td style="padding: 12px 16px; text-align: right;">
+              <div style="display: flex; align-items: center; justify-content: flex-end; gap: 2px;">
+                <input type="number" class="editable-input" value="${item.markup || 0}" min="0" step="1" onchange="updateRetailLineItem('${item.id}', 'markup', this.value)" style="width: 50px; text-align: right; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                <span>%</span>
+              </div>
+            </td>
+            <td style="padding: 12px 16px; text-align: right; font-weight: 600;">$${itemTotal.toFixed(2)}</td>
+            <td style="padding: 12px 16px;">
+              <button onclick="deleteRetailLineItem('${item.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px;">×</button>
+            </td>
+          </tr>
+        `;
+      }
+    }).join('');
   }
+  
+  // Update table headers based on view mode
+  updateRetailTableHeaders(isCustomerView);
   
   // Calculate and display subtotals
   const materialsSubtotal = materials.reduce((sum, item) => sum + calculateRetailItemTotal(item), 0);
@@ -289,6 +321,50 @@ function displayRetailEstimate() {
   
   // Calculate totals
   calculateRetailTotals();
+}
+
+function updateRetailTableHeaders(isCustomerView) {
+  // Find the materials and labor table headers
+  const materialsHeader = document.querySelector('#retailMaterialsTable')?.closest('table')?.querySelector('thead tr');
+  const laborHeader = document.querySelector('#retailLaborTable')?.closest('table')?.querySelector('thead tr');
+
+  const internalHeaders = `
+    <th style="width: 40px;"></th>
+    <th style="width: 30%;">Description</th>
+    <th style="text-align: right; width: 10%;">Qty</th>
+    <th style="text-align: center; width: 10%;">Unit</th>
+    <th style="text-align: right; width: 15%;">Unit Cost</th>
+    <th style="text-align: center; width: 10%;">Markup</th>
+    <th style="text-align: right; width: 15%;">Total</th>
+    <th style="width: 40px;"></th>
+  `;
+
+  const customerHeaders = `
+    <th style="width: 70%;">Description</th>
+    <th style="text-align: center; width: 30%;">Quantity</th>
+  `;
+
+  if (materialsHeader) {
+    materialsHeader.innerHTML = isCustomerView ? customerHeaders : internalHeaders;
+  }
+  
+  if (laborHeader) {
+    laborHeader.innerHTML = isCustomerView ? customerHeaders : internalHeaders;
+  }
+
+  // Also update the subtotal row colspan
+  const materialsSubtotalRow = document.querySelector('#retailMaterialsSubtotal')?.closest('tr');
+  const laborSubtotalRow = document.querySelector('#retailLaborSubtotal')?.closest('tr');
+
+  if (materialsSubtotalRow) {
+    const td = materialsSubtotalRow.querySelector('td:first-child');
+    if (td) td.setAttribute('colspan', isCustomerView ? '1' : '6');
+  }
+
+  if (laborSubtotalRow) {
+    const td = laborSubtotalRow.querySelector('td:first-child');
+    if (td) td.setAttribute('colspan', isCustomerView ? '1' : '6');
+  }
 }
 
 function calculateRetailItemTotal(item) {
