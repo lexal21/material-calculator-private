@@ -489,6 +489,26 @@ function deleteRetailItem(idx) {
   displayRetailEstimate();
 }
 
+function deleteRetailLineItem(itemId) {
+  if (!confirm('Delete this item?')) {
+    return;
+  }
+  
+  if (window.retailData && window.retailData.lineItems) {
+    window.retailData.lineItems = window.retailData.lineItems.filter(item => item.id !== itemId);
+  }
+  
+  if (typeof displayRetailEstimate === 'function') {
+    displayRetailEstimate();
+  }
+  
+  if (typeof saveRetailToStorage === 'function') {
+    saveRetailToStorage();
+  }
+  
+  console.log('[RETAIL] Deleted item:', itemId);
+}
+
 function updateRetailFee(idx, field, value) {
   if (!window.retailData) return;
   const fee = window.retailData.fees[idx];

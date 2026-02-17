@@ -726,21 +726,62 @@ function deleteMaterialRow(rowIndex) {
     return;
   }
   
-  // Save state for undo
-  saveUndoState();
-  
-  // Remove from DOM
-  const row = document.querySelector(`tr[data-row="${rowIndex}"]`);
-  if (row) {
-    row.remove();
+  // Remove from data array
+  if (window.materialsData && window.materialsData[rowIndex]) {
+    window.materialsData.splice(rowIndex, 1);
   }
   
-  // Update stored data - set quantity to 0 to exclude from calculations
-  window.materialsData[rowIndex].quantity = 0;
-  window.materialsData[rowIndex].total = 0;
+  // Re-render the materials table
+  if (typeof displayResults === 'function') {
+    displayResults({
+      materials: window.materialsData,
+      measurements: window.currentMeasurements || {},
+      raw: window.currentRawMeasurements || {},
+      labor: window.laborData,
+      success: true
+    });
+  }
   
-  // Recalculate totals
-  recalculateTotals();
+  console.log('[MATERIALS] Deleted item at index', rowIndex);
+}
+
+function toggleMaterialSelection(rowIndex) {
+  const anyChecked = document.querySelectorAll('.material-checkbox:checked').length > 0;
+  const deleteBtn = document.getElementById('deleteSelectedMaterialsBtn');
+  if (deleteBtn) {
+    deleteBtn.style.display = anyChecked ? 'inline-block' : 'none';
+  }
+}
+
+function deleteSelectedMaterials() {
+  const checkboxes = document.querySelectorAll('.material-checkbox:checked');
+  if (checkboxes.length === 0) {
+    alert('No materials selected.');
+    return;
+  }
+  
+  if (!confirm('Delete ' + checkboxes.length + ' selected material(s)?')) {
+    return;
+  }
+  
+  const indices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.row)).sort((a, b) => b - a);
+  indices.forEach(index => {
+    if (window.materialsData && window.materialsData[index]) {
+      window.materialsData.splice(index, 1);
+    }
+  });
+  
+  if (typeof displayResults === 'function') {
+    displayResults({
+      materials: window.materialsData,
+      measurements: window.currentMeasurements || {},
+      raw: window.currentRawMeasurements || {},
+      labor: window.laborData,
+      success: true
+    });
+  }
+  
+  console.log('[MATERIALS] Deleted', indices.length, 'items');
 }
 
 function deleteMiscRow(miscNum) {
@@ -1288,6 +1329,55 @@ function updateLaborTotals() {
   
   window.laborData.subtotal = subtotal;
   console.log('[LABOR] Updated subtotal:', subtotal);
+}
+
+function toggleLaborSelection(rowIndex) {
+  const anyChecked = document.querySelectorAll('.labor-checkbox:checked').length > 0;
+  const deleteBtn = document.getElementById('deleteSelectedLaborBtn');
+  if (deleteBtn) {
+    deleteBtn.style.display = anyChecked ? 'inline-block' : 'none';
+  }
+}
+
+function deleteSelectedLabor() {
+  const checkboxes = document.querySelectorAll('.labor-checkbox:checked');
+  if (checkboxes.length === 0) {
+    alert('No labor items selected.');
+    return;
+  }
+  
+  if (!confirm('Delete ' + checkboxes.length + ' selected labor item(s)?')) {
+    return;
+  }
+  
+  const indices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.laborRow)).sort((a, b) => b - a);
+  indices.forEach(index => {
+    if (window.laborData && window.laborData.items && window.laborData.items[index]) {
+      window.laborData.items.splice(index, 1);
+    }
+  });
+  
+  if (typeof displayLaborResults === 'function') {
+    displayLaborResults(window.laborData);
+  }
+  
+  console.log('[LABOR] Deleted', indices.length, 'items');
+}
+
+function deleteLaborItem(rowIndex) {
+  if (!confirm('Delete this labor item?')) {
+    return;
+  }
+  
+  if (window.laborData && window.laborData.items && window.laborData.items[rowIndex]) {
+    window.laborData.items.splice(rowIndex, 1);
+  }
+  
+  if (typeof displayLaborResults === 'function') {
+    displayLaborResults(window.laborData);
+  }
+  
+  console.log('[LABOR] Deleted item at index', rowIndex);
 }
 
 // ==========================================
