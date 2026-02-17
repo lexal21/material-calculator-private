@@ -145,6 +145,8 @@ function calculateRetailTotals() {
           fee.calculated = fee.value;
         }
         feesTotal += fee.calculated;
+      } else {
+        fee.calculated = 0;
       }
     });
   }
@@ -321,6 +323,81 @@ function displayRetailEstimate() {
   
   // Calculate totals
   calculateRetailTotals();
+  
+  // Render fees
+  displayRetailFees();
+}
+
+function displayRetailFees() {
+  const feesTable = document.getElementById('retailFeesTable');
+  if (!feesTable || !window.retailData?.fees) return;
+  
+  feesTable.innerHTML = window.retailData.fees.map((fee, index) => `
+    <tr data-fee-id="${fee.id}">
+      <td style="padding: 12px 16px;">
+        <input type="text" value="${fee.description}" onchange="updateRetailFee('${fee.id}', 'description', this.value)" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+      </td>
+      <td style="padding: 12px 16px; text-align: center;">
+        <select onchange="updateRetailFee('${fee.id}', 'type', this.value)" style="padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px;">
+          <option value="flat" ${fee.type === 'flat' ? 'selected' : ''}>Flat $</option>
+          <option value="percent" ${fee.type === 'percent' ? 'selected' : ''}>Percent %</option>
+        </select>
+      </td>
+      <td style="padding: 12px 16px; text-align: right;">
+        <input type="number" value="${fee.value}" min="0" step="0.01" onchange="updateRetailFee('${fee.id}', 'value', this.value)" style="width: 80px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; text-align: right;">
+        ${fee.type === 'percent' ? '%' : ''}
+      </td>
+      <td style="padding: 12px 16px; text-align: right;">
+        $${(fee.calculated || 0).toFixed(2)}
+      </td>
+      <td style="padding: 12px 16px; text-align: center;">
+        <input type="checkbox" ${fee.enabled ? 'checked' : ''} onchange="updateRetailFee('${fee.id}', 'enabled', this.checked)" style="width: 18px; height: 18px; cursor: pointer;">
+      </td>
+      <td style="padding: 12px 16px; text-align: center;">
+        <button onclick="deleteRetailFee('${fee.id}')" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px;">×</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateRetailFee(feeId, field, value) {
+  if (!window.retailData?.fees) return;
+  
+  const fee = window.retailData.fees.find(f => f.id === feeId);
+  if (!fee) return;
+  
+  if (field === 'value') {
+    fee.value = parseFloat(value) || 0;
+  } else if (field === 'enabled') {
+    fee.enabled = value;
+  } else {
+    fee[field] = value;
+  }
+  
+  // Recalculate totals which will update fee.calculated values
+  calculateRetailTotals();
+  
+  // Re-render fees to show updated calculated amounts
+  displayRetailFees();
+  
+  // Save
+  if (typeof saveRetailToStorage === 'function') {
+    saveRetailToStorage();
+  }
+}
+
+function deleteRetailFee(feeId) {
+  if (!window.retailData?.fees) return;
+  if (!confirm('Delete this fee?')) return;
+  
+  window.retailData.fees = window.retailData.fees.filter(f => f.id !== feeId);
+  
+  displayRetailFees();
+  calculateRetailTotals();
+  
+  if (typeof saveRetailToStorage === 'function') {
+    saveRetailToStorage();
+  }
 }
 
 function updateRetailTableHeaders(isCustomerView) {

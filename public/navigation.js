@@ -637,11 +637,13 @@ function createModuleContainers() {
               </div>
               <table class="materials-table" style="margin-bottom: 0;">
                 <thead>
-                  <tr>
-                    <th>Fee Description</th>
-                    <th style="width: 120px;">Type</th>
-                    <th style="width: 100px;">Value</th>
-                    <th style="text-align: right; width: 100px;">Amount</th>
+                  <tr style="background: #1e293b; color: white;">
+                    <th style="padding: 12px 16px; text-align: left;">Fee Description</th>
+                    <th style="padding: 12px 16px; text-align: center;">Type</th>
+                    <th style="padding: 12px 16px; text-align: right;">Value</th>
+                    <th style="padding: 12px 16px; text-align: right;">Amount</th>
+                    <th style="padding: 12px 16px; text-align: center;">Enabled</th>
+                    <th style="padding: 12px 16px; text-align: center; width: 50px;"></th>
                   </tr>
                 </thead>
                 <tbody id="retailFeesTable"></tbody>
