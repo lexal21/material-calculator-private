@@ -347,7 +347,19 @@ function togglePhotoSelection(type, index, isChecked) {
 
 // Delete selected photos
 function deleteSelectedPhotos(type) {
-  const checkboxes = document.querySelectorAll('.photo-checkbox[data-photo-type="' + type + '"]:checked');
+  let checkboxSelector;
+  
+  if (type === 'materials') {
+    checkboxSelector = '#materialsPhotoGrid .photo-checkbox:checked';
+  } else if (type === 'labor') {
+    checkboxSelector = '#laborPhotoGrid .photo-checkbox:checked';
+  } else if (type === 'retail') {
+    checkboxSelector = '#retailPhotoGrid .photo-checkbox:checked';
+  } else {
+    return;
+  }
+  
+  const checkboxes = document.querySelectorAll(checkboxSelector);
   
   if (checkboxes.length === 0) {
     alert('No photos selected.');
@@ -364,37 +376,39 @@ function deleteSelectedPhotos(type) {
     .sort((a, b) => b - a);
   
   // Remove from array
-  if (type === 'retail') {
-    if (window.currentPhotos && window.currentPhotos[type]) {
-      indices.forEach(index => {
-        window.currentPhotos[type].splice(index, 1);
-      });
-    }
-    // Clear selection set
-    selectedRetailPhotos.clear();
-    // Re-render
-    displayRetailPhotos();
-  } else {
-    // Materials and Labor use projectManager
-    const project = projectManager.getCurrentProject();
-    const key = type === 'materials' ? 'materials' : 'labor';
-    
-    if (project.photos && project.photos[key]) {
-      indices.forEach(index => {
-        project.photos[key].splice(index, 1);
-      });
-    }
-    
-    projectManager.saveCurrentProject();
-    
-    // Clear selection sets
-    if (type === 'materials') {
-      selectedMaterialsPhotos.clear();
-      displayMaterialsPhotos();
-    } else if (type === 'labor') {
-      selectedLaborPhotos.clear();
-      displayLaborPhotos();
-    }
+  if (window.currentPhotos && window.currentPhotos[type]) {
+    indices.forEach(index => {
+      window.currentPhotos[type].splice(index, 1);
+    });
+  }
+  
+  // Re-render based on type
+  if (type === 'materials') {
+    if (typeof displayMaterialsPhotos === 'function') displayMaterialsPhotos();
+    else if (typeof renderMaterialsPhotos === 'function') renderMaterialsPhotos();
+  } else if (type === 'labor') {
+    if (typeof displayLaborPhotos === 'function') displayLaborPhotos();
+    else if (typeof renderLaborPhotos === 'function') renderLaborPhotos();
+  } else if (type === 'retail') {
+    if (typeof displayRetailPhotos === 'function') displayRetailPhotos();
+  }
+  
+  // Reset delete button state
+  const deleteBtnId = type === 'materials' ? 'deleteMaterialsPhotosBtn' : 
+                      type === 'labor' ? 'deleteLaborPhotosBtn' : 
+                      'deleteRetailPhotosBtn';
+  const deleteBtn = document.getElementById(deleteBtnId);
+  if (deleteBtn) {
+    deleteBtn.disabled = true;
+    deleteBtn.style.opacity = '0.5';
+    deleteBtn.style.cursor = 'not-allowed';
+  }
+  
+  // Reset Select All button
+  const selectAllBtnId = 'selectAll' + type.charAt(0).toUpperCase() + type.slice(1) + 'PhotosBtn';
+  const selectAllBtn = document.getElementById(selectAllBtnId);
+  if (selectAllBtn) {
+    selectAllBtn.textContent = 'Select All';
   }
   
   console.log('[PHOTOS] Deleted', indices.length, 'photos from', type);
@@ -461,6 +475,8 @@ function selectAllPhotos(type) {
   }
   
   const checkboxes = document.querySelectorAll(checkboxSelector);
+  if (checkboxes.length === 0) return;
+  
   const allChecked = Array.from(checkboxes).every(cb => cb.checked);
   
   // Toggle: if all are checked, uncheck all; otherwise check all
@@ -468,23 +484,24 @@ function selectAllPhotos(type) {
     cb.checked = !allChecked;
   });
   
+  const nowChecked = !allChecked;
+  
   // Update delete button
   const deleteBtn = document.getElementById(deleteBtnId);
-  const anyChecked = document.querySelectorAll(checkboxSelector + ':checked').length > 0;
-  
   if (deleteBtn) {
-    deleteBtn.disabled = !anyChecked;
-    deleteBtn.style.opacity = anyChecked ? '1' : '0.5';
-    deleteBtn.style.cursor = anyChecked ? 'pointer' : 'not-allowed';
+    deleteBtn.disabled = !nowChecked;
+    deleteBtn.style.opacity = nowChecked ? '1' : '0.5';
+    deleteBtn.style.cursor = nowChecked ? 'pointer' : 'not-allowed';
   }
   
   // Update button text
-  const selectAllBtn = document.getElementById('selectAll' + type.charAt(0).toUpperCase() + type.slice(1) + 'PhotosBtn');
+  const selectAllBtnId = 'selectAll' + type.charAt(0).toUpperCase() + type.slice(1) + 'PhotosBtn';
+  const selectAllBtn = document.getElementById(selectAllBtnId);
   if (selectAllBtn) {
-    selectAllBtn.textContent = anyChecked ? 'Deselect All' : 'Select All';
+    selectAllBtn.textContent = nowChecked ? 'Deselect All' : 'Select All';
   }
   
-  console.log('[PHOTOS] ' + (anyChecked ? 'Selected' : 'Deselected') + ' all photos in', type);
+  console.log('[PHOTOS] ' + (nowChecked ? 'Selected' : 'Deselected') + ' all photos in', type);
 }
 
 // Expose functions globally
