@@ -142,7 +142,6 @@
       <button class="tab-btn active" onclick="switchTab('home')">Home</button>
       <button class="tab-btn" onclick="switchTab('calculator')">Materials</button>
       <button class="tab-btn" onclick="switchTab('labor')">Labor</button>
-      <button class="tab-btn" onclick="switchTab('lossCompare')">Loss Compare</button>
       <button class="tab-btn" onclick="switchTab('pricing')">Pricing</button>
     </div>
 
@@ -207,15 +206,24 @@
         </datalist>
       </div>
       
-      <div class="upload-box" id="uploadBox">
-        <input type="file" id="fileInput" accept=".pdf" hidden>
-        <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+      <div id="lc-dropzone" class="lc-dropzone">
+        <input type="file" id="lc-fileInput" accept=".pdf" multiple style="display:none;">
+        <svg style="width:48px;height:48px;color:#94a3b8;margin-bottom:12px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
         </svg>
-        <p class="upload-text">Click to upload or drag and drop</p>
-        <p class="upload-subtext">Ridge Top PDF reports only</p>
-        <button class="btn-primary" id="selectPDFBtn">Select PDF</button>
+        <p class="lc-upload-text">Drop your PDFs here</p>
+        <p class="lc-upload-subtext">Roof report + loss sheet &nbsp;·&nbsp; or either one alone &nbsp;·&nbsp; up to 2 files</p>
+        <button id="lc-selectBtn" class="btn-secondary" style="margin-top: 8px;">Select PDFs</button>
       </div>
+      <div id="lc-fileChips" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;"></div>
+      <div style="margin-top: 20px; display:flex; gap: 12px; align-items: center;">
+        <button id="lc-generateBtn" disabled style="padding: 12px 28px; background: #1F3864; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; opacity: 0.5; transition: all 0.2s;">
+          Generate Report
+        </button>
+        <span style="font-size:13px; color:#94a3b8;">Works with 1 or 2 files</span>
+      </div>
+      <div id="lc-error" style="display:none; margin-top:16px; padding:12px 16px; background:#fee2e2; border-radius:8px; color:#991b1b; font-size:14px;"></div>
+      <div id="lc-results" style="display:none; margin-top:24px;"></div>
     </div>
 
     <div id="loading" class="loading" style="display: none;">
@@ -482,41 +490,6 @@
             <button class="btn-primary" onclick="saveLaborPDF()">Save as PDF</button>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div id="lossCompareTab" class="tab-content">
-      <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
-        <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 20px 0; overflow: hidden;">
-          <div style="background: linear-gradient(135deg, #1F3864, #2B5BA3); color: white; padding: 16px 20px;">
-            <h3 style="margin: 0; font-size: 18px; font-weight: 600;">&#9878;&#65039; Insurance Loss vs. Roof Report</h3>
-            <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Drop up to 2 PDFs &mdash; app auto-detects which is which by carrier name &amp; content</p>
-          </div>
-          <div style="padding: 24px;">
-            <div id="lc-dropzone" class="lc-dropzone">
-              <input type="file" id="lc-fileInput" accept=".pdf" multiple style="display:none;">
-              <svg style="width:48px;height:48px;color:#94a3b8;margin-bottom:12px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <p class="lc-upload-text">Drop your PDFs here</p>
-              <p class="lc-upload-subtext">Roof report + loss sheet &nbsp;&middot;&nbsp; or either one alone &nbsp;&middot;&nbsp; up to 2 files</p>
-              <button id="lc-selectBtn" class="btn-secondary" style="margin-top: 8px;">Select PDFs</button>
-            </div>
-            <div id="lc-fileChips" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;"></div>
-            <div style="margin-top: 20px; display:flex; gap: 12px; align-items: center;">
-              <button id="lc-generateBtn" disabled style="padding: 12px 28px; background: #1F3864; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; opacity: 0.5; transition: all 0.2s;">
-                Generate Report
-              </button>
-              <span style="font-size:13px; color:#94a3b8;">Works with 1 or 2 files</span>
-            </div>
-            <div id="lc-loading" style="display:none; align-items:center; gap:12px; margin-top:20px;">
-              <div class="spinner"></div>
-              <span style="color:#64748b;">Processing PDFs...</span>
-            </div>
-            <div id="lc-error" style="display:none; margin-top:16px; padding:12px 16px; background:#fee2e2; border-radius:8px; color:#991b1b; font-size:14px;"></div>
-          </div>
-        </div>
-        <div id="lc-results" style="display:none;"></div>
       </div>
     </div>
 
