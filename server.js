@@ -427,12 +427,6 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
       });
     }
     
-    // Clean up uploaded file
-    if (fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-      console.log('[UPLOAD] Cleaned up temp file');
-    }
-    
     // Calculate subtotal and tax
     const subtotal = result.materials.reduce((sum, m) => sum + m.total, 0);
     const tax = subtotal * 0.09;
@@ -574,6 +568,31 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
       });
     }
     
+    // ==========================================
+    // PARSE LOSS SHEET ITEMS (if present)
+    // ==========================================
+    let lossItems = [];
+    try {
+      const isLoss = await lossParser.isLossSheet(req.file.path);
+      if (isLoss) {
+        console.log('[UPLOAD] Detected loss sheet, parsing exterior items...');
+        const lossResult = await lossParser.parseLossSheet(req.file.path);
+        if (lossResult.success) {
+          lossItems = lossResult.lossItems;
+          console.log('[UPLOAD] Found', lossItems.length, 'loss items');
+        }
+      }
+    } catch (lossErr) {
+      console.error('[UPLOAD] Loss sheet parsing failed (non-fatal):', lossErr.message);
+      // Continue without loss items - this is optional enhancement
+    }
+    
+    // Clean up uploaded file
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+      console.log('[UPLOAD] Cleaned up temp file');
+    }
+    
     console.log('[UPLOAD] SUCCESS. Sending results.');
     res.json({
       success: true,
@@ -584,6 +603,7 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
         items: laborItems,
         subtotal: laborSubtotal
       },
+      lossItems: lossItems, // NEW: loss sheet items
       subtotal: subtotal,
       tax: tax,
       grandTotal: grandTotal

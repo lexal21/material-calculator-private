@@ -603,6 +603,72 @@ function displayResults(data) {
   // Store original data for recalculation
   window.materialsData = data.materials;
   
+  // ==========================================
+  // APPEND LOSS ITEMS (if present)
+  // ==========================================
+  if (data.lossItems && data.lossItems.length > 0) {
+    console.log('[LOSS] Appending', data.lossItems.length, 'loss sheet items to materials table');
+    
+    // Append loss items to materials table
+    const tableBody = document.getElementById('materialsTable');
+    const startIndex = data.materials.length; // Start numbering after regular materials
+    
+    data.lossItems.forEach((item, idx) => {
+      const rowIndex = startIndex + idx;
+      const row = document.createElement('tr');
+      row.dataset.row = rowIndex;
+      row.dataset.source = 'loss';
+      row.classList.add('loss-item-row');
+      
+      row.innerHTML = `
+        <td class="checkbox-cell no-print">
+          <input type="checkbox" class="material-checkbox" data-row="${rowIndex}" onchange="toggleMaterialSelection(${rowIndex})">
+        </td>
+        <td data-label="Item">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="flex: 1;">${item.name}</span>
+            <span style="background: #fbbf24; color: #78350f; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">FROM LOSS</span>
+          </div>
+        </td>
+        <td data-label="Quantity">
+          <input 
+            type="number" 
+            class="editable-input quantity-input" 
+            value="${item.quantity}" 
+            min="0"
+            step="0.01"
+            data-row="${rowIndex}"
+            data-field="quantity"
+            onchange="updateLossItem(${rowIndex})"
+          />
+        </td>
+        <td data-label="Unit">${item.unit}</td>
+        <td data-label="Color" style="padding: 8px;">
+          <input 
+            type="text" 
+            class="editable-input" 
+            placeholder="Enter color..." 
+            value="${item.color || ''}"
+            data-row="${rowIndex}"
+            data-field="color"
+            onchange="updateLossItemColor(${rowIndex}, this.value)"
+            style="width: 100%; max-width: 200px;"
+          />
+        </td>
+        <td class="delete-cell no-print">
+          <button class="delete-btn" onclick="deleteLossItem(${rowIndex})">
+            &#215;
+          </button>
+        </td>
+      `;
+      
+      tableBody.appendChild(row);
+    });
+    
+    // Store loss items globally
+    window.lossItems = data.lossItems;
+  }
+  
   // Store labor data
   if (data.labor) {
     window.laborData = data.labor;
@@ -2563,4 +2629,49 @@ function saveLaborNotes() {
   if (!window.currentJobData) window.currentJobData = {};
   window.currentJobData.laborNotes = notes;
   console.log('[NOTES] Labor notes saved');
+}
+ 
+ / /   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =    
+ / /   L O S S   I T E M   H A N D L E R S    
+ / /   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =    
+ 
+function updateLossItem(rowIndex) {
+  const row = document.querySelector(`tr[data-row="${rowIndex}"][data-source="loss"]`);
+  if (!row) return;
+  
+  const qtyInput = row.querySelector('input[data-field="quantity"]');
+  const quantity = parseFloat(qtyInput.value) || 0;
+  
+  // Update stored data
+  if (window.lossItems) {
+    const lossIndex = rowIndex - window.materialsData.length;
+    if (window.lossItems[lossIndex]) {
+      window.lossItems[lossIndex].quantity = quantity;
+    }
+  }
+}
+
+function updateLossItemColor(rowIndex, color) {
+  if (window.lossItems) {
+    const lossIndex = rowIndex - window.materialsData.length;
+    if (window.lossItems[lossIndex]) {
+      window.lossItems[lossIndex].color = color;
+      console.log('[LOSS] Updated color for', window.lossItems[lossIndex].name, 'to', color);
+    }
+  }
+}
+
+function deleteLossItem(rowIndex) {
+  if (!confirm('Delete this loss item?')) return;
+  
+  const lossIndex = rowIndex - window.materialsData.length;
+  if (window.lossItems && window.lossItems[lossIndex]) {
+    window.lossItems.splice(lossIndex, 1);
+  }
+  
+  // Re-render materials table
+  if (window.currentPDFData) {
+    window.currentPDFData.lossItems = window.lossItems || [];
+    displayResults(window.currentPDFData);
+  }
 }
