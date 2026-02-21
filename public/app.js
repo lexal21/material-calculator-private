@@ -1,8 +1,8 @@
 // Version: 2026-02-07-00:53 - Labor debug logging
 console.log('[APP.JS] Loaded version: 2026-02-07-00:53');
 
-const fileInput = document.getElementById('fileInput');
-const uploadBox = document.getElementById('uploadBox');
+const fileInput = document.getElementById('fileInput'); // Legacy - may not exist if using lc-dropzone
+const uploadBox = document.getElementById('uploadBox'); // Legacy - may not exist if using lc-dropzone
 const loading = document.getElementById('loading');
 const results = document.getElementById('results');
 const error = document.getElementById('error');
@@ -132,12 +132,13 @@ async function logout() {
 // Load user info on page load
 loadCurrentUser();
 
-// File input change handler
-fileInput.addEventListener('change', handleFileSelect);
+// Legacy upload handlers (only if elements exist - otherwise using lc-dropzone)
+if (fileInput) {
+  fileInput.addEventListener('change', handleFileSelect);
+}
 
-// Select PDF button handler (works on mobile)
 const selectPDFBtn = document.getElementById('selectPDFBtn');
-if (selectPDFBtn) {
+if (selectPDFBtn && fileInput) {
   selectPDFBtn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -152,35 +153,38 @@ if (selectPDFBtn) {
   });
 }
 
-// Upload box click handler (desktop)
-uploadBox.addEventListener('click', (e) => {
-  // Only trigger if not clicking the button directly
-  if (e.target.id !== 'selectPDFBtn' && !e.target.closest('.btn-primary')) {
-    fileInput.click();
-  }
-});
+// Upload box handlers (only if element exists)
+if (uploadBox && fileInput) {
+  // Upload box click handler (desktop)
+  uploadBox.addEventListener('click', (e) => {
+    // Only trigger if not clicking the button directly
+    if (e.target.id !== 'selectPDFBtn' && !e.target.closest('.btn-primary')) {
+      fileInput.click();
+    }
+  });
 
-// Drag and drop handlers
-uploadBox.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  uploadBox.classList.add('dragover');
-});
+  // Drag and drop handlers
+  uploadBox.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadBox.classList.add('dragover');
+  });
 
-uploadBox.addEventListener('dragleave', () => {
-  uploadBox.classList.remove('dragover');
-});
+  uploadBox.addEventListener('dragleave', () => {
+    uploadBox.classList.remove('dragover');
+  });
 
-uploadBox.addEventListener('drop', (e) => {
-  e.preventDefault();
-  uploadBox.classList.remove('dragover');
-  
-  const files = e.dataTransfer.files;
-  if (files.length > 0 && files[0].type === 'application/pdf') {
-    handleFile(files[0]);
-  } else {
-    showError('Please drop a PDF file');
-  }
-});
+  uploadBox.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadBox.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].type === 'application/pdf') {
+      handleFile(files[0]);
+    } else {
+      showError('Please drop a PDF file');
+    }
+  });
+}
 
 function handleFileSelect(e) {
   const file = e.target.files[0];
