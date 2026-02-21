@@ -206,6 +206,8 @@ const LossCompare = (() => {
     }
 
     try {
+      var uploadData = null;
+
       // Step 1: Always send roof report to /upload to populate Materials and Labor tabs
       if (roofFile) {
         var locationEl = document.getElementById('locationSelect');
@@ -220,14 +222,11 @@ const LossCompare = (() => {
           body: uploadForm
         });
 
-        var uploadData = await uploadResp.json();
-        if (uploadData.success && typeof displayResults === 'function') {
-          displayResults(uploadData);
-        }
+        uploadData = await uploadResp.json();
       }
 
-      // Step 2: If loss sheet present, extract and inject loss-only items
-      if (lossFile) {
+      // Step 2: If loss sheet present, extract and merge loss-only items
+      if (lossFile && uploadData) {
         var lossForm = new FormData();
         lossForm.append('pdf0', roofFile || lossFile);
         if (roofFile) lossForm.append('pdf1', lossFile);
@@ -240,9 +239,14 @@ const LossCompare = (() => {
         if (lossResp.ok) {
           var lossData = await lossResp.json();
           if (lossData.success && lossData.lossItems && lossData.lossItems.length > 0) {
-            injectLossItems(lossData.lossItems);
+            uploadData.lossItems = lossData.lossItems;
           }
         }
+      }
+
+      // Step 3: Call displayResults once with merged data
+      if (uploadData && uploadData.success && typeof displayResults === 'function') {
+        displayResults(uploadData);
       }
     } catch (err) {
       showError('Error: ' + err.message);

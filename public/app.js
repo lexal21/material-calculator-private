@@ -69,7 +69,7 @@ function switchTab(tabName) {
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
   
   // If called programmatically (no event), find and activate the button
-  if (event && event.target) {
+  if (typeof event !== 'undefined' && event && event.target) {
     event.target.classList.add('active');
   } else {
     // Find button that triggers this tab
@@ -2630,10 +2630,14 @@ function saveLaborNotes() {
   window.currentJobData.laborNotes = notes;
   console.log('[NOTES] Labor notes saved');
 }
- 
- / /   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =    
- / /   L O S S   I T E M   H A N D L E R S    
- / /   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =    
+
+ 
+ / /   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =   
+ 
+ / /   L O S S   I T E M   H A N D L E R S   
+ 
+ / /   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =   
+ 
  
 function updateLossItem(rowIndex) {
   const row = document.querySelector(`tr[data-row="${rowIndex}"][data-source="loss"]`);
