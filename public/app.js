@@ -1,4 +1,4 @@
-//Version: 2026-02-07-00:53 - Labor debug logging
+﻿//Version: 2026-02-07-00:53 - Labor debug logging
 console.log('[APP.JS] Loaded version: 2026-02-07-00:53');
 
 const fileInput = document.getElementById('fileInput'); // Legacy - may not exist if using lc-dropzone
@@ -2625,14 +2625,14 @@ function saveLaborNotes() {
   console.log('[NOTES] Labor notes saved');
 }
 
- 
- / /   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =   
- 
- / /   L O S S   I T E M   H A N D L E R S   
- 
- / /   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =   
- 
- 
+
+// ========================================== 
+
+// LOSS ITEM HANDLERS 
+
+// ========================================== 
+
+
 function updateLossItem(rowIndex) {
   const row = document.querySelector(`tr[data-row="${rowIndex}"][data-source="loss"]`);
   if (!row) return;
@@ -2673,3 +2673,4 @@ function deleteLossItem(rowIndex) {
     displayResults(window.currentPDFData);
   }
 }
+
