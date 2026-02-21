@@ -179,6 +179,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     let shingleSquares = totalSquares; // Default to calculated squares
     let tearOffSquares = 0;
+    let iceWaterFoundOnLoss = false; // Track if ice & water was explicitly on loss sheet
     const lineItems = {
       shingles: null,
       underlayment: null,
@@ -248,6 +249,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         if (match) {
           lineItems.dripEdge = { quantity: parseFloat(match[1]), unit: 'LF' };
         }
+      }
+      
+      // Ice & water shield detection (for missing data flag)
+      if (/ice.*water|ice\s*&\s*water/i.test(line)) {
+        iceWaterFoundOnLoss = true;
       }
       
       // Pipe jacks / pipe boots
@@ -402,7 +408,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     // Hip & Ridge - use calculateHipRidgeCap from calculator.js
     const hipLength = result.measurements.hipLength || 0;
     if (lineItems.hipRidge || ridgeLength > 0) {
+      console.log('[LOSS-PARSER] Hip & Ridge calculation - hipLength:', hipLength, 'ridgeLength:', ridgeLength);
       const hipRidgeBundles = calculateHipRidgeCap(hipLength, ridgeLength);
+      console.log('[LOSS-PARSER] Hip & Ridge bundles result:', hipRidgeBundles);
       result.materials.push({
         name: MATERIALS.hip_ridge_cap.name,
         quantity: hipRidgeBundles,
@@ -415,13 +423,19 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     // Ice & water shield - use correct formula: ceil(valleyLength / 63)
     const valleyLength = result.measurements.valleyLength || 0;
     const iceWaterRolls = valleyLength === 0 ? 0 : Math.ceil(valleyLength / 63);
-    result.materials.push({
+    const iceMissing = iceWaterRolls === 0 && !iceWaterFoundOnLoss;
+    const iceWaterItem = {
       name: MATERIALS.ice_water_shield.name,
       quantity: iceWaterRolls,
       unit: MATERIALS.ice_water_shield.unit,
       unitPrice: MATERIALS.ice_water_shield.price,
       total: iceWaterRolls * MATERIALS.ice_water_shield.price
-    });
+    };
+    if (iceMissing) {
+      iceWaterItem.missingData = true;
+      iceWaterItem.missingReason = 'Measurement not on loss sheet — verify manually';
+    }
+    result.materials.push(iceWaterItem);
     
     // Ridge vent - use correct formula: ceil((ridgeLength - (ridgeCount × 3)) / 4)
     if (ridgeLength > 0) {
@@ -491,26 +505,36 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     // Step flashing - always add (0 if not found, matching roof report behavior)
     const stepFlashingQty = lineItems.stepFlashing ? Math.ceil(lineItems.stepFlashing.quantity / 10) : 0;
-    result.materials.push({
+    const stepFlashingItem = {
       name: MATERIALS.step_flashing.name,
       quantity: stepFlashingQty,
       unit: MATERIALS.step_flashing.unit,
       unitPrice: MATERIALS.step_flashing.price,
       total: stepFlashingQty * MATERIALS.step_flashing.price
-    });
+    };
+    if (!lineItems.stepFlashing) {
+      stepFlashingItem.missingData = true;
+      stepFlashingItem.missingReason = 'Measurement not on loss sheet — verify manually';
+    }
+    result.materials.push(stepFlashingItem);
     if (lineItems.stepFlashing) {
       result.raw.step_flashing = lineItems.stepFlashing.quantity;
     }
     
     // L flashing - always add (0 if not found, matching roof report behavior)
     const lFlashingQty = lineItems.lFlashing ? Math.ceil(lineItems.lFlashing.quantity / 50) : 0;
-    result.materials.push({
+    const lFlashingItem = {
       name: MATERIALS.l_flashing.name,
       quantity: lFlashingQty,
       unit: MATERIALS.l_flashing.unit,
       unitPrice: MATERIALS.l_flashing.price,
       total: lFlashingQty * MATERIALS.l_flashing.price
-    });
+    };
+    if (!lineItems.lFlashing) {
+      lFlashingItem.missingData = true;
+      lFlashingItem.missingReason = 'Measurement not on loss sheet — verify manually';
+    }
+    result.materials.push(lFlashingItem);
     if (lineItems.lFlashing) {
       result.raw.flashing_length = lineItems.lFlashing.quantity;
     }

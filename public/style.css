@@ -1824,3 +1824,16 @@ tr.row-selected td {
 #retailViewToggle:checked + div + #retailToggleKnob {
   transform: translateX(24px);
 }
+ 
+ / *   M i s s i n g   d a t a   h i g h l i g h t i n g   * /  
+ . m i s s i n g - d a t a - r o w   {  
+     b a c k g r o u n d - c o l o r :   # f f f 8 e 1 ;  
+ }  
+  
+ . m i s s i n g - d a t a - l a b e l   {  
+     c o l o r :   # f 5 7 c 0 0 ;  
+     f o n t - s i z e :   1 1 p x ;  
+     m a r g i n - l e f t :   6 p x ;  
+     f o n t - w e i g h t :   6 0 0 ;  
+ }  
+ 

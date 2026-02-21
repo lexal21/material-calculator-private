@@ -486,9 +486,11 @@ function displayResults(data) {
 //Format quantity: whole numbers if no decimal, otherwise 2 decimals
     const qtyDisplay = item.quantity % 1 === 0 ? item.quantity.toString() : item.quantity.toFixed(2);
     const qtyForPrint = item.quantity % 1 === 0 ? item.quantity.toString() : item.quantity.toFixed(2);
+    const rowClass = item.quantity === 0 ? 'zero-quantity' : (item.missingData ? 'missing-data-row' : '');
+    const missingLabel = item.missingData ? '<span class="missing-data-label">Verify manually</span>' : '';
     
     return `
-    <tr data-row="${index}" data-unit="${item.unit}" class="${item.quantity === 0 ? 'zero-quantity' : ''}">
+    <tr data-row="${index}" data-unit="${item.unit}" class="${rowClass}">
       <td class="checkbox-cell no-print">
         <input type="checkbox" class="material-checkbox" data-row="${index}" onchange="toggleMaterialSelection(${index})">
       </td>
@@ -511,6 +513,7 @@ function displayResults(data) {
           onchange="updateMaterialRow(${index})"
           aria-label="Quantity for ${item.name}"
         />
+        ${missingLabel}
       </td>
       <td data-label="Unit">${pluralUnit}</td>
       <td data-label="Unit Price" class="editable-cell">
