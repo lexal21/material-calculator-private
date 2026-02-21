@@ -420,6 +420,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     }
     
     // Ice & water shield (calculated)
+    const starterPerimeter = lineItems.dripEdge?.quantity || actualPerimeter;
     const iceWaterPerimeter = starterPerimeter / 2; // Eave estimate
     const iceWaterRolls = Math.ceil((iceWaterPerimeter / 2) / 75);
     result.materials.push({
