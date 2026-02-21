@@ -1,5 +1,6 @@
 const fs = require('fs');
 const pdf = require('pdf-parse-fork');
+const { MATERIALS } = require('./calculator');
 
 /**
  * Parse insurance loss sheet completely - extracts customer info, measurements, line items
@@ -68,11 +69,15 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
-      // Number of Squares (main roof)
+      // Number of Squares (main roof) - handles "25.54 Number of Squares" OR "Number of Squares 25.54"
       if (/number\s+of\s+squares/i.test(line)) {
-        const sqMatch = line.match(/(\d+\.?\d*)\s*SQ/i) || lines[i + 1]?.match(/(\d+\.?\d*)/);
+        // Try number before label first, then number after label
+        const sqMatch = line.match(/(\d+\.?\d*)\s+number\s+of\s+squares/i) || 
+                        line.match(/number\s+of\s+squares\s+(\d+\.?\d*)/i) ||
+                        lines[i + 1]?.match(/(\d+\.?\d*)/);
         if (sqMatch) {
           mainRoofSquares = parseFloat(sqMatch[1]);
+          console.log('[LOSS-PARSER] Found main roof squares:', mainRoofSquares);
         }
       }
       
@@ -81,22 +86,41 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         const shedMatch = line.match(/(\d+\.?\d*)\s*SQ/i) || lines[i + 1]?.match(/(\d+\.?\d*)\s*SQ/i);
         if (shedMatch) {
           shedSquares = parseFloat(shedMatch[1]);
+          console.log('[LOSS-PARSER] Found shed squares:', shedSquares);
         }
       }
       
-      // Total Ridge Length
+      // Total Ridge Length - handles "41.14 Total Ridge Length" OR "Total Ridge Length 41.14"
       if (/total\s+ridge\s+length/i.test(line)) {
-        const ridgeMatch = line.match(/(\d+\.?\d*)\s*LF/i) || lines[i + 1]?.match(/(\d+\.?\d*)/);
+        const ridgeMatch = line.match(/(\d+\.?\d*)\s+total\s+ridge\s+length/i) ||
+                           line.match(/total\s+ridge\s+length\s+(\d+\.?\d*)/i) ||
+                           lines[i + 1]?.match(/(\d+\.?\d*)/);
         if (ridgeMatch) {
           ridgeLength = parseFloat(ridgeMatch[1]);
+          console.log('[LOSS-PARSER] Found ridge length:', ridgeLength);
         }
       }
       
-      // Total Perimeter Length
+      // Total Perimeter Length - handles "304.30 Total Perimeter Length" OR "Total Perimeter Length 304.30"
       if (/total\s+perimeter\s+length/i.test(line)) {
-        const perimMatch = line.match(/(\d+\.?\d*)\s*LF/i) || lines[i + 1]?.match(/(\d+\.?\d*)/);
+        const perimMatch = line.match(/(\d+\.?\d*)\s+total\s+perimeter\s+length/i) ||
+                           line.match(/total\s+perimeter\s+length\s+(\d+\.?\d*)/i) ||
+                           lines[i + 1]?.match(/(\d+\.?\d*)/);
         if (perimMatch) {
           perimeterLength = parseFloat(perimMatch[1]);
+          console.log('[LOSS-PARSER] Found perimeter length:', perimeterLength);
+        }
+      }
+      
+      // Total Hip Length - handles "76.66 Total Hip Length" OR "Total Hip Length 76.66"
+      if (/total\s+hip\s+length/i.test(line)) {
+        const hipMatch = line.match(/(\d+\.?\d*)\s+total\s+hip\s+length/i) ||
+                         line.match(/total\s+hip\s+length\s+(\d+\.?\d*)/i) ||
+                         lines[i + 1]?.match(/(\d+\.?\d*)/);
+        if (hipMatch) {
+          const hipLength = parseFloat(hipMatch[1]);
+          result.measurements.hipLength = hipLength;
+          console.log('[LOSS-PARSER] Found hip length:', hipLength);
         }
       }
       
@@ -105,6 +129,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         const dripMatch = line.match(/(\d+\.?\d*)\s*LF/i);
         if (dripMatch) {
           dripEdgeEaveRake = parseFloat(dripMatch[1]);
+          console.log('[LOSS-PARSER] Found drip edge EAVE+RAKE:', dripEdgeEaveRake);
         }
       }
     }
@@ -339,32 +364,32 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     const bundlesPerSq = 3;
     const shingleBundles = Math.ceil(shingleSquares * bundlesPerSq);
     result.materials.push({
-      name: 'Architectural Shingles',
+      name: MATERIALS.shingles.name,
       quantity: shingleBundles,
-      unit: 'Bundle',
-      unitPrice: 42.00,
-      total: shingleBundles * 42.00
+      unit: MATERIALS.shingles.unit,
+      unitPrice: MATERIALS.shingles.price,
+      total: shingleBundles * MATERIALS.shingles.price
     });
     
     // Underlayment
     if (lineItems.underlayment) {
       const rolls = Math.ceil(lineItems.underlayment.quantity / 4);
       result.materials.push({
-        name: 'Synthetic Underlayment',
+        name: MATERIALS.roofrunner.name,
         quantity: rolls,
-        unit: 'Roll',
-        unitPrice: 85.75,
-        total: rolls * 85.75
+        unit: MATERIALS.roofrunner.unit,
+        unitPrice: MATERIALS.roofrunner.price,
+        total: rolls * MATERIALS.roofrunner.price
       });
     } else {
       // Calculate based on squares
       const rolls = Math.ceil(shingleSquares / 4);
       result.materials.push({
-        name: 'Synthetic Underlayment',
+        name: MATERIALS.roofrunner.name,
         quantity: rolls,
-        unit: 'Roll',
-        unitPrice: 85.75,
-        total: rolls * 85.75
+        unit: MATERIALS.roofrunner.unit,
+        unitPrice: MATERIALS.roofrunner.price,
+        total: rolls * MATERIALS.roofrunner.price
       });
     }
     
@@ -372,31 +397,31 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     const starterPerimeter = lineItems.dripEdge?.quantity || actualPerimeter;
     const starterBundles = Math.ceil(starterPerimeter / 120);
     result.materials.push({
-      name: 'Starter Strip',
+      name: MATERIALS.starter_course.name,
       quantity: starterBundles,
-      unit: 'Bundle',
-      unitPrice: 52.00,
-      total: starterBundles * 52.00
+      unit: MATERIALS.starter_course.unit,
+      unitPrice: MATERIALS.starter_course.price,
+      total: starterBundles * MATERIALS.starter_course.price
     });
     
     // Hip & Ridge
     if (lineItems.hipRidge) {
       const bundles = Math.ceil(lineItems.hipRidge.quantity / 20);
       result.materials.push({
-        name: 'Hip & Ridge Cap',
+        name: MATERIALS.hip_ridge_cap.name,
         quantity: bundles,
-        unit: 'Bundle',
-        unitPrice: 65.50,
-        total: bundles * 65.50
+        unit: MATERIALS.hip_ridge_cap.unit,
+        unitPrice: MATERIALS.hip_ridge_cap.price,
+        total: bundles * MATERIALS.hip_ridge_cap.price
       });
     } else if (ridgeLength > 0) {
       const bundles = Math.ceil(ridgeLength / 20);
       result.materials.push({
-        name: 'Hip & Ridge Cap',
+        name: MATERIALS.hip_ridge_cap.name,
         quantity: bundles,
-        unit: 'Bundle',
-        unitPrice: 65.50,
-        total: bundles * 65.50
+        unit: MATERIALS.hip_ridge_cap.unit,
+        unitPrice: MATERIALS.hip_ridge_cap.price,
+        total: bundles * MATERIALS.hip_ridge_cap.price
       });
     }
     
@@ -404,22 +429,22 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     const iceWaterPerimeter = starterPerimeter / 2; // Eave estimate
     const iceWaterRolls = Math.ceil((iceWaterPerimeter / 2) / 75);
     result.materials.push({
-      name: 'Ice & Water Shield',
+      name: MATERIALS.ice_water_shield.name,
       quantity: iceWaterRolls,
-      unit: 'Roll',
-      unitPrice: 69.00,
-      total: iceWaterRolls * 69.00
+      unit: MATERIALS.ice_water_shield.unit,
+      unitPrice: MATERIALS.ice_water_shield.price,
+      total: iceWaterRolls * MATERIALS.ice_water_shield.price
     });
     
     // Ridge vent
     if (lineItems.ridgeVent) {
       const pieces = Math.ceil(lineItems.ridgeVent.quantity / 4);
       result.materials.push({
-        name: 'Ridge Vent 4ft',
+        name: MATERIALS.ridge_vent.name,
         quantity: pieces,
-        unit: 'Piece',
-        unitPrice: 9.00,
-        total: pieces * 9.00
+        unit: MATERIALS.ridge_vent.unit,
+        unitPrice: MATERIALS.ridge_vent.price,
+        total: pieces * MATERIALS.ridge_vent.price
       });
     }
     
@@ -427,31 +452,31 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     if (lineItems.dripEdge) {
       const pieces = Math.ceil(lineItems.dripEdge.quantity / 10);
       result.materials.push({
-        name: 'Drip Edge',
+        name: MATERIALS.drip_edge.name,
         quantity: pieces,
-        unit: 'Piece',
-        unitPrice: 9.25,
-        total: pieces * 9.25
+        unit: MATERIALS.drip_edge.unit,
+        unitPrice: MATERIALS.drip_edge.price,
+        total: pieces * MATERIALS.drip_edge.price
       });
     } else if (actualPerimeter > 0) {
       const pieces = Math.ceil(actualPerimeter / 10);
       result.materials.push({
-        name: 'Drip Edge',
+        name: MATERIALS.drip_edge.name,
         quantity: pieces,
-        unit: 'Piece',
-        unitPrice: 9.25,
-        total: pieces * 9.25
+        unit: MATERIALS.drip_edge.unit,
+        unitPrice: MATERIALS.drip_edge.price,
+        total: pieces * MATERIALS.drip_edge.price
       });
     }
     
     // Roofing nails (calculated)
     const nailBoxes = Math.ceil(shingleSquares / 25);
     result.materials.push({
-      name: '1-1/4" Roofing Nails',
+      name: MATERIALS.roofing_nails.name,
       quantity: nailBoxes,
-      unit: 'Box',
-      unitPrice: 39.99,
-      total: nailBoxes * 39.99
+      unit: MATERIALS.roofing_nails.unit,
+      unitPrice: MATERIALS.roofing_nails.price,
+      total: nailBoxes * MATERIALS.roofing_nails.price
     });
     
     // Pipe boots
@@ -469,11 +494,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     if (lineItems.stepFlashing) {
       const bundles = Math.ceil(lineItems.stepFlashing.quantity / 10);
       result.materials.push({
-        name: 'Step Flashing',
+        name: MATERIALS.step_flashing.name,
         quantity: bundles,
-        unit: 'Bundle',
-        unitPrice: 38.00,
-        total: bundles * 38.00
+        unit: MATERIALS.step_flashing.unit,
+        unitPrice: MATERIALS.step_flashing.price,
+        total: bundles * MATERIALS.step_flashing.price
       });
       result.raw.step_flashing = lineItems.stepFlashing.quantity;
     }
@@ -482,11 +507,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     if (lineItems.lFlashing) {
       const rolls = Math.ceil(lineItems.lFlashing.quantity / 50);
       result.materials.push({
-        name: 'L Flashing (Trim Coil)',
+        name: MATERIALS.l_flashing.name,
         quantity: rolls,
-        unit: 'Roll',
-        unitPrice: 134.50,
-        total: rolls * 134.50
+        unit: MATERIALS.l_flashing.unit,
+        unitPrice: MATERIALS.l_flashing.price,
+        total: rolls * MATERIALS.l_flashing.price
       });
       result.raw.flashing_length = lineItems.lFlashing.quantity;
     }
@@ -494,21 +519,21 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     // Button caps (calculated)
     const buttonCaps = Math.ceil(actualPerimeter / 16);
     result.materials.push({
-      name: 'Button Caps',
+      name: MATERIALS.button_caps.name,
       quantity: buttonCaps,
-      unit: 'Box',
-      unitPrice: 19.50,
-      total: buttonCaps * 19.50
+      unit: MATERIALS.button_caps.unit,
+      unitPrice: MATERIALS.button_caps.price,
+      total: buttonCaps * MATERIALS.button_caps.price
     });
     
     // Sealant (calculated)
     const sealantTubes = Math.ceil(shingleSquares / 5);
     result.materials.push({
-      name: 'Joint Sealant 10oz',
+      name: MATERIALS.joint_sealant.name,
       quantity: sealantTubes,
-      unit: 'Tube',
-      unitPrice: 7.29,
-      total: sealantTubes * 7.29
+      unit: MATERIALS.joint_sealant.unit,
+      unitPrice: MATERIALS.joint_sealant.price,
+      total: sealantTubes * MATERIALS.joint_sealant.price
     });
     
     // ==========================================

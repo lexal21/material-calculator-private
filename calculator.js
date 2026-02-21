@@ -408,6 +408,7 @@ function formatOutput(materials, jobInfo = {}) {
 }
 
 module.exports = {
+  MATERIALS,
   calculateShingles,
   calculateStarterCourse,
   calculateHipRidgeCap,
