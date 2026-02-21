@@ -486,7 +486,10 @@ function displayResults(data) {
 //Format quantity: whole numbers if no decimal, otherwise 2 decimals
     const qtyDisplay = item.quantity % 1 === 0 ? item.quantity.toString() : item.quantity.toFixed(2);
     const qtyForPrint = item.quantity % 1 === 0 ? item.quantity.toString() : item.quantity.toFixed(2);
-    const rowClass = item.quantity === 0 ? 'zero-quantity' : (item.missingData ? 'missing-data-row' : '');
+    const rowClasses = [];
+    if (item.quantity === 0) rowClasses.push('zero-quantity');
+    if (item.missingData) rowClasses.push('missing-data-row');
+    const rowClass = rowClasses.join(' ');
     const missingLabel = item.missingData ? '<span class="missing-data-label">Verify manually</span>' : '';
     
     return `
