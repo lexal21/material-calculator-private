@@ -1,14 +1,14 @@
-/**
+﻿/**
  * loss-compare.js
  * QuikBitz - Insurance Loss vs Roof Report Comparison
  * Drop zone, file detection, and results rendering
  */
 
 const LossCompare = (() => {
-  // ── State ──────────────────────────────────────────────────────────────────
+  // --   State  
   let droppedFiles = [];
 
-  // ── Known carrier / adjuster signatures for detection ─────────────────────
+  // --   Known carrier / adjuster signatures for detection  
   const LOSS_SHEET_SIGNATURES = [
     'USAA', 'State Farm', 'Allstate', 'Travelers', 'Farmers', 'Liberty Mutual',
     'Nationwide', 'American Family', 'Chubb', 'Erie Insurance', 'Auto-Owners',
@@ -32,7 +32,7 @@ const LossCompare = (() => {
     'roof sq', 'Hip', 'Ridge', 'Valley', 'Eave', 'Rake'
   ];
 
-  // ── Init ───────────────────────────────────────────────────────────────────
+  // --   Init  
   function init() {
     const zone = document.getElementById('lc-dropzone');
     const input = document.getElementById('lc-fileInput');
@@ -68,7 +68,7 @@ const LossCompare = (() => {
     generateBtn.addEventListener('click', generateReport);
   }
 
-  // ── Handle dropped / selected files ───────────────────────────────────────
+  // --   Handle dropped / selected files  
   function handleFiles(newFiles) {
     newFiles.forEach(file => {
       if (droppedFiles.length >= 2) return;
@@ -87,7 +87,7 @@ const LossCompare = (() => {
     clearResults();
   }
 
-  // ── Render file chips below drop zone ─────────────────────────────────────
+  // --   Render file chips below drop zone  
   function renderFileChips() {
     const container = document.getElementById('lc-fileChips');
     container.innerHTML = '';
@@ -112,7 +112,7 @@ const LossCompare = (() => {
     });
   }
 
-  // ── Detect file type by reading text ──────────────────────────────────────
+  // --   Detect file type by reading text  
   async function detectFileType(file) {
     return new Promise(resolve => {
       const reader = new FileReader();
@@ -189,7 +189,7 @@ const LossCompare = (() => {
     return null;
   }
 
-  // ── Update generate button state ───────────────────────────────────────────
+  // --   Update generate button state  
   function updateGenerateBtn() {
     const btn = document.getElementById('lc-generateBtn');
     btn.disabled = droppedFiles.length === 0;
@@ -200,7 +200,7 @@ const LossCompare = (() => {
         : 'Generate Report';
   }
 
-  // ── Generate report ────────────────────────────────────────────────────────
+  // --   Generate report  
   async function generateReport() {
     if (droppedFiles.length === 0) return;
     showLoading(true);
@@ -224,7 +224,7 @@ const LossCompare = (() => {
     }
   }
 
-  // ── Render results ─────────────────────────────────────────────────────────
+  // --   Render results  
   function renderResults(data) {
     const container = document.getElementById('lc-results');
     container.style.display = 'block';
@@ -371,7 +371,7 @@ const LossCompare = (() => {
       '</div>';
   }
 
-  // ── Utility ────────────────────────────────────────────────────────────────
+  // --   Utility  
   function showLoading(show) {
     const loadingEl = document.getElementById('lc-loading');
     if (loadingEl) loadingEl.style.display = show ? 'flex' : 'none';
@@ -394,3 +394,4 @@ const LossCompare = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', LossCompare.init);
+
