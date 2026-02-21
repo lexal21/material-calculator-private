@@ -1,78 +1,74 @@
-﻿/**
+/**
  * loss-compare.js
- * QuikBitz - Insurance Loss vs Roof Report Comparison
- * Drop zone, file detection, and results rendering
+ * QuikBitz - Loss Sheet Enhancement to Roof Report Upload
  */
 
 const LossCompare = (() => {
-  // --   State  
+  // -- State --
   let droppedFiles = [];
 
-  // --   Known carrier / adjuster signatures for detection  
+  // -- Loss sheet signatures --
   const LOSS_SHEET_SIGNATURES = [
     'USAA', 'State Farm', 'Allstate', 'Travelers', 'Farmers', 'Liberty Mutual',
     'Nationwide', 'American Family', 'Chubb', 'Erie Insurance', 'Auto-Owners',
     'Cincinnati Insurance', 'Amica', 'GEICO', 'Progressive', 'SafeCo', 'Hartford',
     'Hippo', 'Kin Insurance', 'Universal Property', 'Heritage Insurance',
-    'Citizens Property', 'Security First', 'Tower Hill', 'Homeowners of America',
-    'Openly', 'Branch Insurance',
+    'Citizens Property', 'Security First', 'Tower Hill',
     'David Morse', 'Pilot Catastrophe', 'Eberl Claims', 'Crawford', 'Sedgwick',
-    'Gallagher Bassett', 'McLarens', 'Engle Martin', 'Rimkus', 'Haag Engineering',
-    'Xactimate', 'Symbility',
+    'Gallagher Bassett', 'Xactimate', 'Symbility',
     'Replacement Cost Value', 'Actual Cash Value', 'Recoverable Depreciation',
     'Net Claim', 'Deductible', 'Policy Number', 'Date of Loss', 'Cause of Loss',
-    'Line Item Total', 'Price List: SC'
+    'Line Item Total', 'Price List'
   ];
 
-  const ROOF_REPORT_SIGNATURES = [
-    'RidgeTop', 'Ridge Top Aerial', 'Ridge Top', 'EagleView', 'GAF QuickMeasure', 'Hover',
-    'Xactimate Sketch', 'RoofScope', 'Roof Area', 'Roof Squares', 'Hip Length',
-    'Ridge Length', 'Valley Length', 'Eave Edge', 'Rake Edge', 'Step Flashing',
-    'Waste Factor', 'Number of Squares', 'Total Perimeter', 'Order #', 'Roof sq',
-    'roof sq', 'Hip', 'Ridge', 'Valley', 'Eave', 'Rake'
-  ];
-
-  // --   Init  
+  // -- Init --
   function init() {
-    const zone = document.getElementById('lc-dropzone');
-    const input = document.getElementById('lc-fileInput');
-    const btn = document.getElementById('lc-selectBtn');
-    const generateBtn = document.getElementById('lc-generateBtn');
-
+    var zone = document.getElementById('lc-dropzone');
+    var input = document.getElementById('lc-fileInput');
+    var btn = document.getElementById('lc-selectBtn');
+    var generateBtn = document.getElementById('lc-generateBtn');
     if (!zone) return;
 
-    btn.addEventListener('click', () => input.click());
+    btn.addEventListener('click', function() {
+      input.click();
+    });
 
-    zone.addEventListener('click', (e) => {
+    zone.addEventListener('click', function(e) {
       if (e.target === zone || e.target.classList.contains('lc-upload-text') || e.target.classList.contains('lc-upload-subtext')) {
         input.click();
       }
     });
 
-    input.addEventListener('change', (e) => handleFiles(Array.from(e.target.files)));
+    input.addEventListener('change', function(e) {
+      handleFiles(Array.from(e.target.files));
+    });
 
-    zone.addEventListener('dragover', (e) => {
+    zone.addEventListener('dragover', function(e) {
       e.preventDefault();
       zone.classList.add('lc-dragover');
     });
 
-    zone.addEventListener('dragleave', () => zone.classList.remove('lc-dragover'));
+    zone.addEventListener('dragleave', function() {
+      zone.classList.remove('lc-dragover');
+    });
 
-    zone.addEventListener('drop', (e) => {
+    zone.addEventListener('drop', function(e) {
       e.preventDefault();
       zone.classList.remove('lc-dragover');
-      const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
+      var files = Array.from(e.dataTransfer.files).filter(function(f) {
+        return f.type === 'application/pdf';
+      });
       if (files.length) handleFiles(files);
     });
 
     generateBtn.addEventListener('click', generateReport);
   }
 
-  // --   Handle dropped / selected files  
+  // -- Handle files --
   function handleFiles(newFiles) {
-    newFiles.forEach(file => {
+    newFiles.forEach(function(file) {
       if (droppedFiles.length >= 2) return;
-      if (!droppedFiles.find(f => f.name === file.name)) {
+      if (!droppedFiles.find(function(f) { return f.name === file.name; })) {
         droppedFiles.push(file);
       }
     });
@@ -81,80 +77,74 @@ const LossCompare = (() => {
   }
 
   function removeFile(name) {
-    droppedFiles = droppedFiles.filter(f => f.name !== name);
+    droppedFiles = droppedFiles.filter(function(f) {
+      return f.name !== name;
+    });
     renderFileChips();
     updateGenerateBtn();
-    clearResults();
+    clearError();
   }
 
-  // --   Render file chips below drop zone  
+  // -- Render file chips --
   function renderFileChips() {
-    const container = document.getElementById('lc-fileChips');
+    var container = document.getElementById('lc-fileChips');
+    if (!container) return;
     container.innerHTML = '';
 
-    droppedFiles.forEach(file => {
-      const chip = document.createElement('div');
+    droppedFiles.forEach(function(file) {
+      var chip = document.createElement('div');
       chip.className = 'lc-chip';
-      chip.innerHTML =
-        '<span class="lc-chip-icon">\uD83D\uDCC4</span>' +
+      chip.innerHTML = '<span class="lc-chip-icon">PDF</span>' +
         '<span class="lc-chip-name">' + file.name + '</span>' +
         '<span class="lc-chip-badge lc-detecting">Detecting...</span>' +
-        '<button class="lc-chip-remove" onclick="LossCompare.removeFile(\'' + file.name.replace(/'/g, "\\'") + '\')" title="Remove">\u2715</button>';
+        '<button class="lc-chip-remove" onclick="LossCompare.removeFile(\'' + file.name + '\')" title="Remove">x</button>';
       container.appendChild(chip);
 
-      detectFileType(file).then(type => {
-        const badge = chip.querySelector('.lc-chip-badge');
+      detectFileType(file).then(function(type) {
+        var badge = chip.querySelector('.lc-chip-badge');
         badge.textContent = type.label;
         badge.className = 'lc-chip-badge ' + type.cls;
         chip.dataset.type = type.key;
-        chip.dataset.carrier = type.carrier || '';
       });
     });
   }
 
-  // --   Detect file type by reading text  
-  async function detectFileType(file) {
-    return new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const binary = e.target.result;
-        const text = extractTextFromBinary(binary);
+  // -- Detect file type --
+  function detectFileType(file) {
+    return new Promise(function(resolve) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var binary = e.target.result;
+        var text = extractTextFromBinary(binary);
 
-        for (const sig of LOSS_SHEET_SIGNATURES) {
-          if (text.includes(sig)) {
-            const carrier = extractCarrierName(text);
+        for (var i = 0; i < LOSS_SHEET_SIGNATURES.length; i++) {
+          if (text.indexOf(LOSS_SHEET_SIGNATURES[i]) !== -1) {
+            var carrier = extractCarrierName(text);
             return resolve({
               key: 'loss',
               label: carrier ? 'Loss: ' + carrier : 'Loss Sheet',
-              cls: 'lc-badge-loss',
-              carrier
+              cls: 'lc-badge-loss'
             });
           }
         }
 
-        for (const sig of ROOF_REPORT_SIGNATURES) {
-          if (text.includes(sig)) {
-            const provider = extractReportProvider(text);
-            return resolve({
-              key: 'roof',
-              label: provider ? 'Roof: ' + provider : 'Roof Report',
-              cls: 'lc-badge-roof',
-              carrier: provider
-            });
-          }
-        }
-
-        resolve({ key: 'unknown', label: 'Unknown - Review', cls: 'lc-badge-unknown' });
+        // Default anything undetected to Roof Report
+        resolve({
+          key: 'roof',
+          label: 'Roof Report',
+          cls: 'lc-badge-roof'
+        });
       };
       reader.readAsBinaryString(file);
     });
   }
 
   function extractTextFromBinary(binary) {
-    let text = '';
-    let run = '';
-    for (let i = 0; i < Math.min(binary.length, 80000); i++) {
-      const c = binary.charCodeAt(i);
+    var text = '';
+    var run = '';
+    var limit = Math.min(binary.length, 80000);
+    for (var i = 0; i < limit; i++) {
+      var c = binary.charCodeAt(i);
       if (c >= 32 && c <= 126) {
         run += binary[i];
       } else {
@@ -166,232 +156,156 @@ const LossCompare = (() => {
   }
 
   function extractCarrierName(text) {
-    const carriers = [
+    var carriers = [
       'USAA', 'State Farm', 'Allstate', 'Travelers', 'Farmers', 'Liberty Mutual',
       'Nationwide', 'American Family', 'Chubb', 'Erie Insurance', 'Auto-Owners',
-      'Cincinnati Insurance', 'Amica', 'SafeCo', 'Hartford', 'Hippo', 'Kin Insurance',
-      'Universal Property', 'Heritage Insurance', 'Citizens Property', 'Security First',
-      'Tower Hill', 'Progressive', 'GEICO'
+      'Cincinnati Insurance', 'SafeCo', 'Hartford', 'Hippo', 'Universal Property',
+      'Heritage Insurance', 'Citizens Property', 'Security First', 'Tower Hill',
+      'Progressive', 'GEICO'
     ];
-    for (const c of carriers) {
-      if (text.includes(c)) return c;
-    }
-    const match = text.match(/Insurance\s+Company[:\s]+([A-Z][A-Za-z\s&]+?)(?:\s{2,}|\n|$)/);
-    if (match) return match[1].trim().substring(0, 30);
-    return null;
-  }
-
-  function extractReportProvider(text) {
-    const providers = ['RidgeTop', 'EagleView', 'GAF QuickMeasure', 'Hover', 'RoofScope'];
-    for (const p of providers) {
-      if (text.includes(p)) return p;
+    for (var i = 0; i < carriers.length; i++) {
+      if (text.indexOf(carriers[i]) !== -1) return carriers[i];
     }
     return null;
   }
 
-  // --   Update generate button state  
+  // -- Update generate button --
   function updateGenerateBtn() {
-    const btn = document.getElementById('lc-generateBtn');
+    var btn = document.getElementById('lc-generateBtn');
+    if (!btn) return;
     btn.disabled = droppedFiles.length === 0;
-    btn.textContent = droppedFiles.length === 2
-      ? '\uD83D\uDD0D Generate Comparison Report'
-      : droppedFiles.length === 1
-        ? '\uD83D\uDCCB Generate Report'
-        : 'Generate Report';
+    if (droppedFiles.length === 2) {
+      btn.textContent = 'Generate Report';
+    } else if (droppedFiles.length === 1) {
+      btn.textContent = 'Generate Report';
+    } else {
+      btn.textContent = 'Generate Report';
+    }
   }
 
-  // --   Generate report  
+  // -- Generate report --
   async function generateReport() {
     if (droppedFiles.length === 0) return;
-    showLoading(true);
-    clearResults();
+    clearError();
+
+    // Find roof report and loss sheet from dropped files
+    var roofFile = null;
+    var lossFile = null;
+    var chips = document.querySelectorAll('.lc-chip');
+    chips.forEach(function(chip, i) {
+      if (chip.dataset.type === 'loss') {
+        lossFile = droppedFiles[i];
+      } else {
+        roofFile = droppedFiles[i];
+      }
+    });
+
+    // If only one file, treat it as roof report
+    if (droppedFiles.length === 1) {
+      roofFile = droppedFiles[0];
+    }
 
     try {
-      const formData = new FormData();
-      droppedFiles.forEach((file, i) => formData.append('pdf' + i, file));
+      // Step 1: Always send roof report to /upload to populate Materials and Labor tabs
+      if (roofFile) {
+        var locationEl = document.getElementById('locationSelect');
+        var location = locationEl ? locationEl.value : 'charleston';
+        var uploadForm = new FormData();
+        uploadForm.append('pdf', roofFile);
+        uploadForm.append('location', location);
+        uploadForm.append('pricing', JSON.stringify(window.customPricing || {}));
 
-      const resp = await fetch('/api/loss-compare', { method: 'POST', body: formData });
-      if (!resp.ok) throw new Error('Server error: ' + resp.status);
+        var uploadResp = await fetch('/upload', {
+          method: 'POST',
+          body: uploadForm
+        });
 
-      const data = await resp.json();
-      if (!data.success) throw new Error(data.error || 'Processing failed');
+        var uploadData = await uploadResp.json();
+        if (uploadData.success && typeof displayResults === 'function') {
+          displayResults(uploadData);
+        }
+      }
 
-      renderResults(data);
+      // Step 2: If loss sheet present, extract and inject loss-only items
+      if (lossFile) {
+        var lossForm = new FormData();
+        lossForm.append('pdf0', roofFile || lossFile);
+        if (roofFile) lossForm.append('pdf1', lossFile);
+
+        var lossResp = await fetch('/api/loss-compare', {
+          method: 'POST',
+          body: lossForm
+        });
+
+        if (lossResp.ok) {
+          var lossData = await lossResp.json();
+          if (lossData.success && lossData.lossItems && lossData.lossItems.length > 0) {
+            injectLossItems(lossData.lossItems);
+          }
+        }
+      }
     } catch (err) {
-      showError(err.message);
-    } finally {
-      showLoading(false);
+      showError('Error: ' + err.message);
     }
   }
 
-  // --   Render results  
-  function renderResults(data) {
-    const container = document.getElementById('lc-results');
-    container.style.display = 'block';
-
-    // Header info bar
-    let headerHtml = '<div class="lc-info-bar">';
-    if (data.roofReport) {
-      headerHtml += '<div class="lc-info-pill lc-pill-roof">\uD83D\uDCCF Roof Report: ' + (data.roofReport.provider || 'Detected') + '</div>';
+  // -- Inject loss-only items into materials tab --
+  function injectLossItems(items) {
+    // Find the materials table body
+    var tbody = document.querySelector('#materialsTable tbody');
+    if (!tbody) {
+      // Try alternate selector
+      tbody = document.querySelector('.materials-table tbody');
     }
-    if (data.lossSheet) {
-      headerHtml += '<div class="lc-info-pill lc-pill-loss">\uD83D\uDCC4 Loss Sheet: ' + (data.lossSheet.carrier || 'Detected') + (data.lossSheet.insured ? ' \u2014 ' + data.lossSheet.insured : '') + '</div>';
-    }
-    headerHtml += '</div>';
+    if (!tbody) return;
 
-    // Comparison table
-    let compHtml = '';
-    if (data.comparison && data.comparison.length > 0) {
-      const flagged = data.comparison.filter(r => r.status === 'flagged');
-      compHtml =
-        '<div class="lc-section">' +
-          '<div class="lc-section-header lc-header-compare">' +
-            '<div>' +
-              '<h3>\u2696\uFE0F Quantity Comparison</h3>' +
-              '<p>Roof report measurements vs. insurance estimate</p>' +
-            '</div>' +
-            '<div class="lc-flag-count">' + flagged.length + ' item' + (flagged.length !== 1 ? 's' : '') + ' flagged</div>' +
-          '</div>' +
-          '<div class="lc-section-body">' +
-            '<table class="lc-table">' +
-              '<thead><tr>' +
-                '<th>Line Item</th><th>Roof Report</th><th>Loss Sheet</th><th>Difference</th><th>Status</th>' +
-              '</tr></thead>' +
-              '<tbody>' +
-                data.comparison.map(row =>
-                  '<tr class="' + (row.status === 'flagged' ? 'lc-row-flagged' : 'lc-row-ok') + '">' +
-                    '<td>' + row.item + '</td>' +
-                    '<td>' + row.roofValue + '</td>' +
-                    '<td>' + row.lossValue + '</td>' +
-                    '<td>' + row.difference + '</td>' +
-                    '<td><span class="lc-status-badge lc-status-' + row.status + '">' + (row.status === 'flagged' ? '\u26A0\uFE0F Flagged' : '\u2713 Match') + '</span></td>' +
-                  '</tr>'
-                ).join('') +
-              '</tbody>' +
-            '</table>' +
-          '</div>' +
-        '</div>';
-    }
+    items.forEach(function(item) {
+      var tr = document.createElement('tr');
+      tr.className = 'loss-injected-row';
+      tr.innerHTML = '<td>' + item.description +
+        ' <span class="from-loss-badge">From Loss</span></td>' +
+        '<td>' + item.quantity + '</td>' +
+        '<td>' + item.unit + '</td>' +
+        '<td><input type="text" class="loss-color-input" placeholder="Color..." style="width:120px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:13px;" data-item="' + item.description + '" /></td>' +
+        '<td></td>';
+      tbody.appendChild(tr);
+    });
 
-    // Roof report measurements
-    let roofHtml = '';
-    if (data.roofReport && data.roofReport.measurements) {
-      const m = data.roofReport.measurements;
-      roofHtml =
-        '<div class="lc-section">' +
-          '<div class="lc-section-header lc-header-roof">' +
-            '<div>' +
-              '<h3>\uD83D\uDCCF Roof Report Measurements</h3>' +
-              '<p>' + (data.roofReport.address || '') + '</p>' +
-            '</div>' +
-          '</div>' +
-          '<div class="lc-section-body">' +
-            '<div class="lc-measurements-grid">' +
-              measurementCard('Roof Squares', m.roofSquares, 'SQ') +
-              measurementCard('Roof Area', m.roofArea, 'ft\u00B2') +
-              measurementCard('Ridge Length', m.ridgeLength, 'LF') +
-              measurementCard('Hip Length', m.hipLength, 'LF') +
-              measurementCard('Valley Length', m.valleyLength, 'LF') +
-              measurementCard('Eave Edge', m.eaveEdge, 'LF') +
-              measurementCard('Rake Edge', m.rakeEdge, 'LF') +
-              measurementCard('Step Flashing', m.stepFlashing, 'LF') +
-              measurementCard('Wall Flashing', m.wallFlashing, 'LF') +
-            '</div>' +
-          '</div>' +
-        '</div>';
+    // Add badge style if not already present
+    if (!document.getElementById('loss-inject-styles')) {
+      var style = document.createElement('style');
+      style.id = 'loss-inject-styles';
+      style.textContent = '.from-loss-badge{display:inline-block;padding:1px 6px;background:#fef3c7;color:#92400e;border-radius:10px;font-size:10px;font-weight:700;margin-left:6px;}' +
+        '.loss-injected-row{background:#fffbeb;}' +
+        '.loss-color-input{outline:none;}' +
+        '.loss-color-input:focus{border-color:#2B5BA3;}';
+      document.head.appendChild(style);
     }
-
-    // Loss sheet line items
-    let lossHtml = '';
-    if (data.lossSheet && data.lossSheet.lineItems && data.lossSheet.lineItems.length > 0) {
-      lossHtml =
-        '<div class="lc-section">' +
-          '<div class="lc-section-header lc-header-loss">' +
-            '<div>' +
-              '<h3>\uD83D\uDCC4 Loss Sheet Line Items</h3>' +
-              '<p>' + (data.lossSheet.carrier || '') + (data.lossSheet.rcv ? ' \u2014 RCV: ' + data.lossSheet.rcv : '') + '</p>' +
-            '</div>' +
-          '</div>' +
-          '<div class="lc-section-body">' +
-            '<table class="lc-table">' +
-              '<thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>RCV</th></tr></thead>' +
-              '<tbody>' +
-                data.lossSheet.lineItems.map(item =>
-                  '<tr>' +
-                    '<td>' + item.description + '</td>' +
-                    '<td>' + item.quantity + '</td>' +
-                    '<td>' + item.unit + '</td>' +
-                    '<td>' + (item.rcv ? '$' + item.rcv.toFixed(2) : '\u2014') + '</td>' +
-                  '</tr>'
-                ).join('') +
-              '</tbody>' +
-            '</table>' +
-          '</div>' +
-        '</div>';
-    }
-
-    // Supplement items
-    let suppHtml = '';
-    if (data.supplementItems && data.supplementItems.length > 0) {
-      suppHtml =
-        '<div class="lc-section">' +
-          '<div class="lc-section-header lc-header-supp">' +
-            '<div>' +
-              '<h3>\uD83D\uDD27 Items to Order (Loss Sheet Only)</h3>' +
-              '<p>These items appear on the loss sheet but are not measured by the roof report \u2014 verify quantities on site</p>' +
-            '</div>' +
-          '</div>' +
-          '<div class="lc-section-body">' +
-            '<table class="lc-table">' +
-              '<thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Note</th></tr></thead>' +
-              '<tbody>' +
-                data.supplementItems.map(item =>
-                  '<tr>' +
-                    '<td>' + item.description + '</td>' +
-                    '<td>' + item.quantity + '</td>' +
-                    '<td>' + item.unit + '</td>' +
-                    '<td style="color:#92400e; font-size:12px;">' + (item.note || 'Field verify') + '</td>' +
-                  '</tr>'
-                ).join('') +
-              '</tbody>' +
-            '</table>' +
-          '</div>' +
-        '</div>';
-    }
-
-    container.innerHTML = headerHtml + compHtml + roofHtml + lossHtml + suppHtml;
-    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function measurementCard(label, value, unit) {
-    if (!value && value !== 0) return '';
-    return '<div class="lc-meas-card">' +
-      '<div class="lc-meas-label">' + label + '</div>' +
-      '<div class="lc-meas-value">' + value + ' <span class="lc-meas-unit">' + unit + '</span></div>' +
-      '</div>';
-  }
-
-  // --   Utility  
-  function showLoading(show) {
-    const loadingEl = document.getElementById('lc-loading');
-    if (loadingEl) loadingEl.style.display = show ? 'flex' : 'none';
-  }
-
+  // -- Utility --
   function showError(msg) {
-    const el = document.getElementById('lc-error');
-    el.textContent = '\u26A0\uFE0F ' + msg;
-    el.style.display = 'block';
+    var el = document.getElementById('lc-error');
+    if (el) {
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
   }
 
-  function clearResults() {
-    const r = document.getElementById('lc-results');
-    if (r) { r.innerHTML = ''; r.style.display = 'none'; }
-    const e = document.getElementById('lc-error');
-    if (e) { e.style.display = 'none'; e.textContent = ''; }
+  function clearError() {
+    var el = document.getElementById('lc-error');
+    if (el) {
+      el.style.display = 'none';
+      el.textContent = '';
+    }
   }
 
-  return { init, removeFile, handleFiles };
+  // -- Public API --
+  return {
+    init: init,
+    removeFile: removeFile,
+    handleFiles: handleFiles
+  };
 })();
 
 document.addEventListener('DOMContentLoaded', LossCompare.init);
-
