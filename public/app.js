@@ -1165,11 +1165,14 @@ function pluralizeUnit(unit, quantity) {
   return pluralMap[unit] || unit + 's';
 }
 
-// ----------------------------------------//FORM VALIDATION
+// ----------------------------------------
+//FORM VALIDATION
 
 
-// ----------------------------------------//DEFAULT SYSTEM FUNCTIONS
-// ----------------------------------------const DEFAULT_SYSTEM_KEY = 'quikbitz-default-system';
+// ----------------------------------------
+//DEFAULT SYSTEM FUNCTIONS
+// ----------------------------------------
+const DEFAULT_SYSTEM_KEY = 'quikbitz-default-system';
 
 function getDefaultSystem() {
   try {
@@ -1499,8 +1502,10 @@ function deleteLaborItem(rowIndex) {
   console.log('[LABOR] Deleted item at index', rowIndex);
 }
 
-// ----------------------------------------//PRICING TAB FUNCTIONS
-// ----------------------------------------function initPricingTab() {
+// ----------------------------------------
+//PRICING TAB FUNCTIONS
+// ----------------------------------------
+function initPricingTab() {
   console.log('[PRICING] initPricingTab called');
   console.log('[PRICING] getManufacturers exists:', typeof getManufacturers);
   populatePricingManufacturerDropdown();
@@ -1540,8 +1545,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 500);
 });
 
-// ----------------------------------------//PRICING TAB CHANGE HANDLERS
-// ----------------------------------------function handlePricingManufacturerChange() {
+// ----------------------------------------
+//PRICING TAB CHANGE HANDLERS
+// ----------------------------------------
+function handlePricingManufacturerChange() {
   const manufacturerSelect = document.getElementById('pricingManufacturerSelect');
   const shingleLineSelect = document.getElementById('pricingShingleLineSelect');
   const editorContainer = document.getElementById('pricingEditorContainer');
@@ -1756,8 +1763,10 @@ function resetToDefaultPricing() {
   console.log('[PRICING] Reset to defaults');
 }
 
-// ----------------------------------------//MATERIALS MANUFACTURER SELECTOR FUNCTIONS
-// ----------------------------------------function showMaterialsManufacturerSelector() {
+// ----------------------------------------
+//MATERIALS MANUFACTURER SELECTOR FUNCTIONS
+// ----------------------------------------
+function showMaterialsManufacturerSelector() {
   const selector = document.getElementById('materialsManufacturerSelector');
   if (selector) {
     selector.style.display = 'block';
@@ -1998,8 +2007,10 @@ function populateMaterialTemplateSelector() {
 //Placeholder - no action needed for now
 }
 
-// ----------------------------------------//ADD MATERIAL MODAL FUNCTIONS
-// ----------------------------------------function openAddMaterialModal() {
+// ----------------------------------------
+//ADD MATERIAL MODAL FUNCTIONS
+// ----------------------------------------
+function openAddMaterialModal() {
   const modal = document.getElementById('addMaterialModal');
   if (modal) {
     modal.style.display = 'flex';
@@ -2115,8 +2126,10 @@ function addMaterialFromModal() {
   closeAddMaterialModal();
 }
 
-// ----------------------------------------//ADD LABOR MODAL FUNCTIONS
-// ----------------------------------------function openAddLaborModal() {
+// ----------------------------------------
+//ADD LABOR MODAL FUNCTIONS
+// ----------------------------------------
+function openAddLaborModal() {
   const modal = document.getElementById('addLaborModal');
   if (modal) {
     modal.style.display = 'flex';
@@ -2188,8 +2201,10 @@ function addLaborFromModal() {
   closeAddLaborModal();
 }
 
-// ----------------------------------------//PRINT/PDF FUNCTIONS - MATERIALS/LABOR
-// ----------------------------------------function printResults() {
+// ----------------------------------------
+//PRINT/PDF FUNCTIONS - MATERIALS/LABOR
+// ----------------------------------------
+function printResults() {
   const pdfDoc = buildMaterialsPDF();
   pdfMake.createPdf(pdfDoc).print();
 }
@@ -2592,7 +2607,9 @@ function buildLaborPDF() {
   };
 }
 
-// ----------------------------------------NOTES SAVE FUNCTIONS ====================
+// ==========================================
+// NOTES SAVE FUNCTIONS
+// ==========================================
 
 function saveMaterialsNotes() {
   const notes = document.getElementById('materialsDeliveryNotes')?.value || '';
