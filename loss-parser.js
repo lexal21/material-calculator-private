@@ -412,10 +412,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       });
     }
     
-    // Ice & water shield (calculated)
-    const starterPerimeter = lineItems.dripEdge?.quantity || actualPerimeter;
-    const iceWaterPerimeter = starterPerimeter / 2; // Eave estimate
-    const iceWaterRolls = Math.ceil((iceWaterPerimeter / 2) / 75);
+    // Ice & water shield - use correct formula: ceil(valleyLength / 63)
+    const valleyLength = result.measurements.valleyLength || 0;
+    const iceWaterRolls = valleyLength === 0 ? 0 : Math.ceil(valleyLength / 63);
     result.materials.push({
       name: MATERIALS.ice_water_shield.name,
       quantity: iceWaterRolls,
@@ -424,9 +423,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       total: iceWaterRolls * MATERIALS.ice_water_shield.price
     });
     
-    // Ridge vent
-    if (lineItems.ridgeVent) {
-      const pieces = Math.ceil(lineItems.ridgeVent.quantity / 4);
+    // Ridge vent - use correct formula: ceil((ridgeLength - (ridgeCount × 3)) / 4)
+    if (ridgeLength > 0) {
+      const ridgeCount = result.measurements.ridgeCount || Math.ceil(ridgeLength / 12);
+      const adjustedLength = ridgeLength - (ridgeCount * 3);
+      const pieces = Math.ceil(adjustedLength / 4);
       result.materials.push({
         name: MATERIALS.ridge_vent.name,
         quantity: pieces,
@@ -436,9 +437,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       });
     }
     
-    // Drip edge
+    // Drip edge - use correct formula: ceil(perimeter / 10) + 3
     if (lineItems.dripEdge) {
-      const pieces = Math.ceil(lineItems.dripEdge.quantity / 10);
+      const pieces = Math.ceil(lineItems.dripEdge.quantity / 10) + 3;
       result.materials.push({
         name: MATERIALS.drip_edge.name,
         quantity: pieces,
@@ -447,7 +448,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         total: pieces * MATERIALS.drip_edge.price
       });
     } else if (actualPerimeter > 0) {
-      const pieces = Math.ceil(actualPerimeter / 10);
+      const pieces = Math.ceil(actualPerimeter / 10) + 3;
       result.materials.push({
         name: MATERIALS.drip_edge.name,
         quantity: pieces,
