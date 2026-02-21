@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const cookieParser = require('cookie-parser');
 const parser = require('./pdf-parser');
+const lossParser = require('./loss-parser');
 const crypto = require('crypto');
 
 // HARDCODED USERS FOR VERCEL (stateless workaround)
@@ -65,6 +66,15 @@ const upload = multer({
   limits: {
     fileSize: 50 * 1024 * 1024 // 50MB limit (increased for new Ridge Top PDFs)
   }
+});
+
+const uploadMulti = multer({
+  dest: '/tmp/',
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') cb(null, true);
+    else cb(new Error('Only PDF files are allowed'));
+  },
+  limits: { fileSize: 50 * 1024 * 1024 }
 });
 
 // Authentication middleware
@@ -361,6 +371,33 @@ app.get('/api/diagnostic', requireAuth, (req, res) => {
 });
 
 // Upload and process endpoint (protected + tracked)
+app.post('/api/loss-compare', uploadMulti.fields([
+  { name: 'pdf0', maxCount: 1 },
+  { name: 'pdf1', maxCount: 1 }
+]), async (req, res) => {
+  console.log('[LOSS-COMPARE] Request from:', req.user.email);
+  const files = req.files;
+  const pdfPaths = [];
+  if (files.pdf0 && files.pdf0[0]) pdfPaths.push(files.pdf0[0].path);
+  if (files.pdf1 && files.pdf1[0]) pdfPaths.push(files.pdf1[0].path);
+
+  if (pdfPaths.length === 0) {
+    return res.status(400).json({ success: false, error: 'No PDF files uploaded' });
+  }
+
+  console.log('[LOSS-COMPARE] Processing', pdfPaths.length, 'file(s)');
+  try {
+    const result = await lossParser.processDocuments(pdfPaths);
+    console.log('[LOSS-COMPARE] SUCCESS');
+    res.json(result);
+  } catch (err) {
+    console.error('[LOSS-COMPARE] ERROR:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to process documents', message: err.message });
+  } finally {
+    pdfPaths.forEach(p => { try { if (fs.existsSync(p)) fs.unlinkSync(p); } catch (e) {} });
+  }
+});
+
 app.post('/upload', upload.single('pdf'), async (req, res) => {
   console.log('[UPLOAD] Request received from:', req.user.email);
   

@@ -85,6 +85,49 @@
       outline: none;
       border-color: #2B7BA3;
     }
+
+    /* ── Loss Compare ── */
+    .lc-dropzone { border: 2px dashed #cbd5e0; border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; background: #f8fafc; display: flex; flex-direction: column; align-items: center; }
+    .lc-dropzone:hover, .lc-dropzone.lc-dragover { border-color: #2B5BA3; background: #EEF4FF; }
+    .lc-upload-text { margin: 0 0 4px 0; font-size: 16px; font-weight: 600; color: #334155; }
+    .lc-upload-subtext { margin: 0; font-size: 13px; color: #94a3b8; }
+    .lc-chip { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f1f5f9; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; max-width: 360px; }
+    .lc-chip-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #334155; font-weight: 500; }
+    .lc-chip-badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .lc-detecting { background: #e2e8f0; color: #64748b; }
+    .lc-badge-loss { background: #fef3c7; color: #92400e; }
+    .lc-badge-roof { background: #d1fae5; color: #065f46; }
+    .lc-badge-unknown { background: #fee2e2; color: #991b1b; }
+    .lc-chip-remove { background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 14px; padding: 0 4px; }
+    .lc-chip-remove:hover { color: #ef4444; }
+    .lc-info-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    .lc-info-pill { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+    .lc-pill-roof { background: #d1fae5; color: #065f46; }
+    .lc-pill-loss { background: #fef3c7; color: #92400e; }
+    .lc-section { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden; }
+    .lc-section-header { color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .lc-section-header h3 { margin: 0; font-size: 18px; font-weight: 600; }
+    .lc-section-header p { margin: 4px 0 0 0; font-size: 13px; opacity: 0.9; }
+    .lc-header-compare { background: linear-gradient(135deg, #1F3864, #2B5BA3); }
+    .lc-header-roof { background: linear-gradient(135deg, #065f46, #059669); }
+    .lc-header-loss { background: linear-gradient(135deg, #92400e, #d97706); }
+    .lc-header-supp { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+    .lc-flag-count { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+    .lc-section-body { padding: 20px; }
+    .lc-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .lc-table th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+    .lc-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+    .lc-row-flagged td { background: #fffbeb; }
+    .lc-row-ok td { background: white; }
+    .lc-status-badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .lc-status-flagged { background: #fef3c7; color: #92400e; }
+    .lc-status-ok { background: #d1fae5; color: #065f46; }
+    .lc-measurements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .lc-meas-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; }
+    .lc-meas-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; }
+    .lc-meas-value { font-size: 20px; font-weight: 700; color: #1e293b; }
+    .lc-meas-unit { font-size: 13px; font-weight: 400; color: #64748b; }
+    #lc-generateBtn:not([disabled]) { opacity: 1 !important; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -99,6 +142,7 @@
       <button class="tab-btn active" onclick="switchTab('home')">Home</button>
       <button class="tab-btn" onclick="switchTab('calculator')">Materials</button>
       <button class="tab-btn" onclick="switchTab('labor')">Labor</button>
+      <button class="tab-btn" onclick="switchTab('lossCompare')">Loss Compare</button>
       <button class="tab-btn" onclick="switchTab('pricing')">Pricing</button>
     </div>
 
@@ -438,6 +482,41 @@
             <button class="btn-primary" onclick="saveLaborPDF()">Save as PDF</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div id="lossCompareTab" class="tab-content">
+      <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+        <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 20px 0; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #1F3864, #2B5BA3); color: white; padding: 16px 20px;">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600;">&#9878;&#65039; Insurance Loss vs. Roof Report</h3>
+            <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Drop up to 2 PDFs &mdash; app auto-detects which is which by carrier name &amp; content</p>
+          </div>
+          <div style="padding: 24px;">
+            <div id="lc-dropzone" class="lc-dropzone">
+              <input type="file" id="lc-fileInput" accept=".pdf" multiple style="display:none;">
+              <svg style="width:48px;height:48px;color:#94a3b8;margin-bottom:12px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <p class="lc-upload-text">Drop your PDFs here</p>
+              <p class="lc-upload-subtext">Roof report + loss sheet &nbsp;&middot;&nbsp; or either one alone &nbsp;&middot;&nbsp; up to 2 files</p>
+              <button id="lc-selectBtn" class="btn-secondary" style="margin-top: 8px;">Select PDFs</button>
+            </div>
+            <div id="lc-fileChips" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;"></div>
+            <div style="margin-top: 20px; display:flex; gap: 12px; align-items: center;">
+              <button id="lc-generateBtn" disabled style="padding: 12px 28px; background: #1F3864; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; opacity: 0.5; transition: all 0.2s;">
+                Generate Report
+              </button>
+              <span style="font-size:13px; color:#94a3b8;">Works with 1 or 2 files</span>
+            </div>
+            <div id="lc-loading" style="display:none; align-items:center; gap:12px; margin-top:20px;">
+              <div class="spinner"></div>
+              <span style="color:#64748b;">Processing PDFs...</span>
+            </div>
+            <div id="lc-error" style="display:none; margin-top:16px; padding:12px 16px; background:#fee2e2; border-radius:8px; color:#991b1b; font-size:14px;"></div>
+          </div>
+        </div>
+        <div id="lc-results" style="display:none;"></div>
       </div>
     </div>
 
@@ -782,6 +861,7 @@
   <script src="retail-estimate.js"></script>
   <script src="navigation.js"></script>
   <script src="project-manager.js"></script>
+  <script src="loss-compare.js"></script>
   <!-- Add Material Item Modal -->
   <div id="addMaterialModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
     <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
