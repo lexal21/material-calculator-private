@@ -210,7 +210,8 @@ const LossCompare = (() => {
         
         var lossResp = await fetch('/api/parse-loss', {
           method: 'POST',
-          body: lossForm
+          body: lossForm,
+          credentials: 'same-origin'
         });
         
         var lossData = await lossResp.json();
@@ -254,7 +255,8 @@ const LossCompare = (() => {
 
         var uploadResp = await fetch('/upload', {
           method: 'POST',
-          body: uploadForm
+          body: uploadForm,
+          credentials: 'same-origin'
         });
 
         uploadData = await uploadResp.json();
@@ -268,7 +270,8 @@ const LossCompare = (() => {
 
         var lossResp2 = await fetch('/api/loss-compare', {
           method: 'POST',
-          body: lossForm2
+          body: lossForm2,
+          credentials: 'same-origin'
         });
 
         if (lossResp2.ok) {
@@ -325,7 +328,8 @@ const LossCompare = (() => {
       
       var resp = await fetch('/api/parse-loss', {
         method: 'POST',
-        body: form
+        body: form,
+        credentials: 'same-origin'
       });
       
       var data = await resp.json();
