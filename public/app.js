@@ -510,6 +510,7 @@ function displayResults(data) {
           step="0.01"
           data-row="${index}"
           data-field="quantity"
+          oninput="updateMaterialRow(${index})"
           onchange="updateMaterialRow(${index})"
           aria-label="Quantity for ${item.name}"
         />
