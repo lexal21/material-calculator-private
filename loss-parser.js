@@ -177,5 +177,22 @@ async function isLossSheet(pdfPath) {
 
 module.exports = {
   parseLossSheet,
-  isLossSheet
+  isLossSheet,
+  processDocuments: async function(pdfPaths) {
+    const results = { success: true, lossItems: [] };
+    
+    for (const p of pdfPaths) {
+      const isLoss = await isLossSheet(p);
+      if (isLoss) {
+        const parsed = await parseLossSheet(p);
+        if (parsed.success) {
+          results.lossItems = parsed.lossItems || [];
+        }
+      } else {
+        results.roofReport = { detected: true };
+      }
+    }
+    
+    return results;
+  }
 };
