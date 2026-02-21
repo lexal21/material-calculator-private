@@ -70,6 +70,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     let mainRoofSquares = 0;
     let shedSquares = 0;
     let ridgeLength = 0;
+    let hipLength = 0;
     let perimeterLength = 0;
     let dripEdgeEaveRake = 0;
     
@@ -124,8 +125,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
                          line.match(/total\s*hip\s*length\s*(\d+\.?\d*)/i) ||
                          lines[i + 1]?.match(/(\d+\.?\d*)/);
         if (hipMatch) {
-          const hipLength = parseFloat(hipMatch[1]);
-          result.measurements.hipLength = hipLength;
+          hipLength = parseFloat(hipMatch[1]);
           console.log('[LOSS-PARSER] Found hip length:', hipLength);
         }
       }
@@ -167,7 +167,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       eaveLength: eaveLength,
       rakeLength: rakeLength,
       valleyLength: 0,
-      hipLength: 0,
+      hipLength: hipLength,
       ridgeCount: Math.ceil(ridgeLength / 12)
     };
     
@@ -406,10 +406,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     });
     
     // Hip & Ridge - use calculateHipRidgeCap from calculator.js
-    const hipLength = result.measurements.hipLength || 0;
+    // Use hipLength from measurements (already extracted above)
     if (lineItems.hipRidge || ridgeLength > 0) {
-      console.log('[LOSS-PARSER] Hip & Ridge calculation - hipLength:', hipLength, 'ridgeLength:', ridgeLength);
-      const hipRidgeBundles = calculateHipRidgeCap(hipLength, ridgeLength);
+      console.log('[LOSS-PARSER] Hip & Ridge calculation - hipLength:', result.measurements.hipLength, 'ridgeLength:', ridgeLength);
+      const hipRidgeBundles = calculateHipRidgeCap(result.measurements.hipLength, ridgeLength);
       console.log('[LOSS-PARSER] Hip & Ridge bundles result:', hipRidgeBundles);
       result.materials.push({
         name: MATERIALS.hip_ridge_cap.name,

@@ -998,6 +998,15 @@ function updateMaterialRow(rowIndex) {
     row.classList.remove('zero-quantity');
   }
   
+  // Remove missing-data highlight and label when user edits quantity
+  if (row.classList.contains('missing-data-row')) {
+    row.classList.remove('missing-data-row');
+    const missingLabel = quantityCell?.querySelector('.missing-data-label');
+    if (missingLabel) {
+      missingLabel.remove();
+    }
+  }
+  
 //Update stored data
   if (window.materialsData && window.materialsData[rowIndex]) {
     window.materialsData[rowIndex].quantity = parseFloat(quantity.toFixed(2));
