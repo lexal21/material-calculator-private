@@ -200,7 +200,42 @@ const LossCompare = (() => {
       }
     });
 
-    // If only one file, treat it as roof report
+    // SPECIAL CASE: Single loss sheet (no roof report)
+    if (droppedFiles.length === 1 && droppedFiles[0] === lossFile) {
+      console.log('[LOSS-COMPARE] Standalone loss sheet detected');
+      try {
+        var lossForm = new FormData();
+        lossForm.append('pdf', lossFile);
+        lossForm.append('shed_included', window.shedIncluded !== false ? 'true' : 'false');
+        
+        var lossResp = await fetch('/api/parse-loss', {
+          method: 'POST',
+          body: lossForm
+        });
+        
+        var lossData = await lossResp.json();
+        
+        if (lossData.success && typeof displayResults === 'function') {
+          // Store for shed toggle
+          window.currentLossData = lossData;
+          window.currentLossFile = lossFile;
+          
+          // Show shed toggle if shed squares present
+          if (lossData.shed_squares > 0) {
+            showShedToggle(lossData.shed_included, lossData.shed_squares);
+          }
+          
+          displayResults(lossData);
+        } else {
+          showError('Failed to parse loss sheet: ' + (lossData.message || 'Unknown error'));
+        }
+      } catch (err) {
+        showError('Error: ' + err.message);
+      }
+      return;
+    }
+
+    // NORMAL CASE: Roof report or roof + loss
     if (droppedFiles.length === 1) {
       roofFile = droppedFiles[0];
     }
@@ -227,19 +262,19 @@ const LossCompare = (() => {
 
       // Step 2: If loss sheet present, extract and merge loss-only items
       if (lossFile && uploadData) {
-        var lossForm = new FormData();
-        lossForm.append('pdf0', roofFile || lossFile);
-        if (roofFile) lossForm.append('pdf1', lossFile);
+        var lossForm2 = new FormData();
+        lossForm2.append('pdf0', roofFile || lossFile);
+        if (roofFile) lossForm2.append('pdf1', lossFile);
 
-        var lossResp = await fetch('/api/loss-compare', {
+        var lossResp2 = await fetch('/api/loss-compare', {
           method: 'POST',
-          body: lossForm
+          body: lossForm2
         });
 
-        if (lossResp.ok) {
-          var lossData = await lossResp.json();
-          if (lossData.success && lossData.lossItems && lossData.lossItems.length > 0) {
-            uploadData.lossItems = lossData.lossItems;
+        if (lossResp2.ok) {
+          var lossData2 = await lossResp2.json();
+          if (lossData2.success && lossData2.lossItems && lossData2.lossItems.length > 0) {
+            uploadData.lossItems = lossData2.lossItems;
           }
         }
       }
@@ -250,6 +285,65 @@ const LossCompare = (() => {
       }
     } catch (err) {
       showError('Error: ' + err.message);
+    }
+  }
+  
+  // -- Show shed toggle banner --
+  function showShedToggle(included, shedSquares) {
+    var existingBanner = document.getElementById('lc-shed-banner');
+    if (existingBanner) existingBanner.remove();
+    
+    var materialsTable = document.getElementById('materialsTable');
+    if (!materialsTable) return;
+    
+    var banner = document.createElement('div');
+    banner.id = 'lc-shed-banner';
+    banner.style.cssText = 'background:#fef3c7;border:1px solid #fbbf24;color:#78350f;padding:12px 16px;border-radius:8px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;';
+    banner.innerHTML = '<div><strong>Parsed from Insurance Loss Sheet</strong> &mdash; Shed: ' + shedSquares.toFixed(2) + ' SQ</div>' +
+      '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">' +
+      '<input type="checkbox" id="lc-shed-toggle" ' + (included ? 'checked' : '') + ' style="width:18px;height:18px;cursor:pointer;">' +
+      '<span>Include shed in calculations</span>' +
+      '</label>';
+    
+    materialsTable.parentNode.insertBefore(banner, materialsTable);
+    
+    document.getElementById('lc-shed-toggle').addEventListener('change', function(e) {
+      toggleShed(e.target.checked);
+    });
+  }
+  
+  // -- Toggle shed recalculation --
+  async function toggleShed(include) {
+    if (!window.currentLossFile) return;
+    
+    window.shedIncluded = include;
+    
+    try {
+      var form = new FormData();
+      form.append('pdf', window.currentLossFile);
+      form.append('shed_included', include ? 'true' : 'false');
+      
+      var resp = await fetch('/api/parse-loss', {
+        method: 'POST',
+        body: form
+      });
+      
+      var data = await resp.json();
+      
+      if (data.success && typeof displayResults === 'function') {
+        window.currentLossData = data;
+        displayResults(data);
+        
+        // Update banner
+        var banner = document.getElementById('lc-shed-banner');
+        if (banner) {
+          var checkbox = document.getElementById('lc-shed-toggle');
+          if (checkbox) checkbox.checked = include;
+        }
+      }
+    } catch (err) {
+      console.error('[LOSS-COMPARE] Toggle shed error:', err);
+      showError('Failed to recalculate: ' + err.message);
     }
   }
 

@@ -370,6 +370,45 @@ app.get('/api/diagnostic', requireAuth, (req, res) => {
   res.json(diagnostics);
 });
 
+// Parse complete loss sheet (standalone)
+app.post('/api/parse-loss', upload.single('pdf'), async (req, res) => {
+  console.log('[PARSE-LOSS] Request from:', req.user.email);
+  
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+  
+  const shedIncluded = req.body.shed_included !== 'false';
+  
+  console.log('[PARSE-LOSS] Parsing loss sheet, shed_included:', shedIncluded);
+  
+  try {
+    const result = await lossParser.parseCompleteLossSheet(req.file.path, { shed_included: shedIncluded });
+    
+    // Clean up temp file
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    if (result.success) {
+      console.log('[PARSE-LOSS] SUCCESS');
+      res.json(result);
+    } else {
+      console.error('[PARSE-LOSS] Parse failed:', result.message);
+      res.status(500).json({ success: false, message: result.message || 'Failed to parse loss sheet' });
+    }
+  } catch (err) {
+    console.error('[PARSE-LOSS] ERROR:', err);
+    
+    // Clean up on error
+    try {
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    } catch (e) {}
+    
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Upload and process endpoint (protected + tracked)
 app.post('/api/loss-compare', uploadMulti.fields([
   { name: 'pdf0', maxCount: 1 },
