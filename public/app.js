@@ -1,4 +1,4 @@
-// Version: 2026-02-07-00:53 - Labor debug logging
+//Version: 2026-02-07-00:53 - Labor debug logging
 console.log('[APP.JS] Loaded version: 2026-02-07-00:53');
 
 const fileInput = document.getElementById('fileInput'); // Legacy - may not exist if using lc-dropzone
@@ -7,7 +7,7 @@ const loading = document.getElementById('loading');
 const results = document.getElementById('results');
 const error = document.getElementById('error');
 
-// Helper functions
+//Helper functions
 function validateQuantity(value) {
   const num = parseFloat(value);
   return !isNaN(num) && num >= 0;
@@ -37,9 +37,9 @@ function removeErrorMessage(element) {
   }
 }
 
-// Get current pricing based on default system
+//Get current pricing based on default system
 function getCurrentPricing() {
-  // Try to get custom pricing from localStorage based on default system
+//Try to get custom pricing from localStorage based on default system
   try {
     const defaultSystemStr = localStorage.getItem('quikbitz-default-system');
     if (defaultSystemStr) {
@@ -59,20 +59,20 @@ function getCurrentPricing() {
     console.error('[PRICING] Error loading custom pricing:', e);
   }
   
-  // Return empty object if no custom pricing found
+//Return empty object if no custom pricing found
   return {};
 }
 
-// Tab switching
+//Tab switching
 function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
   
-  // If called programmatically (no event), find and activate the button
+//If called programmatically (no event), find and activate the button
   if (typeof event !== 'undefined' && event && event.target) {
     event.target.classList.add('active');
   } else {
-    // Find button that triggers this tab
+//Find button that triggers this tab
     const buttons = document.querySelectorAll('.tab-btn');
     buttons.forEach(btn => {
       if (btn.getAttribute('onclick').includes(`'${tabName}'`)) {
@@ -83,7 +83,7 @@ function switchTab(tabName) {
   
   document.getElementById(tabName + 'Tab').classList.add('active');
   
-  // If switching to home tab, ensure upload section is visible
+//If switching to home tab, ensure upload section is visible
   if (tabName === 'home') {
     const uploadSection = document.querySelector('.upload-section');
     if (uploadSection) {
@@ -91,7 +91,7 @@ function switchTab(tabName) {
     }
   }
   
-  // Initialize pricing tab when switched to
+//Initialize pricing tab when switched to
   if (tabName === 'pricing') {
     if (typeof initPricingTab === 'function') {
       initPricingTab();
@@ -99,7 +99,7 @@ function switchTab(tabName) {
   }
 }
 
-// Load current user on page load
+//Load current user on page load
 async function loadCurrentUser() {
   try {
     const response = await fetch('/api/user');
@@ -118,7 +118,7 @@ async function loadCurrentUser() {
   }
 }
 
-// Logout function
+//Logout function
 async function logout() {
   try {
     await fetch('/api/logout', { method: 'POST' });
@@ -129,10 +129,10 @@ async function logout() {
   }
 }
 
-// Load user info on page load
+//Load user info on page load
 loadCurrentUser();
 
-// Legacy upload handlers (only if elements exist - otherwise using lc-dropzone)
+//Legacy upload handlers (only if elements exist - otherwise using lc-dropzone)
 if (fileInput) {
   fileInput.addEventListener('change', handleFileSelect);
 }
@@ -145,7 +145,7 @@ if (selectPDFBtn && fileInput) {
     fileInput.click();
   });
   
-  // Also add touch handler for iOS
+//Also add touch handler for iOS
   selectPDFBtn.addEventListener('touchend', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -153,17 +153,17 @@ if (selectPDFBtn && fileInput) {
   });
 }
 
-// Upload box handlers (only if element exists)
+//Upload box handlers (only if element exists)
 if (uploadBox && fileInput) {
-  // Upload box click handler (desktop)
+//Upload box click handler (desktop)
   uploadBox.addEventListener('click', (e) => {
-    // Only trigger if not clicking the button directly
+//Only trigger if not clicking the button directly
     if (e.target.id !== 'selectPDFBtn' && !e.target.closest('.btn-primary')) {
       fileInput.click();
     }
   });
 
-  // Drag and drop handlers
+//Drag and drop handlers
   uploadBox.addEventListener('dragover', (e) => {
     e.preventDefault();
     uploadBox.classList.add('dragover');
@@ -197,7 +197,7 @@ async function handleFile(file) {
   hideError();
   showLoading();
   
-  // Clear photos when uploading new PDF
+//Clear photos when uploading new PDF
   window.currentPhotos = { materials: [], labor: [] };
   if (typeof displayMaterialsPhotos === 'function') {
     displayMaterialsPhotos();
@@ -255,19 +255,19 @@ function hideError() {
   error.style.display = 'none';
 }
 
-// Build additional item options from ALL_MATERIALS + current pricing
+//Build additional item options from ALL_MATERIALS + current pricing
 function buildAdditionalItemOptions() {
   const options = [
     { name: 'Select Item...', price: 0 }
   ];
   
-  // Get current pricing
+//Get current pricing
   const currentPricing = window.getCurrentPricing ? window.getCurrentPricing() : {};
   
-  // Add ALL_MATERIALS items (includes Custom Item...)
+//Add ALL_MATERIALS items (includes Custom Item...)
   if (window.ALL_MATERIALS) {
     window.ALL_MATERIALS.forEach(item => {
-      // Update price from current pricing if available
+//Update price from current pricing if available
       const price = currentPricing[item.name] ? currentPricing[item.name].price : item.price;
       options.push({
         name: item.name,
@@ -276,7 +276,7 @@ function buildAdditionalItemOptions() {
     });
   }
   
-  // Add any custom items from pricing that aren't in ALL_MATERIALS
+//Add any custom items from pricing that aren't in ALL_MATERIALS
   Object.keys(currentPricing).forEach(itemName => {
     const existsInOptions = options.some(opt => opt.name === itemName);
     if (!existsInOptions) {
@@ -290,7 +290,7 @@ function buildAdditionalItemOptions() {
   return options;
 }
 
-// Create HTML for an additional item row
+//Create HTML for an additional item row
 function createAdditionalItemRow(rowNumber) {
   const additionalItemOptions = buildAdditionalItemOptions();
   const optionsHTML = additionalItemOptions.map(item => 
@@ -351,8 +351,8 @@ function createAdditionalItemRow(rowNumber) {
 function displayResults(data) {
   console.log('[DISPLAY] Full data received:', data);
   
-  // Only store ORIGINAL PDF measurements (when roof_sq exists)
-  // Don't overwrite if this is just a materials refresh
+//Only store ORIGINAL PDF measurements (when roof_sq exists)
+//Don't overwrite if this is just a materials refresh
   if (data.raw && data.raw.roof_sq) {
     window.originalPdfData = {
       raw: data.raw,
@@ -364,7 +364,7 @@ function displayResults(data) {
     window.lastServerResponse = data;
     console.log('[DISPLAY] Stored ORIGINAL PDF data:', data.raw.roof_sq, 'squares');
   } else {
-    // This is a refresh (e.g., after applying system), use stored original data
+//This is a refresh (e.g., after applying system), use stored original data
     if (window.originalPdfData) {
       data.raw = window.originalPdfData.raw;
       data.measurements = window.originalPdfData.measurements;
@@ -372,17 +372,17 @@ function displayResults(data) {
     }
   }
   
-  // Ensure raw exists
+//Ensure raw exists
   if (!data.raw) data.raw = {};
   
-  // Store data for restoration after print
+//Store data for restoration after print
   window.currentPDFData = data;
   
-  // Store customer name and job number for PDF
+//Store customer name and job number for PDF
   window.currentCustomerName = data.raw.customer_name || '';
   window.currentJobNumber = data.raw.order_number || '';
   
-  // Display measurements - Split into customer info and measurements
+//Display measurements - Split into customer info and measurements
   const measurementsDiv = document.getElementById('measurements');
   measurementsDiv.innerHTML = `
     <div class="customer-info">
@@ -473,17 +473,17 @@ function displayResults(data) {
     </div>
   `;
   
-  // Display materials with editable quantities and prices
+//Display materials with editable quantities and prices
   const tableBody = document.getElementById('materialsTable');
   
-  // Build dropdown options from all materials
+//Build dropdown options from all materials
   const materialOptions = (window.ALL_MATERIALS || []).map(mat => 
     `<option value="${mat.name}" data-unit="${mat.unit}" data-price="${mat.price}">${mat.name}</option>`
   ).join('');
   
   tableBody.innerHTML = data.materials.map((item, index) => {
     const pluralUnit = pluralizeUnit(item.unit, item.quantity);
-    // Format quantity: whole numbers if no decimal, otherwise 2 decimals
+//Format quantity: whole numbers if no decimal, otherwise 2 decimals
     const qtyDisplay = item.quantity % 1 === 0 ? item.quantity.toString() : item.quantity.toFixed(2);
     const qtyForPrint = item.quantity % 1 === 0 ? item.quantity.toString() : item.quantity.toFixed(2);
     
@@ -536,12 +536,12 @@ function displayResults(data) {
   `;
   }).join('');
   
-  // Additional items dropdown options - dynamically built from ALL_MATERIALS + current pricing
+//Additional items dropdown options - dynamically built from ALL_MATERIALS + current pricing
   const additionalItemOptions = buildAdditionalItemOptions();
   
   window.additionalItemOptions = additionalItemOptions;
   
-  // Add 3 additional items to the materials table - COMMENTED OUT (use + Add Item button instead)
+//Add 3 additional items to the materials table - COMMENTED OUT (use + Add Item button instead)
   /*
   for (let i = 1; i <= 3; i++) {
     const optionsHTML = additionalItemOptions.map(item => 
@@ -600,7 +600,7 @@ function displayResults(data) {
   }
   */
   
-  // Store original data for recalculation
+//Store original data for recalculation
   window.materialsData = data.materials;
   
   // ==========================================
@@ -609,8 +609,7 @@ function displayResults(data) {
   if (data.lossItems && data.lossItems.length > 0) {
     console.log('[LOSS] Appending', data.lossItems.length, 'loss sheet items to materials table');
     
-    // Append loss items to materials table
-    const tableBody = document.getElementById('materialsTable');
+    // Use tableBody already declared above
     const startIndex = data.materials.length; // Start numbering after regular materials
     
     data.lossItems.forEach((item, idx) => {
@@ -665,16 +664,16 @@ function displayResults(data) {
       tableBody.appendChild(row);
     });
     
-    // Store loss items globally
+//Store loss items globally
     window.lossItems = data.lossItems;
   }
   
-  // Store labor data
+//Store labor data
   if (data.labor) {
     window.laborData = data.labor;
     console.log('[LABOR] Stored labor data:', window.laborData);
     
-    // Display labor results
+//Display labor results
     if (typeof displayLaborResults === 'function') {
       displayLaborResults(data.labor);
     }
@@ -684,7 +683,7 @@ function displayResults(data) {
   window.miscTotals = new Array(3).fill(0);
   window.miscItemCount = 3; // Track number of misc items
   
-  // Add totals in separate section (won't repeat on print)
+//Add totals in separate section (won't repeat on print)
   const totalsTable = document.getElementById('totalsTable');
   totalsTable.innerHTML = `
     <tr class="subtotal-row">
@@ -725,13 +724,13 @@ function displayResults(data) {
   
   results.style.display = 'block';
   
-  // Show manufacturer selector
+//Show manufacturer selector
   showMaterialsManufacturerSelector();
   
-  // Switch to Materials (calculator) tab after processing
+//Switch to Materials (calculator) tab after processing
   switchTab('calculator');
   
-  // Show "Add More Items" button and material actions
+//Show "Add More Items" button and material actions
   const addMoreBtn = document.getElementById('addMoreItemsBtn');
   if (addMoreBtn) {
     addMoreBtn.style.display = 'inline-block';
@@ -741,15 +740,15 @@ function displayResults(data) {
     materialActions.style.display = 'block';
   }
   
-  // Initialize and show material template selector
+//Initialize and show material template selector
   populateMaterialTemplateSelector();
   
-  // Store measurements globally for labor tab
+//Store measurements globally for labor tab
   console.log('[DISPLAY] Storing measurements for labor tab...');
   window.currentMeasurements = data.measurements;
   window.currentRawMeasurements = data.raw;
   
-  // Populate labor tab
+//Populate labor tab
   console.log('[DISPLAY] About to call displayLaborResults with data:', data);
   try {
     displayLaborResults(data);
@@ -759,17 +758,17 @@ function displayResults(data) {
     console.error('[DISPLAY] Stack trace:', err.stack);
   }
   
-  // Initialize retail estimate
+//Initialize retail estimate
   if (typeof displayRetailEstimate === 'function') {
     displayRetailEstimate();
   }
   
-  // Ensure all zero-quantity rows have the class applied (for print preview)
+//Ensure all zero-quantity rows have the class applied (for print preview)
   setTimeout(() => {
     applyZeroQuantityClasses();
   }, 100);
   
-  // Show manufacturer selector
+//Show manufacturer selector
   if (typeof showMaterialsManufacturerSelector === 'function') {
     showMaterialsManufacturerSelector();
   }
@@ -781,11 +780,11 @@ function updateMiscItemSelect(miscNum) {
   const selectedOption = select.options[select.selectedIndex];
   const price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
   
-  // If "Custom Item..." is selected, convert to text input
+//If "Custom Item..." is selected, convert to text input
   if (select.value === 'Custom Item...') {
     const customName = prompt('Enter custom item name:');
     if (customName) {
-      // Replace select with text input
+//Replace select with text input
       const input = document.createElement('input');
       input.type = 'text';
       input.value = customName;
@@ -797,12 +796,12 @@ function updateMiscItemSelect(miscNum) {
     return;
   }
   
-  // Auto-populate price when item is selected
+//Auto-populate price when item is selected
   if (select.value !== 'Select Item...' && select.value !== 'Custom Item...') {
     priceInput.value = price.toFixed(2);
   }
   
-  // Update row
+//Update row
   updateMiscRow(miscNum);
 }
 
@@ -811,12 +810,12 @@ function deleteMaterialRow(rowIndex) {
     return;
   }
   
-  // Remove from data array
+//Remove from data array
   if (window.materialsData && window.materialsData[rowIndex]) {
     window.materialsData.splice(rowIndex, 1);
   }
   
-  // Re-render the materials table
+//Re-render the materials table
   if (typeof displayResults === 'function') {
     displayResults({
       materials: window.materialsData,
@@ -842,7 +841,7 @@ function toggleMaterialSelection(rowIndex) {
     }
   }
   
-  // Update delete button visibility
+//Update delete button visibility
   const anyChecked = document.querySelectorAll('.material-checkbox:checked').length > 0;
   const deleteBtn = document.getElementById('deleteSelectedMaterialsBtn');
   if (deleteBtn) {
@@ -886,19 +885,19 @@ function deleteMiscRow(miscNum) {
     return;
   }
   
-  // Save state for undo
+//Save state for undo
   saveUndoState();
   
-  // Remove from DOM
+//Remove from DOM
   const row = document.querySelector(`tr[data-misc="${miscNum}"]`);
   if (row) {
     row.remove();
   }
   
-  // Update stored data
+//Update stored data
   window.miscTotals[miscNum - 1] = 0;
   
-  // Recalculate totals
+//Recalculate totals
   recalculateTotals();
 }
 
@@ -909,7 +908,7 @@ function updateMiscRow(miscNum) {
   const qty = parseFloat(qtyInput.value) || 0;
   const price = parseFloat(priceInput.value) || 0;
   
-  // Validate if values are entered
+//Validate if values are entered
   let valid = true;
   if (qty > 0) {
     valid = validateQuantity(qtyInput, qty) && valid;
@@ -933,13 +932,13 @@ function updateMiscRow(miscNum) {
   
   window.miscTotals[miscNum - 1] = total;
   
-  // Update the visible total cell
+//Update the visible total cell
   const totalCell = document.getElementById(`miscTotal${miscNum}`);
   if (totalCell) {
     totalCell.textContent = '$' + total.toFixed(2);
   }
   
-  // Toggle zero-quantity class for print hiding
+//Toggle zero-quantity class for print hiding
   const row = document.querySelector(`tr[data-misc="${miscNum}"]`);
   if (row) {
     if (qty === 0) {
@@ -973,37 +972,37 @@ function updateMaterialRow(rowIndex) {
   const unitPrice = parseFloat(priceInput.value) || 0;
   const total = quantity * unitPrice;
   
-  // Update row total
+//Update row total
   totalCell.textContent = '$' + total.toFixed(2);
   
-  // Update unit with pluralization if unitCell exists
+//Update unit with pluralization if unitCell exists
   if (unitCell && typeof pluralizeUnit === 'function') {
     const baseUnit = row.getAttribute('data-unit') || window.materialsData[rowIndex]?.unit || 'Piece';
     unitCell.textContent = pluralizeUnit(baseUnit, quantity);
   }
   
-  // Update data-print-value for print rendering
+//Update data-print-value for print rendering
   const quantityCell = row.querySelector('td[data-label="Quantity"]');
   if (quantityCell) {
     const unit = unitCell?.textContent || window.materialsData[rowIndex]?.unit || '';
     quantityCell.setAttribute('data-print-value', `${quantity} ${unit}`);
   }
   
-  // Toggle zero-quantity class for print hiding
+//Toggle zero-quantity class for print hiding
   if (quantity === 0) {
     row.classList.add('zero-quantity');
   } else {
     row.classList.remove('zero-quantity');
   }
   
-  // Update stored data
+//Update stored data
   if (window.materialsData && window.materialsData[rowIndex]) {
     window.materialsData[rowIndex].quantity = parseFloat(quantity.toFixed(2));
     window.materialsData[rowIndex].unitPrice = unitPrice;
     window.materialsData[rowIndex].total = total;
   }
   
-  // Recalculate subtotal, tax, and grand total
+//Recalculate subtotal, tax, and grand total
   if (typeof recalculateTotals === 'function') {
     recalculateTotals();
   }
@@ -1021,7 +1020,7 @@ function updateMaterialsTotals() {
     subtotalEl.textContent = '$' + subtotal.toFixed(2);
   }
   
-  // Update grand total
+//Update grand total
   const taxRate = 0.09; // 9% tax
   const tax = subtotal * taxRate;
   const grandTotal = subtotal + tax;
@@ -1050,7 +1049,7 @@ function updateTaxRate(newRate) {
   const taxInput = document.getElementById('taxRateInput');
   const rate = parseFloat(newRate);
   
-  // Validate tax rate
+//Validate tax rate
   if (!validateTaxRate(taxInput, rate)) {
     return;
   }
@@ -1072,7 +1071,7 @@ function addMoreAdditionalItems() {
   const currentCount = window.miscItemCount || 10;
   const newCount = currentCount + 3; // Add 3 more items at a time
   
-  // Rebuild options to get latest pricing
+//Rebuild options to get latest pricing
   const additionalItemOptions = buildAdditionalItemOptions();
   const optionsHTML = additionalItemOptions.map(item => 
     `<option value="${item.name}" data-price="${item.price}">${item.name}</option>`
@@ -1136,22 +1135,22 @@ function addMoreAdditionalItems() {
   window.miscItemCount = newCount;
 }
 
-// Pluralize unit names based on quantity
+//Pluralize unit names based on quantity
 function pluralizeUnit(unit, quantity) {
   if (!unit) return '';
   const qty = parseFloat(quantity) || 0;
   
-  // Don't pluralize abbreviations
+//Don't pluralize abbreviations
   if (['SQ', 'EA', 'LF', 'BD'].includes(unit.toUpperCase())) {
     return unit;
   }
   
-  // Pluralize if quantity is not 1
+//Pluralize if quantity is not 1
   if (qty === 1) {
     return unit;
   }
   
-  // Handle special cases
+//Handle special cases
   const pluralMap = {
     'Bundle': 'Bundles',
     'Piece': 'Pieces',
@@ -1166,15 +1165,11 @@ function pluralizeUnit(unit, quantity) {
   return pluralMap[unit] || unit + 's';
 }
 
-// ============================================
-// FORM VALIDATION
+// ----------------------------------------//FORM VALIDATION
 
 
-// ==========================================
-// DEFAULT SYSTEM FUNCTIONS
-// ==========================================
-
-const DEFAULT_SYSTEM_KEY = 'quikbitz-default-system';
+// ----------------------------------------//DEFAULT SYSTEM FUNCTIONS
+// ----------------------------------------const DEFAULT_SYSTEM_KEY = 'quikbitz-default-system';
 
 function getDefaultSystem() {
   try {
@@ -1194,7 +1189,7 @@ function setAsDefaultSystem() {
     return;
   }
   
-  // Get manufacturer and model names
+//Get manufacturer and model names
   let manufacturerName = manufacturerId;
   let shingleLineName = shingleLineId;
   
@@ -1220,7 +1215,7 @@ function setAsDefaultSystem() {
   localStorage.setItem(DEFAULT_SYSTEM_KEY, JSON.stringify(defaultSystem));
   alert(`✅ Default system set to: ${manufacturerName} ${shingleLineName}`);
   
-  // Update banner
+//Update banner
   updateDefaultSystemBanner();
 }
 
@@ -1246,12 +1241,12 @@ function updateDefaultSystemBanner() {
   }
 }
 
-// Auto-load default system on page load
+//Auto-load default system on page load
 if (typeof initDefaultSystem === 'undefined') {
   window.initDefaultSystem = function() {
     const defaultSystem = getDefaultSystem();
     if (defaultSystem) {
-      // Auto-select default system in Materials/Labor tab
+//Auto-select default system in Materials/Labor tab
       const materialsManufacturerSelect = document.getElementById('materialsManufacturerSelect');
       const materialsShingleLineSelect = document.getElementById('materialsShingleLineSelect');
       
@@ -1265,11 +1260,11 @@ if (typeof initDefaultSystem === 'undefined') {
       }
     }
     
-    // Update banner
+//Update banner
     updateDefaultSystemBanner();
   };
   
-  // Run on page load
+//Run on page load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initDefaultSystem);
   } else {
@@ -1277,11 +1272,11 @@ if (typeof initDefaultSystem === 'undefined') {
   }
 }
 
-// Missing displayLaborResults function
+//Missing displayLaborResults function
 function displayLaborResults(data) {
   console.log('[LABOR] displayLaborResults called with data:', data);
   
-  // Handle both formats: data.labor.items OR data.items directly
+//Handle both formats: data.labor.items OR data.items directly
   let laborData;
   if (data.labor && data.labor.items) {
     laborData = data.labor;
@@ -1292,36 +1287,36 @@ function displayLaborResults(data) {
     return;
   }
   
-  // Store labor data globally
+//Store labor data globally
   window.laborData = laborData;
   console.log('[LABOR] Stored labor data:', window.laborData);
   
-  // Get labor table
+//Get labor table
   const laborTable = document.getElementById('laborTable');
   if (!laborTable) {
     console.error('[LABOR] Labor table element not found');
     return;
   }
   
-  // Clear existing rows
+//Clear existing rows
   laborTable.innerHTML = '';
   
-  // Render each labor item
+//Render each labor item
   laborData.items.forEach((item, index) => {
     const row = createLaborRow(item, index);
     laborTable.innerHTML += row;
   });
   
-  // Update totals
+//Update totals
   updateLaborTotals();
   
-  // Show the labor results container
+//Show the labor results container
   const laborResultsDiv = document.getElementById('laborResults');
   if (laborResultsDiv) {
     laborResultsDiv.style.display = 'block';
   }
   
-  // Also hide the "not ready" message if it exists
+//Also hide the "not ready" message if it exists
   const laborNotReady = document.getElementById('laborNotReady');
   if (laborNotReady) {
     laborNotReady.style.display = 'none';
@@ -1330,13 +1325,13 @@ function displayLaborResults(data) {
   console.log('[LABOR] Rendered', laborData.items.length, 'labor items');
 }
 
-// Helper function to create labor row HTML
+//Helper function to create labor row HTML
 function createLaborRow(item, index) {
   const quantity = parseFloat(item.quantity) || 0;
   const unitPrice = parseFloat(item.unitPrice) || 0;
   const total = quantity * unitPrice;
   
-  // Pluralize unit
+//Pluralize unit
   const unit = item.unit || '';
   let pluralUnit = unit;
   if (quantity !== 1 && unit && typeof pluralizeUnit === 'function') {
@@ -1386,14 +1381,14 @@ function createLaborRow(item, index) {
   `;
 }
 
-// Update labor row
+//Update labor row
 function updateLaborRow(rowIndex) {
   if (!window.laborData || !window.laborData.items) return;
   
   const item = window.laborData.items[rowIndex];
   if (!item) return;
   
-  // Get input values from the row
+//Get input values from the row
   const qtyInput = document.querySelector(`[data-labor-row="${rowIndex}"][data-field="quantity"]`);
   const priceInput = document.querySelector(`[data-labor-row="${rowIndex}"][data-field="unitPrice"]`);
   
@@ -1404,10 +1399,10 @@ function updateLaborRow(rowIndex) {
     item.unitPrice = parseFloat(priceInput.value) || 0;
   }
   
-  // Recalculate total
+//Recalculate total
   item.total = item.quantity * item.unitPrice;
   
-  // Update the total cell in the row
+//Update the total cell in the row
   const row = document.querySelector(`tr[data-labor-row="${rowIndex}"]`);
   if (row) {
     const totalCell = row.querySelector('.row-total');
@@ -1416,13 +1411,13 @@ function updateLaborRow(rowIndex) {
     }
   }
   
-  // Update labor totals
+//Update labor totals
   updateLaborTotals();
   
   console.log('[LABOR] Updated row', rowIndex, ':', item.name, '=', item.total);
 }
 
-// Update labor totals
+//Update labor totals
 function updateLaborTotals() {
   if (!window.laborData || !window.laborData.items) return;
   
@@ -1433,7 +1428,7 @@ function updateLaborTotals() {
     subtotal += qty * price;
   });
   
-  // Update labor subtotal display if it exists
+//Update labor subtotal display if it exists
   const laborSubtotalEl = document.getElementById('laborSubtotal');
   if (laborSubtotalEl) {
     laborSubtotalEl.textContent = `$${subtotal.toFixed(2)}`;
@@ -1455,7 +1450,7 @@ function toggleLaborSelection(rowIndex) {
     }
   }
   
-  // Update delete button visibility
+//Update delete button visibility
   const anyChecked = document.querySelectorAll('.labor-checkbox:checked').length > 0;
   const deleteBtn = document.getElementById('deleteSelectedLaborBtn');
   if (deleteBtn) {
@@ -1504,11 +1499,8 @@ function deleteLaborItem(rowIndex) {
   console.log('[LABOR] Deleted item at index', rowIndex);
 }
 
-// ==========================================
-// PRICING TAB FUNCTIONS
-// ==========================================
-
-function initPricingTab() {
+// ----------------------------------------//PRICING TAB FUNCTIONS
+// ----------------------------------------function initPricingTab() {
   console.log('[PRICING] initPricingTab called');
   console.log('[PRICING] getManufacturers exists:', typeof getManufacturers);
   populatePricingManufacturerDropdown();
@@ -1537,10 +1529,10 @@ function populatePricingManufacturerDropdown() {
   });
 }
 
-// DOMContentLoaded fallback initialization
+//DOMContentLoaded fallback initialization
 document.addEventListener('DOMContentLoaded', function() {
   console.log('[PRICING] DOMContentLoaded - initializing pricing dropdown');
-  // Initialize pricing dropdown after page loads
+//Initialize pricing dropdown after page loads
   setTimeout(() => {
     if (typeof populatePricingManufacturerDropdown === 'function') {
       populatePricingManufacturerDropdown();
@@ -1548,11 +1540,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 500);
 });
 
-// ==========================================
-// PRICING TAB CHANGE HANDLERS
-// ==========================================
-
-function handlePricingManufacturerChange() {
+// ----------------------------------------//PRICING TAB CHANGE HANDLERS
+// ----------------------------------------function handlePricingManufacturerChange() {
   const manufacturerSelect = document.getElementById('pricingManufacturerSelect');
   const shingleLineSelect = document.getElementById('pricingShingleLineSelect');
   const editorContainer = document.getElementById('pricingEditorContainer');
@@ -1561,10 +1550,10 @@ function handlePricingManufacturerChange() {
   const manufacturerId = manufacturerSelect.value;
   console.log('[PRICING] Manufacturer changed to:', manufacturerId);
   
-  // Reset shingle line dropdown
+//Reset shingle line dropdown
   shingleLineSelect.innerHTML = '<option value="">Select Model</option>';
   
-  // Hide editor, show placeholder
+//Hide editor, show placeholder
   if (editorContainer) editorContainer.style.display = 'none';
   if (placeholder) placeholder.style.display = 'block';
   
@@ -1574,7 +1563,7 @@ function handlePricingManufacturerChange() {
     return;
   }
   
-  // Get shingle lines for selected manufacturer
+//Get shingle lines for selected manufacturer
   const shingleLines = getShingleLines(manufacturerId);
   console.log('[PRICING] Shingle lines for', manufacturerId, ':', shingleLines);
   
@@ -1583,16 +1572,16 @@ function handlePricingManufacturerChange() {
     return;
   }
   
-  // Populate shingle lines
+//Populate shingle lines
   shingleLines.forEach(line => {
     shingleLineSelect.innerHTML += `<option value="${line.id}">${line.name}</option>`;
   });
   
-  // Enable dropdown
+//Enable dropdown
   shingleLineSelect.disabled = false;
   shingleLineSelect.style.background = 'white';
   
-  // Store selection
+//Store selection
   window._pricingManufacturer = manufacturerId;
   window._pricingShingleLine = null;
 }
@@ -1625,24 +1614,24 @@ function handlePricingShingleLineChange() {
   
   console.log('[PRICING] Shingle data:', shingleData);
   
-  // Update title
+//Update title
   if (titleEl) {
     titleEl.textContent = `${shingleData.manufacturer} ${shingleData.name} Pricing`;
   }
   
-  // Load custom pricing if exists
+//Load custom pricing if exists
   const customPricing = typeof loadCustomPricing === 'function' ? loadCustomPricing() : {};
   const pricingKey = `${manufacturerId}_${shingleLineId}`;
   const savedPricing = customPricing[pricingKey] || {};
   
   console.log('[PRICING] Saved pricing for', pricingKey, ':', savedPricing);
   
-  // Populate materials pricing table
+//Populate materials pricing table
   const tbody = document.getElementById('pricingEditorBody');
   if (tbody) {
     let html = '';
     
-    // Shingles
+//Shingles
     const shinglesPrice = savedPricing.shingles || shingleData.pricePerBundle;
     html += `
       <tr>
@@ -1658,7 +1647,7 @@ function handlePricingShingleLineChange() {
       </tr>
     `;
     
-    // System components
+//System components
     const components = shingleData.systemComponents;
     const componentKeys = ['starter', 'hipRidge', 'underlayment', 'iceWater', 'ridgeVent', 'dripEdge', 'nails', 'sealant'];
     
@@ -1685,7 +1674,7 @@ function handlePricingShingleLineChange() {
     tbody.innerHTML = html;
   }
   
-  // Load saved labor rates
+//Load saved labor rates
   const laborRates = savedPricing.labor || {};
   const laborDefaults = {
     'laborRate_squares': 90,
@@ -1705,7 +1694,7 @@ function handlePricingShingleLineChange() {
     }
   });
   
-  // Show editor, hide placeholder
+//Show editor, hide placeholder
   if (editorContainer) editorContainer.style.display = 'block';
   if (placeholder) placeholder.style.display = 'none';
   
@@ -1721,7 +1710,7 @@ function savePricingTemplate() {
   const pricingKey = `${window._pricingManufacturer}_${window._pricingShingleLine}`;
   
   const pricing = {
-    // Materials
+//Materials
     shingles: parseFloat(document.getElementById('price_shingles')?.value) || 0,
     starter: parseFloat(document.getElementById('price_starter')?.value) || 0,
     hipRidge: parseFloat(document.getElementById('price_hipRidge')?.value) || 0,
@@ -1731,7 +1720,7 @@ function savePricingTemplate() {
     dripEdge: parseFloat(document.getElementById('price_dripEdge')?.value) || 0,
     nails: parseFloat(document.getElementById('price_nails')?.value) || 0,
     sealant: parseFloat(document.getElementById('price_sealant')?.value) || 0,
-    // Labor
+//Labor
     labor: {
       squares: parseFloat(document.getElementById('laborRate_squares')?.value) || 90,
       starter: parseFloat(document.getElementById('laborRate_starter')?.value) || 25,
@@ -1754,12 +1743,12 @@ function savePricingTemplate() {
 function resetToDefaultPricing() {
   if (!confirm('Reset all prices to default values?')) return;
   
-  // Reset material prices
+//Reset material prices
   document.querySelectorAll('#pricingEditorBody input[data-default]').forEach(input => {
     input.value = input.dataset.default;
   });
   
-  // Reset labor rates
+//Reset labor rates
   document.querySelectorAll('#laborPricingBody input[data-default]').forEach(input => {
     input.value = input.dataset.default;
   });
@@ -1767,11 +1756,8 @@ function resetToDefaultPricing() {
   console.log('[PRICING] Reset to defaults');
 }
 
-// ==========================================
-// MATERIALS MANUFACTURER SELECTOR FUNCTIONS
-// ==========================================
-
-function showMaterialsManufacturerSelector() {
+// ----------------------------------------//MATERIALS MANUFACTURER SELECTOR FUNCTIONS
+// ----------------------------------------function showMaterialsManufacturerSelector() {
   const selector = document.getElementById('materialsManufacturerSelector');
   if (selector) {
     selector.style.display = 'block';
@@ -1906,7 +1892,7 @@ function applyMaterialsManufacturerSystem() {
     return;
   }
   
-  // Use ORIGINAL PDF measurements
+//Use ORIGINAL PDF measurements
   const originalData = window.originalPdfData || {};
   const raw = originalData.raw || window.currentRawMeasurements || {};
   const measurements = originalData.measurements || window.currentMeasurements || {};
@@ -1922,15 +1908,15 @@ function applyMaterialsManufacturerSystem() {
   
   console.log('[MATERIALS] Using ORIGINAL measurements:', measurementData);
   
-  // Calculate materials from manufacturer system
+//Calculate materials from manufacturer system
   const systemMaterials = calculateSystemMaterials(window._materialsManufacturer, window._materialsShingleLine, measurementData);
   
-  // Add color to shingle name if selected
+//Add color to shingle name if selected
   if (window._materialsColor && systemMaterials.length > 0) {
     systemMaterials[0].name = `${systemMaterials[0].name} - ${window._materialsColor}`;
   }
   
-  // Items to preserve from original materials (not part of shingle system)
+//Items to preserve from original materials (not part of shingle system)
   const preserveItems = [
     'step flashing',
     'l flashing',
@@ -1948,25 +1934,25 @@ function applyMaterialsManufacturerSystem() {
     'collar'
   ];
   
-  // Get original materials from first PDF upload
+//Get original materials from first PDF upload
   const originalMaterials = window.originalPdfData?.materials || window.lastServerResponse?.materials || [];
   
-  // Find items to preserve
+//Find items to preserve
   const preservedMaterials = originalMaterials.filter(mat => {
     const nameLower = (mat.name || '').toLowerCase();
     return preserveItems.some(item => nameLower.includes(item));
   });
   
-  // Get names of system materials (lowercase)
+//Get names of system materials (lowercase)
   const systemMaterialNames = systemMaterials.map(m => (m.name || '').toLowerCase());
   
-  // Keep preserved items that aren't already in the system materials
+//Keep preserved items that aren't already in the system materials
   const uniquePreserved = preservedMaterials.filter(mat => {
     const nameLower = (mat.name || '').toLowerCase();
     
-    // Check if this exact item (or very similar) is already in system materials
+//Check if this exact item (or very similar) is already in system materials
     const isDuplicate = systemMaterialNames.some(sysName => {
-      // Check for key word overlap
+//Check for key word overlap
       if (nameLower.includes('shingle') && sysName.includes('shingle')) return true;
       if (nameLower.includes('starter') && sysName.includes('starter')) return true;
       if (nameLower.includes('ridge cap') && sysName.includes('ridge')) return true;
@@ -1992,10 +1978,10 @@ function applyMaterialsManufacturerSystem() {
   console.log('[MATERIALS] Preserved materials:', uniquePreserved.map(m => m.name));
   console.log('[MATERIALS] Total materials:', materials.length);
   
-  // Update global materialsData
+//Update global materialsData
   window.materialsData = materials;
   
-  // Refresh display
+//Refresh display
   if (typeof displayResults === 'function') {
     displayResults({
       materials: materials,
@@ -2009,14 +1995,11 @@ function applyMaterialsManufacturerSystem() {
 
 function populateMaterialTemplateSelector() {
   console.log('[MATERIALS] populateMaterialTemplateSelector called');
-  // Placeholder - no action needed for now
+//Placeholder - no action needed for now
 }
 
-// ==========================================
-// ADD MATERIAL MODAL FUNCTIONS
-// ==========================================
-
-function openAddMaterialModal() {
+// ----------------------------------------//ADD MATERIAL MODAL FUNCTIONS
+// ----------------------------------------function openAddMaterialModal() {
   const modal = document.getElementById('addMaterialModal');
   if (modal) {
     modal.style.display = 'flex';
@@ -2132,11 +2115,8 @@ function addMaterialFromModal() {
   closeAddMaterialModal();
 }
 
-// ==========================================
-// ADD LABOR MODAL FUNCTIONS
-// ==========================================
-
-function openAddLaborModal() {
+// ----------------------------------------//ADD LABOR MODAL FUNCTIONS
+// ----------------------------------------function openAddLaborModal() {
   const modal = document.getElementById('addLaborModal');
   if (modal) {
     modal.style.display = 'flex';
@@ -2208,11 +2188,8 @@ function addLaborFromModal() {
   closeAddLaborModal();
 }
 
-// ==========================================
-// PRINT/PDF FUNCTIONS - MATERIALS/LABOR
-// ==========================================
-
-function printResults() {
+// ----------------------------------------//PRINT/PDF FUNCTIONS - MATERIALS/LABOR
+// ----------------------------------------function printResults() {
   const pdfDoc = buildMaterialsPDF();
   pdfMake.createPdf(pdfDoc).print();
 }
@@ -2238,16 +2215,16 @@ function buildMaterialsPDF() {
   const raw = window.currentRawMeasurements || {};
   const materials = window.materialsData || [];
   
-  // Calculate totals
+//Calculate totals
   const subtotal = materials.reduce((sum, item) => sum + (item.total || 0), 0);
   const taxRate = 0.09;
   const tax = subtotal * taxRate;
   const grandTotal = subtotal + tax;
   
-  // Check for cover photo
+//Check for cover photo
   const coverPhoto = window.currentPhotos?.materials?.find(p => p.isCover);
   
-  // Build materials table
+//Build materials table
   const tableBody = [
     [
       { text: 'Item', style: 'tableHeader' },
@@ -2280,7 +2257,7 @@ function buildMaterialsPDF() {
     paddingBottom: () => 6
   };
   
-  // Build totals section
+//Build totals section
   const totalsStack = [
     {
       columns: [
@@ -2308,10 +2285,10 @@ function buildMaterialsPDF() {
     }
   ];
   
-  // Build content array
+//Build content array
   const content = [];
   
-  // Add cover page if cover photo exists
+//Add cover page if cover photo exists
   if (coverPhoto && coverPhoto.data) {
     content.push(
       { text: 'MATERIAL LIST', style: 'coverTitle', alignment: 'center', margin: [0, 0, 0, 20] },
@@ -2323,7 +2300,7 @@ function buildMaterialsPDF() {
     );
   }
   
-  // Add main content
+//Add main content
   content.push(
     { text: 'MATERIAL LIST', style: 'header' },
     { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 8, 0, 20] },
@@ -2370,14 +2347,14 @@ function buildMaterialsPDF() {
     }
   );
   
-  // Add delivery notes if present
+//Add delivery notes if present
   const materialsNotes = document.getElementById('materialsDeliveryNotes')?.value || window.currentJobData?.materialsNotes;
   if (materialsNotes) {
     content.push({ text: 'DELIVERY NOTES', style: 'sectionHeader', margin: [0, 20, 0, 8] });
     content.push({ text: materialsNotes, margin: [0, 0, 0, 20], fontSize: 11 });
   }
   
-  // Add photos section if there are photos (excluding cover photo from grid)
+//Add photos section if there are photos (excluding cover photo from grid)
   const otherPhotos = window.currentPhotos?.materials?.filter(p => !p.isCover) || [];
   if (otherPhotos.length > 0) {
     content.push({
@@ -2388,8 +2365,8 @@ function buildMaterialsPDF() {
     });
     
     otherPhotos.forEach((photo, index) => {
-      // Determine if portrait or landscape based on aspect ratio
-      // Default to landscape sizing, but use fit to constrain both dimensions
+//Determine if portrait or landscape based on aspect ratio
+//Default to landscape sizing, but use fit to constrain both dimensions
       const photoBlock = {
         stack: [
           {
@@ -2401,7 +2378,7 @@ function buildMaterialsPDF() {
         margin: [0, 0, 0, 16]
       };
       
-      // Add caption if exists
+//Add caption if exists
       if (photo.label) {
         photoBlock.stack.push({
           text: photo.label,
@@ -2439,13 +2416,13 @@ function buildLaborPDF() {
   const laborData = window.laborData || { items: [] };
   const laborItems = laborData.items || [];
   
-  // Calculate totals
+//Calculate totals
   const subtotal = laborItems.reduce((sum, item) => sum + (item.total || 0), 0);
   
-  // Check for cover photo
+//Check for cover photo
   const coverPhoto = window.currentPhotos?.labor?.find(p => p.isCover);
   
-  // Build labor table
+//Build labor table
   const tableBody = [
     [
       { text: 'Description', style: 'tableHeader' },
@@ -2478,7 +2455,7 @@ function buildLaborPDF() {
     paddingBottom: () => 6
   };
   
-  // Build totals section
+//Build totals section
   const totalsStack = [
     {
       canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 2, lineColor: '#7c3aed' }],
@@ -2492,10 +2469,10 @@ function buildLaborPDF() {
     }
   ];
   
-  // Build content array
+//Build content array
   const content = [];
   
-  // Add cover page if cover photo exists
+//Add cover page if cover photo exists
   if (coverPhoto && coverPhoto.data) {
     content.push(
       { text: 'LABOR INVOICE', style: 'coverTitle', alignment: 'center', margin: [0, 0, 0, 20] },
@@ -2507,7 +2484,7 @@ function buildLaborPDF() {
     );
   }
   
-  // Add main content
+//Add main content
   content.push(
     { text: 'LABOR INVOICE', style: 'header' },
     { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 8, 0, 20] },
@@ -2554,14 +2531,14 @@ function buildLaborPDF() {
     }
   );
   
-  // Add labor notes if present
+//Add labor notes if present
   const laborNotes = document.getElementById('laborDeliveryNotes')?.value || window.currentJobData?.laborNotes;
   if (laborNotes) {
     content.push({ text: 'LABOR NOTES', style: 'sectionHeader', margin: [0, 20, 0, 8] });
     content.push({ text: laborNotes, margin: [0, 0, 0, 20], fontSize: 11 });
   }
   
-  // Add photos section if there are photos (excluding cover photo from grid)
+//Add photos section if there are photos (excluding cover photo from grid)
   const otherPhotos = window.currentPhotos?.labor?.filter(p => !p.isCover) || [];
   if (otherPhotos.length > 0) {
     content.push({
@@ -2615,7 +2592,7 @@ function buildLaborPDF() {
   };
 }
 
-// ==================== NOTES SAVE FUNCTIONS ====================
+// ----------------------------------------NOTES SAVE FUNCTIONS ====================
 
 function saveMaterialsNotes() {
   const notes = document.getElementById('materialsDeliveryNotes')?.value || '';
@@ -2646,7 +2623,7 @@ function updateLossItem(rowIndex) {
   const qtyInput = row.querySelector('input[data-field="quantity"]');
   const quantity = parseFloat(qtyInput.value) || 0;
   
-  // Update stored data
+//Update stored data
   if (window.lossItems) {
     const lossIndex = rowIndex - window.materialsData.length;
     if (window.lossItems[lossIndex]) {
@@ -2673,7 +2650,7 @@ function deleteLossItem(rowIndex) {
     window.lossItems.splice(lossIndex, 1);
   }
   
-  // Re-render materials table
+//Re-render materials table
   if (window.currentPDFData) {
     window.currentPDFData.lossItems = window.lossItems || [];
     displayResults(window.currentPDFData);
