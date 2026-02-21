@@ -76,16 +76,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
-      // DEBUG: Log all lines containing "Perimeter" to diagnose parsing issues
-      if (/perimeter/i.test(line)) {
-        console.log('[LOSS-PARSER DEBUG] Line containing "Perimeter":', line);
-      }
-      
-      // Number of Squares (main roof) - handles "25.54 Number of Squares" OR "Number of Squares 25.54"
-      if (/number\s+of\s+squares/i.test(line)) {
-        // Try number before label first, then number after label
-        const sqMatch = line.match(/(\d+\.?\d*)\s+number\s+of\s+squares/i) || 
-                        line.match(/number\s+of\s+squares\s+(\d+\.?\d*)/i) ||
+      // Number of Squares (main roof) - handles "25.54Number of Squares" (no space)
+      if (/number\s*of\s*squares/i.test(line)) {
+        const sqMatch = line.match(/(\d+\.?\d*)Number\s*of\s*Squares/i) || 
+                        line.match(/number\s*of\s*squares\s*(\d+\.?\d*)/i) ||
                         lines[i + 1]?.match(/(\d+\.?\d*)/);
         if (sqMatch) {
           mainRoofSquares = parseFloat(sqMatch[1]);
@@ -102,10 +96,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
-      // Total Ridge Length - handles "41.14 Total Ridge Length" OR "Total Ridge Length 41.14"
-      if (/total\s+ridge\s+length/i.test(line)) {
-        const ridgeMatch = line.match(/(\d+\.?\d*)\s+total\s+ridge\s+length/i) ||
-                           line.match(/total\s+ridge\s+length\s+(\d+\.?\d*)/i) ||
+      // Total Ridge Length - handles "41.14Total Ridge Length" (no space)
+      if (/total\s*ridge\s*length/i.test(line)) {
+        const ridgeMatch = line.match(/(\d+\.?\d*)Total\s*Ridge\s*Length/i) ||
+                           line.match(/total\s*ridge\s*length\s*(\d+\.?\d*)/i) ||
                            lines[i + 1]?.match(/(\d+\.?\d*)/);
         if (ridgeMatch) {
           ridgeLength = parseFloat(ridgeMatch[1]);
@@ -113,23 +107,21 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
-      // Total Perimeter Length - handles "304.30 Total Perimeter Length" OR "Total Perimeter Length 304.30"
-      // More flexible matching to catch various formats
-      if (/perimeter/i.test(line) && /length|total/i.test(line)) {
-        const perimMatch = line.match(/(\d+\.?\d*)\s+.*perimeter.*length/i) ||
-                           line.match(/perimeter.*length\s+(\d+\.?\d*)/i) ||
-                           line.match(/(\d+\.\d+)\s+total\s+perimeter/i) ||
+      // Total Perimeter Length - handles "304.30Total Perimeter Length" (no space)
+      if (/total\s*perimeter\s*length/i.test(line)) {
+        const perimMatch = line.match(/(\d+\.?\d*)Total\s*Perimeter\s*Length/i) ||
+                           line.match(/total\s*perimeter\s*length\s*(\d+\.?\d*)/i) ||
                            lines[i + 1]?.match(/(\d+\.?\d*)/);
         if (perimMatch && !perimeterLength) {
           perimeterLength = parseFloat(perimMatch[1]);
-          console.log('[LOSS-PARSER] Found perimeter length:', perimeterLength, 'from line:', line);
+          console.log('[LOSS-PARSER] Found perimeter length:', perimeterLength);
         }
       }
       
-      // Total Hip Length - handles "76.66 Total Hip Length" OR "Total Hip Length 76.66"
-      if (/total\s+hip\s+length/i.test(line)) {
-        const hipMatch = line.match(/(\d+\.?\d*)\s+total\s+hip\s+length/i) ||
-                         line.match(/total\s+hip\s+length\s+(\d+\.?\d*)/i) ||
+      // Total Hip Length - handles "76.66Total Hip Length" (no space)
+      if (/total\s*hip\s*length/i.test(line)) {
+        const hipMatch = line.match(/(\d+\.?\d*)Total\s*Hip\s*Length/i) ||
+                         line.match(/total\s*hip\s*length\s*(\d+\.?\d*)/i) ||
                          lines[i + 1]?.match(/(\d+\.?\d*)/);
         if (hipMatch) {
           const hipLength = parseFloat(hipMatch[1]);
@@ -234,10 +226,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Hip/Ridge cap
-      if (/hip.*ridge.*cap|ridge.*cap/i.test(line) && /(\d+\.?\d*)\s*LF/i.test(line)) {
+      if (/hip.*ridge.*cap|ridge.*cap/i.test(line)) {
         const match = line.match(/(\d+\.?\d*)\s*LF/i);
         if (match) {
           lineItems.hipRidge = { quantity: parseFloat(match[1]), unit: 'LF' };
+          console.log('[LOSS-PARSER] Found hip/ridge cap:', match[1], 'LF from line:', line);
         }
       }
       
