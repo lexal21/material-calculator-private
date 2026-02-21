@@ -25,10 +25,11 @@ const LossCompare = (() => {
   ];
 
   const ROOF_REPORT_SIGNATURES = [
-    'RidgeTop', 'Ridge Top Aerial', 'EagleView', 'GAF QuickMeasure', 'Hover',
+    'RidgeTop', 'Ridge Top Aerial', 'Ridge Top', 'EagleView', 'GAF QuickMeasure', 'Hover',
     'Xactimate Sketch', 'RoofScope', 'Roof Area', 'Roof Squares', 'Hip Length',
     'Ridge Length', 'Valley Length', 'Eave Edge', 'Rake Edge', 'Step Flashing',
-    'Waste Factor', 'Number of Squares', 'Total Perimeter'
+    'Waste Factor', 'Number of Squares', 'Total Perimeter', 'Order #', 'Roof sq',
+    'roof sq', 'Hip', 'Ridge', 'Valley', 'Eave', 'Rake'
   ];
 
   // ── Init ───────────────────────────────────────────────────────────────────
@@ -372,7 +373,8 @@ const LossCompare = (() => {
 
   // ── Utility ────────────────────────────────────────────────────────────────
   function showLoading(show) {
-    document.getElementById('lc-loading').style.display = show ? 'flex' : 'none';
+    const loadingEl = document.getElementById('lc-loading');
+    if (loadingEl) loadingEl.style.display = show ? 'flex' : 'none';
   }
 
   function showError(msg) {
