@@ -281,105 +281,102 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // R&R items (only if contains R&R or Replace)
+      // COLUMN-AGNOSTIC APPROACH: Find description line, then look for next line starting with number + unit
       if (/R&R|Replace/i.test(line)) {
-        // Fascia - DEBUG LOGGING ENABLED - Check current line, next 2 lines
+        
+        // Helper: Find next line starting with number + unit (ignores column positions)
+        const findQuantityInNextLines = (startIndex, unitPattern) => {
+          // Check next 5 lines for a line starting with a number followed by the expected unit
+          for (let j = startIndex + 1; j < Math.min(startIndex + 6, lines.length); j++) {
+            const nextLine = lines[j].trim();
+            // Look for line starting with number (with optional whitespace/formatting)
+            const match = nextLine.match(new RegExp(`^\\s*(\\d+\\.?\\d*)\\s*(${unitPattern})`, 'i'));
+            if (match) {
+              return { quantity: parseFloat(match[1]), unit: match[2].toUpperCase() };
+            }
+          }
+          return null;
+        };
+        
+        // Fascia - DEBUG LOGGING ENABLED
         if (/fascia/i.test(line)) {
           console.log('[LOSS-PARSER] FASCIA DEBUG:');
-          console.log('  Line [i-1]:', i > 0 ? lines[i - 1] : '(no prev line)');
-          console.log('  Line [i]  :', line);
-          console.log('  Line [i+1]:', i < lines.length - 1 ? lines[i + 1] : '(no next line)');
-          console.log('  Line [i+2]:', i < lines.length - 2 ? lines[i + 2] : '(no next line)');
+          console.log('  Description line:', line);
+          for (let j = i + 1; j <= Math.min(i + 5, lines.length - 1); j++) {
+            console.log(`  Next line [+${j-i}]:`, lines[j]);
+          }
           
-          // Try current line, then next line, then line after that (for USAA format with O&P column)
-          const match = line.match(/(\d+\.?\d*)\s*(LF|SF)/i) || 
-                        lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*(LF|SF)/i) ||
-                        lines[i + 2]?.trim().match(/(\d+\.?\d*)\s*(LF|SF)/i);
-          console.log('  Match result:', match);
+          const result = findQuantityInNextLines(i, 'LF|SF');
+          console.log('  Extraction result:', result);
           
-          if (match) {
-            const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*(LF|SF)/i)[0].trim();
+          if (result) {
             lineItems.fascia.push({
-              name: desc || 'Fascia',
-              quantity: parseFloat(match[1]),
-              unit: match[2].toUpperCase()
+              name: line.replace(/R&R|Replace/i, '').trim() || 'Fascia',
+              quantity: result.quantity,
+              unit: result.unit
             });
             console.log('  ✅ Extracted:', lineItems.fascia[lineItems.fascia.length - 1]);
           } else {
-            console.log('  ❌ No match found');
+            console.log('  ❌ No quantity found in next 5 lines');
           }
         }
         
-        // Siding - Check current + next 2 lines
+        // Siding
         if (/siding/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*SF/i) || 
-                        lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*SF/i) ||
-                        lines[i + 2]?.trim().match(/(\d+\.?\d*)\s*SF/i);
-          if (match) {
-            const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*SF/i)[0].trim();
+          const result = findQuantityInNextLines(i, 'SF');
+          if (result) {
             lineItems.siding.push({
-              name: desc || 'Siding',
-              quantity: parseFloat(match[1]),
-              unit: 'SF'
+              name: line.replace(/R&R|Replace/i, '').trim() || 'Siding',
+              quantity: result.quantity,
+              unit: result.unit
             });
           }
         }
         
-        // Window wrap - Check current + next 2 lines
+        // Window wrap
         if (/wrap.*window|window.*wrap/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*(EA|LF)/i) || 
-                        lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*(EA|LF)/i) ||
-                        lines[i + 2]?.trim().match(/(\d+\.?\d*)\s*(EA|LF)/i);
-          if (match) {
-            const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*(EA|LF)/i)[0].trim();
+          const result = findQuantityInNextLines(i, 'EA|LF');
+          if (result) {
             lineItems.windowWrap.push({
-              name: desc || 'Window Wrap',
-              quantity: parseFloat(match[1]),
-              unit: match[2].toUpperCase()
+              name: line.replace(/R&R|Replace/i, '').trim() || 'Window Wrap',
+              quantity: result.quantity,
+              unit: result.unit
             });
           }
         }
         
-        // Soffit - Check current + next 2 lines
+        // Soffit
         if (/soffit/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*SF/i) || 
-                        lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*SF/i) ||
-                        lines[i + 2]?.trim().match(/(\d+\.?\d*)\s*SF/i);
-          if (match) {
-            const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*SF/i)[0].trim();
+          const result = findQuantityInNextLines(i, 'SF');
+          if (result) {
             lineItems.soffit.push({
-              name: desc || 'Soffit',
-              quantity: parseFloat(match[1]),
-              unit: 'SF'
+              name: line.replace(/R&R|Replace/i, '').trim() || 'Soffit',
+              quantity: result.quantity,
+              unit: result.unit
             });
           }
         }
         
-        // Gutters - Check current + next 2 lines
+        // Gutters
         if (/gutter/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*LF/i) || 
-                        lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*LF/i) ||
-                        lines[i + 2]?.trim().match(/(\d+\.?\d*)\s*LF/i);
-          if (match) {
-            const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*LF/i)[0].trim();
+          const result = findQuantityInNextLines(i, 'LF');
+          if (result) {
             lineItems.gutters.push({
-              name: desc || 'Gutter',
-              quantity: parseFloat(match[1]),
-              unit: 'LF'
+              name: line.replace(/R&R|Replace/i, '').trim() || 'Gutter',
+              quantity: result.quantity,
+              unit: result.unit
             });
           }
         }
         
-        // Downspouts - Check current + next 2 lines
+        // Downspouts
         if (/downspout/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*LF/i) || 
-                        lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*LF/i) ||
-                        lines[i + 2]?.trim().match(/(\d+\.?\d*)\s*LF/i);
-          if (match) {
-            const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*LF/i)[0].trim();
+          const result = findQuantityInNextLines(i, 'LF');
+          if (result) {
             lineItems.downspouts.push({
-              name: desc || 'Downspout',
-              quantity: parseFloat(match[1]),
-              unit: 'LF'
+              name: line.replace(/R&R|Replace/i, '').trim() || 'Downspout',
+              quantity: result.quantity,
+              unit: result.unit
             });
           }
         }
