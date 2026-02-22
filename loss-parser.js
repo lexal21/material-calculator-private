@@ -202,14 +202,18 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       if (!line) continue;
       
       // Shingles (primary source of SQ measurement)
-      // Match: "Laminated - comp. shingle rfg.", "3 tab - 25 yr. - comp. shingle roofing", "architectural shingle"
-      // Pattern handles both "38.33SQ" and "38.33 SQ"
-      if (/laminated.*comp.*shingle|3\s*tab.*comp.*shingle|architectural.*shingle|comp.*shingle.*rfg/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(SQ)/i);
+      if (/comp.*shingle|laminated.*shingle|shingle.*rfg|3.?tab.*shingle|architectural.*shingle/i.test(line)) {
+        // Check current line first, then next line
+        const searchLine = /(\d+\.?\d*)\s*SQ/i.test(line) ? line : (lines[i + 1] || '');
+        const match = searchLine.match(/(\d+\.?\d*)\s*SQ/i);
         if (match) {
-          shingleSquares = parseFloat(match[1]);
-          lineItems.shingles = { quantity: shingleSquares, unit: 'SQ' };
-          console.log('[LOSS-PARSER] SHINGLE SQ EXTRACTED:', shingleSquares, 'from line:', line);
+          const val = parseFloat(match[1]);
+          // Only use if greater than what we have (waste-adjusted shingle SQ is always > raw squares)
+          if (val > shingleSquares) {
+            shingleSquares = val;
+            lineItems.shingles = { quantity: shingleSquares, unit: 'SQ' };
+            console.log('[LOSS-PARSER] SHINGLE SQ EXTRACTED:', shingleSquares);
+          }
         }
       }
       
@@ -254,11 +258,17 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
-      // Ice & water shield detection (for missing data flag)
-      // Just detect the phrase - don't care about quantity or unit type
-      if (/ice\s*&\s*water\s*shield|ice\s*&\s*water\s*barrier|ice.*water.*shield|ice.*water.*barrier/i.test(line)) {
+      // Ice & water shield detection
+      if (/ice.*water|ice\s*&\s*water/i.test(line)) {
         iceWaterFoundOnLoss = true;
-        console.log('[LOSS-PARSER] Ice & water detected on loss sheet from line:', line);
+        // Check current line and next line for SF quantity
+        const searchLine = /(\d+\.?\d*)\s*SF/i.test(line) ? line : (lines[i + 1] || '');
+        const sfMatch = searchLine.match(/(\d+\.?\d*)\s*SF/i);
+        if (sfMatch) {
+          const sfQty = parseFloat(sfMatch[1]);
+          result.measurements.valleyLength = Math.ceil(sfQty / 3);
+          console.log('[LOSS-PARSER] ICE & WATER SF FOUND:', sfQty, '→ valleyLength set to:', result.measurements.valleyLength);
+        }
       }
       
       // Pipe jacks / pipe boots
@@ -473,7 +483,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     // Ice & water shield - use correct formula: ceil(valleyLength / 63)
     const valleyLength = result.measurements.valleyLength || 0;
-    const iceWaterRolls = valleyLength === 0 ? 0 : Math.ceil(valleyLength / 63);
+    const iceWaterRolls = valleyLength === 0 ? 1 : Math.ceil(valleyLength / 63);
     const iceMissing = iceWaterRolls === 0 && !iceWaterFoundOnLoss;
     const iceWaterItem = {
       name: MATERIALS.ice_water_shield.name,
