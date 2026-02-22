@@ -321,14 +321,14 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
             console.log(`  Next line [+${j-i}]:`, lines[j]);
           }
           
-          const result = findQuantityInNextLines(i, 'LF|SF');
-          console.log('  Extraction result:', result);
+          const fasciaFound = findQuantityInNextLines(i, 'LF|SF');
+          console.log('  Extraction result:', fasciaFound);
           
-          if (result) {
+          if (fasciaFound) {
             lineItems.fascia.push({
               name: line.replace(/R&R|Replace/i, '').trim() || 'Fascia',
-              quantity: result.quantity,
-              unit: result.unit
+              quantity: fasciaFound.quantity,
+              unit: fasciaFound.unit
             });
             console.log('  ✅ Extracted:', lineItems.fascia[lineItems.fascia.length - 1]);
           } else {
@@ -338,60 +338,60 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         
         // Siding
         if (/siding/i.test(line)) {
-          const result = findQuantityInNextLines(i, 'SF');
-          if (result) {
+          const sidingFound = findQuantityInNextLines(i, 'SF');
+          if (sidingFound) {
             lineItems.siding.push({
               name: line.replace(/R&R|Replace/i, '').trim() || 'Siding',
-              quantity: result.quantity,
-              unit: result.unit
+              quantity: sidingFound.quantity,
+              unit: sidingFound.unit
             });
           }
         }
         
         // Window wrap
         if (/wrap.*window|window.*wrap/i.test(line)) {
-          const result = findQuantityInNextLines(i, 'EA|LF');
-          if (result) {
+          const wrapFound = findQuantityInNextLines(i, 'EA|LF');
+          if (wrapFound) {
             lineItems.windowWrap.push({
               name: line.replace(/R&R|Replace/i, '').trim() || 'Window Wrap',
-              quantity: result.quantity,
-              unit: result.unit
+              quantity: wrapFound.quantity,
+              unit: wrapFound.unit
             });
           }
         }
         
         // Soffit
         if (/soffit/i.test(line)) {
-          const result = findQuantityInNextLines(i, 'SF');
-          if (result) {
+          const soffitFound = findQuantityInNextLines(i, 'SF');
+          if (soffitFound) {
             lineItems.soffit.push({
               name: line.replace(/R&R|Replace/i, '').trim() || 'Soffit',
-              quantity: result.quantity,
-              unit: result.unit
+              quantity: soffitFound.quantity,
+              unit: soffitFound.unit
             });
           }
         }
         
         // Gutters
         if (/gutter/i.test(line)) {
-          const result = findQuantityInNextLines(i, 'LF');
-          if (result) {
+          const gutterFound = findQuantityInNextLines(i, 'LF');
+          if (gutterFound) {
             lineItems.gutters.push({
               name: line.replace(/R&R|Replace/i, '').trim() || 'Gutter',
-              quantity: result.quantity,
-              unit: result.unit
+              quantity: gutterFound.quantity,
+              unit: gutterFound.unit
             });
           }
         }
         
         // Downspouts
         if (/downspout/i.test(line)) {
-          const result = findQuantityInNextLines(i, 'LF');
-          if (result) {
+          const downspoutFound = findQuantityInNextLines(i, 'LF');
+          if (downspoutFound) {
             lineItems.downspouts.push({
               name: line.replace(/R&R|Replace/i, '').trim() || 'Downspout',
-              quantity: result.quantity,
-              unit: result.unit
+              quantity: downspoutFound.quantity,
+              unit: downspoutFound.unit
             });
           }
         }
@@ -404,13 +404,13 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
             console.log(`  Next line [+${j-i}]:`, lines[j]);
           }
           
-          const result = findQuantityInNextLines(i, 'LF');
-          console.log('  Extraction result:', result);
+          const lFlashFound = findQuantityInNextLines(i, 'LF');
+          console.log('  Extraction result:', lFlashFound);
           
-          if (result) {
+          if (lFlashFound) {
             // Store in lineItems.lFlashing (not an array, just overwrite if found)
             if (!lineItems.lFlashing) {
-              lineItems.lFlashing = { quantity: result.quantity, unit: result.unit };
+              lineItems.lFlashing = { quantity: lFlashFound.quantity, unit: lFlashFound.unit };
               console.log('  ✅ Extracted L flashing from R&R section:', lineItems.lFlashing);
             }
           } else {
