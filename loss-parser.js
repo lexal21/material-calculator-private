@@ -284,7 +284,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       if (/R&R|Replace/i.test(line)) {
         // Fascia
         if (/fascia/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*(LF|SF)/i);
+          const match = line.match(/(\d+\.?\d*)\s*(LF|SF)/i) || lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*(LF|SF)/i);
           if (match) {
             const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*(LF|SF)/i)[0].trim();
             lineItems.fascia.push({
@@ -297,7 +297,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         
         // Siding
         if (/siding/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*SF/i);
+          const match = line.match(/(\d+\.?\d*)\s*SF/i) || lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*SF/i);
           if (match) {
             const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*SF/i)[0].trim();
             lineItems.siding.push({
@@ -310,7 +310,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         
         // Window wrap
         if (/wrap.*window|window.*wrap/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*(EA|LF)/i);
+          const match = line.match(/(\d+\.?\d*)\s*(EA|LF)/i) || lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*(EA|LF)/i);
           if (match) {
             const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*(EA|LF)/i)[0].trim();
             lineItems.windowWrap.push({
@@ -323,7 +323,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         
         // Soffit
         if (/soffit/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*SF/i);
+          const match = line.match(/(\d+\.?\d*)\s*SF/i) || lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*SF/i);
           if (match) {
             const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*SF/i)[0].trim();
             lineItems.soffit.push({
@@ -336,7 +336,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         
         // Gutters
         if (/gutter/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*LF/i);
+          const match = line.match(/(\d+\.?\d*)\s*LF/i) || lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*LF/i);
           if (match) {
             const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*LF/i)[0].trim();
             lineItems.gutters.push({
@@ -349,7 +349,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         
         // Downspouts
         if (/downspout/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*LF/i);
+          const match = line.match(/(\d+\.?\d*)\s*LF/i) || lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*LF/i);
           if (match) {
             const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*LF/i)[0].trim();
             lineItems.downspouts.push({
