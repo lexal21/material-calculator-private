@@ -288,7 +288,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Fascia without R&R prefix (Griston and similar carriers)
-      if (!lineItems.fascia && /fascia/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean/i.test(line)) {
+      if (!lineItems.fascia && /fascia/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line)) {
         const sameLine = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (sameLine) {
           lineItems.fascia = { quantity: parseFloat(sameLine[1]), unit: 'LF' };
@@ -304,7 +304,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Soffit without R&R prefix
-      if (!lineItems.soffit && /soffit/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean/i.test(line)) {
+      if (!lineItems.soffit && /soffit/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line)) {
         const sameLine = line.match(/(\d+\.?\d*)\s*(LF|SF)/i);
         if (sameLine) {
           lineItems.soffit = { quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() };
@@ -320,7 +320,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Gutters without R&R prefix
-      if (!lineItems.gutters && /gutter/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean/i.test(line)) {
+      if (!lineItems.gutters && /gutter/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line)) {
         const sameLine = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (sameLine) {
           lineItems.gutters = { quantity: parseFloat(sameLine[1]), unit: 'LF' };
@@ -352,7 +352,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Siding without R&R prefix
-      if (!lineItems.siding && /vinyl\s+siding|hardboard\s+siding|siding.*lap|lap.*siding/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean/i.test(line)) {
+      if (!lineItems.siding && /vinyl\s+siding|hardboard\s+siding|siding.*lap|lap.*siding/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line)) {
         const sameLine = line.match(/(\d+\.?\d*)\s*(SQ|SF)/i);
         if (sameLine) {
           lineItems.siding = { quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() };
