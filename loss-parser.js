@@ -252,7 +252,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Ice & water shield detection (for missing data flag)
-      if (/ice.*water|ice\s*&\s*water/i.test(line)) {
+      // Skip if this is a code upgrade item (struck through or "payable when incurred")
+      const isCodeUpgrade = /code\s+upgrade|payable\s+when\s+incurred/i.test(line) || 
+                            (i > 0 && /code\s+upgrade|payable\s+when\s+incurred/i.test(lines[i-1]));
+      
+      if (!isCodeUpgrade && (/ice.*water.*barrier|ice\s*&\s*water\s*barrier|ice.*water|ice\s*&\s*water/i.test(line))) {
         iceWaterFoundOnLoss = true;
       }
       
@@ -378,6 +382,28 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
               quantity: result.quantity,
               unit: result.unit
             });
+          }
+        }
+        
+        // L flashing (from R&R section) - DEBUG LOGGING ENABLED
+        if (/l\s+flashing|flashing.*l\s|flashing.*galvanized/i.test(line)) {
+          console.log('[LOSS-PARSER] L FLASHING DEBUG:');
+          console.log('  Description line:', line);
+          for (let j = i + 1; j <= Math.min(i + 5, lines.length - 1); j++) {
+            console.log(`  Next line [+${j-i}]:`, lines[j]);
+          }
+          
+          const result = findQuantityInNextLines(i, 'LF');
+          console.log('  Extraction result:', result);
+          
+          if (result) {
+            // Store in lineItems.lFlashing (not an array, just overwrite if found)
+            if (!lineItems.lFlashing) {
+              lineItems.lFlashing = { quantity: result.quantity, unit: result.unit };
+              console.log('  ✅ Extracted L flashing from R&R section:', lineItems.lFlashing);
+            }
+          } else {
+            console.log('  ❌ No quantity found in next 5 lines');
           }
         }
       }
@@ -664,6 +690,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         name: item.name,
         quantity: item.quantity,
         unit: item.unit,
+        unitPrice: 0,  // User must enter pricing for loss-sourced items
         source: 'loss',
         color: ''
       });

@@ -636,9 +636,35 @@ function displayResults(data) {
           <input type="checkbox" class="material-checkbox" data-row="${rowIndex}" onchange="toggleMaterialSelection(${rowIndex})">
         </td>
         <td data-label="Item">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="flex: 1;">${item.name}</span>
-            <span style="background: #fbbf24; color: #78350f; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">FROM LOSS</span>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="flex: 1;">${item.name}</span>
+              <span style="background: #fbbf24; color: #78350f; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">FROM LOSS</span>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <input 
+                type="text" 
+                class="editable-input" 
+                placeholder="Color..." 
+                value="${item.color || ''}"
+                data-row="${rowIndex}"
+                data-field="color"
+                onchange="updateLossItemColor(${rowIndex}, this.value)"
+                style="flex: 1; min-width: 120px;"
+              />
+              <input 
+                type="number" 
+                class="editable-input" 
+                placeholder="Unit price..." 
+                value="${item.unitPrice || 0}"
+                min="0"
+                step="0.01"
+                data-row="${rowIndex}"
+                data-field="unitPrice"
+                onchange="updateLossItemUnitPrice(${rowIndex}, parseFloat(this.value) || 0)"
+                style="flex: 1; min-width: 120px;"
+              />
+            </div>
           </div>
         </td>
         <td data-label="Quantity">
@@ -655,16 +681,7 @@ function displayResults(data) {
         </td>
         <td data-label="Unit">${item.unit}</td>
         <td data-label="Color" style="padding: 8px;">
-          <input 
-            type="text" 
-            class="editable-input" 
-            placeholder="Enter color..." 
-            value="${item.color || ''}"
-            data-row="${rowIndex}"
-            data-field="color"
-            onchange="updateLossItemColor(${rowIndex}, this.value)"
-            style="width: 100%; max-width: 200px;"
-          />
+          <!-- Removed, now in Item column -->
         </td>
         <td class="delete-cell no-print">
           <button class="delete-btn" onclick="deleteLossItem(${rowIndex})">
@@ -2676,6 +2693,16 @@ function updateLossItemColor(rowIndex, color) {
     if (window.lossItems[lossIndex]) {
       window.lossItems[lossIndex].color = color;
       console.log('[LOSS] Updated color for', window.lossItems[lossIndex].name, 'to', color);
+    }
+  }
+}
+
+function updateLossItemUnitPrice(rowIndex, unitPrice) {
+  if (window.lossItems) {
+    const lossIndex = rowIndex - window.materialsData.length;
+    if (window.lossItems[lossIndex]) {
+      window.lossItems[lossIndex].unitPrice = unitPrice;
+      console.log('[LOSS] Updated unit price for', window.lossItems[lossIndex].name, 'to $' + unitPrice.toFixed(2));
     }
   }
 }
