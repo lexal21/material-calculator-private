@@ -200,45 +200,45 @@ const LossCompare = (() => {
       }
     });
 
-    // SPECIAL CASE: Single loss sheet (no roof report)
-    if (droppedFiles.length === 1 && droppedFiles[0] === lossFile) {
-      console.log('[LOSS-COMPARE] Standalone loss sheet detected');
+    // SINGLE FILE: Always use /api/parse-loss (backend routes to correct parser)
+    if (droppedFiles.length === 1) {
+      console.log('[LOSS-COMPARE] Single file upload - using /api/parse-loss');
+      var singleFile = droppedFiles[0];
+      
       try {
-        var lossForm = new FormData();
-        lossForm.append('pdf', lossFile);
-        lossForm.append('shed_included', window.shedIncluded !== false ? 'true' : 'false');
+        var singleForm = new FormData();
+        singleForm.append('pdf', singleFile);
+        singleForm.append('shed_included', window.shedIncluded !== false ? 'true' : 'false');
+        singleForm.append('location', document.getElementById('location')?.value || 'charleston');
         
-        var lossResp = await fetch('/api/parse-loss', {
+        var singleResp = await fetch('/api/parse-loss', {
           method: 'POST',
-          body: lossForm,
+          body: singleForm,
           credentials: 'same-origin'
         });
         
-        var lossData = await lossResp.json();
+        var singleData = await singleResp.json();
         
-        if (lossData.success && typeof displayResults === 'function') {
-          // Store for shed toggle
-          window.currentLossData = lossData;
-          window.currentLossFile = lossFile;
-          
-          // Show shed toggle if shed squares present
-          if (lossData.shed_squares > 0) {
-            showShedToggle(lossData.shed_included, lossData.shed_squares);
+        if (singleData.success && typeof displayResults === 'function') {
+          // Store for shed toggle (if loss sheet)
+          if (singleData.shed_squares) {
+            window.currentLossData = singleData;
+            window.currentLossFile = singleFile;
+            
+            // Show shed toggle if shed squares present
+            if (singleData.shed_squares > 0) {
+              showShedToggle(singleData.shed_included, singleData.shed_squares);
+            }
           }
           
-          displayResults(lossData);
+          displayResults(singleData);
         } else {
-          showError('Failed to parse loss sheet: ' + (lossData.message || 'Unknown error'));
+          showError('Failed to parse PDF: ' + (singleData.message || 'Unknown error'));
         }
       } catch (err) {
         showError('Error: ' + err.message);
       }
       return;
-    }
-
-    // NORMAL CASE: Roof report or roof + loss
-    if (droppedFiles.length === 1) {
-      roofFile = droppedFiles[0];
     }
 
     try {

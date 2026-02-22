@@ -378,6 +378,65 @@ app.post('/api/parse-loss', upload.single('pdf'), async (req, res) => {
     return res.status(400).json({ success: false, message: 'No file uploaded' });
   }
   
+  // Check if this is actually a loss sheet (not a roof report)
+  const isLoss = await lossParser.isLossSheet(req.file.path);
+  
+  if (!isLoss) {
+    // This is a roof report, not a loss sheet - route to roof parser
+    console.log('[PARSE-LOSS] Detected roof report, routing to roof parser');
+    try {
+      const location = req.body.location || 'charleston';
+      const result = await parser.parseAndCalculate(req.file.path, location);
+      
+      // Calculate labor items (same as /upload endpoint)
+      const laborItems = [];
+      const squares = result.measurements.roofSquares || 0;
+      const pitchData = result.raw.pitch_data || {};
+      
+      if (squares > 0) laborItems.push({ name: 'Labor - Squares', quantity: squares, unit: 'SQ', unitPrice: 90, total: squares * 90 });
+      if (squares > 0) laborItems.push({ name: 'Tear Off - 1 Layer', quantity: squares, unit: 'SQ', unitPrice: 25, total: squares * 25 });
+      
+      const starterBundles = result.materials.find(m => m.name.includes('Starter'))?.quantity || 0;
+      if (starterBundles > 0) laborItems.push({ name: 'Starter per Bundle', quantity: starterBundles, unit: 'BD', unitPrice: 25, total: starterBundles * 25 });
+      
+      const hipRidgeBundles = result.materials.find(m => m.name.includes('Hip'))?.quantity || 0;
+      if (hipRidgeBundles > 0) laborItems.push({ name: 'Hip and Ridge Cap per Bundle', quantity: hipRidgeBundles, unit: 'BD', unitPrice: 25, total: hipRidgeBundles * 25 });
+      
+      if (pitchData.tier_8_9 > 0) laborItems.push({ name: 'Steep Charge for 8-9/12 pitch', quantity: pitchData.tier_8_9, unit: 'SQ', unitPrice: 5, total: pitchData.tier_8_9 * 5 });
+      if (pitchData.tier_10_11 > 0) laborItems.push({ name: 'Steep Charge for 10-11/12 pitch', quantity: pitchData.tier_10_11, unit: 'SQ', unitPrice: 10, total: pitchData.tier_10_11 * 10 });
+      if (pitchData.tier_12_plus > 0) laborItems.push({ name: 'Steep Charge for 12+/12 pitch', quantity: pitchData.tier_12_plus, unit: 'SQ', unitPrice: 20, total: pitchData.tier_12_plus * 20 });
+      
+      const plywoodQty = result.materials.find(m => m.name.includes('Plywood'))?.quantity || 0;
+      const plywoodRate = plywoodQty > 10 ? 10 : 30;
+      if (plywoodQty > 0) laborItems.push({ name: `Plywood (${plywoodQty > 10 ? 'Lots' : 'Few'})`, quantity: plywoodQty, unit: 'Sheet', unitPrice: plywoodRate, total: plywoodQty * plywoodRate });
+      
+      const laborSubtotal = laborItems.reduce((sum, item) => sum + item.total, 0);
+      const subtotal = result.materials.reduce((sum, m) => sum + m.total, 0);
+      const tax = subtotal * 0.09;
+      
+      // Clean up temp file
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      
+      return res.json({
+        success: true,
+        measurements: result.measurements,
+        raw: result.raw,
+        materials: result.materials,
+        labor: { items: laborItems, subtotal: laborSubtotal },
+        lossItems: [],
+        subtotal,
+        tax,
+        grandTotal: subtotal + tax
+      });
+    } catch (err) {
+      console.error('[PARSE-LOSS] Roof report parsing failed:', err);
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  }
+  
   const shedIncluded = req.body.shed_included !== 'false';
   
   console.log('[PARSE-LOSS] Parsing loss sheet, shed_included:', shedIncluded);
