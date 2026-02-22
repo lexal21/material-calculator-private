@@ -351,6 +351,22 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
+      // Siding without R&R prefix
+      if (!lineItems.siding && /vinyl\s+siding|hardboard\s+siding|siding.*lap|lap.*siding/i.test(line) && !/R&R|Replace/i.test(line)) {
+        const sameLine = line.match(/(\d+\.?\d*)\s*(SQ|SF)/i);
+        if (sameLine) {
+          lineItems.siding = { quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() };
+        } else {
+          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(SQ|SF)/i);
+            if (nextMatch) {
+              lineItems.siding = { quantity: parseFloat(nextMatch[1]), unit: nextMatch[2].toUpperCase() };
+              break;
+            }
+          }
+        }
+      }
+      
       // Step flashing
       if (/step\s+flashing/i.test(line)) {
         const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
