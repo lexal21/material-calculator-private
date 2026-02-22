@@ -397,7 +397,17 @@ function startNewProject() {
     fileInput.value = '';
   }
   
-  // Clear loss compare dropzone (uploaded files + preview)
+  // Clear loss upload area
+  const lcFileChips = document.getElementById('lc-fileChips');
+  if (lcFileChips) lcFileChips.innerHTML = '';
+  const lcFileInput = document.getElementById('lc-fileInput');
+  if (lcFileInput) lcFileInput.value = '';
+  const lcResults = document.getElementById('lc-results');
+  if (lcResults) lcResults.style.display = 'none';
+  const lcError = document.getElementById('lc-error');
+  if (lcError) lcError.style.display = 'none';
+  const lcLoading = document.getElementById('lc-loading');
+  if (lcLoading) lcLoading.style.display = 'none';
   if (typeof LossCompare !== 'undefined' && typeof LossCompare.clearAll === 'function') {
     LossCompare.clearAll();
   }
