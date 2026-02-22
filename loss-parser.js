@@ -90,7 +90,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Shed squares from "Other Structure" or "Shed" section
       if ((/other\s+structure|shed/i.test(line)) && /roof/i.test(line)) {
-        const shedMatch = line.match(/(\d+\.?\d*)\s*SQ/i) || lines[i + 1]?.match(/(\d+\.?\d*)\s*SQ/i);
+        const shedMatch = line.match(/(\d+\.?\d*)\s*(SQ)/i) || lines[i + 1]?.match(/(\d+\.?\d*)\s*(SQ)/i);
         if (shedMatch) {
           shedSquares = parseFloat(shedMatch[1]);
           console.log('[LOSS-PARSER] Found shed squares:', shedSquares);
@@ -132,7 +132,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Drip edge EAVE+RAKE quantity (most reliable for perimeter)
       if (/drip\s+edge/i.test(line) && /eave.*rake|eave\s*\+\s*rake/i.test(line)) {
-        const dripMatch = line.match(/(\d+\.?\d*)\s*LF/i);
+        const dripMatch = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (dripMatch) {
           dripEdgeEaveRake = parseFloat(dripMatch[1]);
           console.log('[LOSS-PARSER] Found drip edge EAVE+RAKE:', dripEdgeEaveRake);
@@ -203,8 +203,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Shingles (primary source of SQ measurement)
       // Match: "Laminated - comp. shingle rfg.", "3 tab - 25 yr. - comp. shingle roofing", "architectural shingle"
-      if ((/laminated.*comp.*shingle|3\s*tab.*comp.*shingle|architectural.*shingle|comp.*shingle.*rfg/i.test(line)) && /(\d+\.?\d*)\s*SQ/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*SQ/i);
+      // Pattern handles both "38.33SQ" and "38.33 SQ"
+      if (/laminated.*comp.*shingle|3\s*tab.*comp.*shingle|architectural.*shingle|comp.*shingle.*rfg/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(SQ)/i);
         if (match) {
           shingleSquares = parseFloat(match[1]);
           lineItems.shingles = { quantity: shingleSquares, unit: 'SQ' };
@@ -213,16 +214,16 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Tear off (extract for labor only)
-      if (/tear\s*off|remove.*shingle/i.test(line) && /(\d+\.?\d*)\s*SQ/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*SQ/i);
+      if (/tear\s*off|remove.*shingle/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(SQ)/i);
         if (match) {
           tearOffSquares = parseFloat(match[1]);
         }
       }
       
       // Roofing felt / underlayment
-      if (/roofing\s+felt|underlayment|15.*felt|30.*felt/i.test(line) && /(\d+\.?\d*)\s*SQ/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*SQ/i);
+      if (/roofing\s+felt|underlayment|15.*felt|30.*felt/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(SQ)/i);
         if (match) {
           lineItems.underlayment = { quantity: parseFloat(match[1]), unit: 'SQ' };
         }
@@ -230,7 +231,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Hip/Ridge cap
       if (/hip.*ridge.*cap|ridge.*cap/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*LF/i);
+        const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (match) {
           lineItems.hipRidge = { quantity: parseFloat(match[1]), unit: 'LF' };
           console.log('[LOSS-PARSER] Found hip/ridge cap:', match[1], 'LF from line:', line);
@@ -238,47 +239,47 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Ridge vent
-      if (/ridge\s+vent/i.test(line) && /(\d+\.?\d*)\s*LF/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*LF/i);
+      if (/ridge\s+vent/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (match) {
           lineItems.ridgeVent = { quantity: parseFloat(match[1]), unit: 'LF' };
         }
       }
       
       // Drip edge
-      if (/drip\s+edge/i.test(line) && /(\d+\.?\d*)\s*LF/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*LF/i);
+      if (/drip\s+edge/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (match) {
           lineItems.dripEdge = { quantity: parseFloat(match[1]), unit: 'LF' };
         }
       }
       
       // Ice & water shield detection (for missing data flag)
-      // Detect even if marked as code upgrade - it's still on the loss sheet
-      if (/ice\s*&\s*water\s*barrier|ice.*water.*barrier|ice\s*&\s*water|ice.*water/i.test(line)) {
+      // Just detect the phrase - don't care about quantity or unit type
+      if (/ice\s*&\s*water\s*shield|ice\s*&\s*water\s*barrier|ice.*water.*shield|ice.*water.*barrier/i.test(line)) {
         iceWaterFoundOnLoss = true;
         console.log('[LOSS-PARSER] Ice & water detected on loss sheet from line:', line);
       }
       
       // Pipe jacks / pipe boots
-      if (/pipe\s+jack|flashing.*pipe|pipe.*boot/i.test(line) && /(\d+\.?\d*)\s*EA/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*EA/i);
+      if (/pipe\s+jack|flashing.*pipe|pipe.*boot/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(EA)/i);
         if (match) {
           lineItems.pipeBoots = { quantity: parseFloat(match[1]), unit: 'EA' };
         }
       }
       
       // Step flashing
-      if (/step\s+flashing/i.test(line) && /(\d+\.?\d*)\s*LF/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*LF/i);
+      if (/step\s+flashing/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (match) {
           lineItems.stepFlashing = { quantity: parseFloat(match[1]), unit: 'LF' };
         }
       }
       
       // L flashing / trim coil
-      if ((/flashing.*14|l\s+flashing|trim\s+coil/i.test(line)) && /(\d+\.?\d*)\s*LF/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*LF/i);
+      if (/flashing.*14|l\s+flashing|trim\s+coil/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (match) {
           lineItems.lFlashing = { quantity: parseFloat(match[1]), unit: 'LF' };
         }
