@@ -202,11 +202,13 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       if (!line) continue;
       
       // Shingles (primary source of SQ measurement)
-      if ((/comp.*shingle|laminated|3-tab|architectural.*shingle/i.test(line)) && /(\d+\.?\d*)\s*SQ/i.test(line)) {
+      // Match: "Laminated - comp. shingle rfg.", "3 tab - 25 yr. - comp. shingle roofing", "architectural shingle"
+      if ((/laminated.*comp.*shingle|3\s*tab.*comp.*shingle|architectural.*shingle|comp.*shingle.*rfg/i.test(line)) && /(\d+\.?\d*)\s*SQ/i.test(line)) {
         const match = line.match(/(\d+\.?\d*)\s*SQ/i);
         if (match) {
           shingleSquares = parseFloat(match[1]);
           lineItems.shingles = { quantity: shingleSquares, unit: 'SQ' };
+          console.log('[LOSS-PARSER] SHINGLE SQ EXTRACTED:', shingleSquares, 'from line:', line);
         }
       }
       
@@ -252,12 +254,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Ice & water shield detection (for missing data flag)
-      // Skip if this is a code upgrade item (struck through or "payable when incurred")
-      const isCodeUpgrade = /code\s+upgrade|payable\s+when\s+incurred/i.test(line) || 
-                            (i > 0 && /code\s+upgrade|payable\s+when\s+incurred/i.test(lines[i-1]));
-      
-      if (!isCodeUpgrade && (/ice.*water.*barrier|ice\s*&\s*water\s*barrier|ice.*water|ice\s*&\s*water/i.test(line))) {
+      // Detect even if marked as code upgrade - it's still on the loss sheet
+      if (/ice\s*&\s*water\s*barrier|ice.*water.*barrier|ice\s*&\s*water|ice.*water/i.test(line)) {
         iceWaterFoundOnLoss = true;
+        console.log('[LOSS-PARSER] Ice & water detected on loss sheet from line:', line);
       }
       
       // Pipe jacks / pipe boots
@@ -411,9 +411,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     // Use shingle SQ as primary squares value
     if (shingleSquares !== totalSquares) {
-      console.log('[LOSS-PARSER] Using shingle SQ from loss sheet:', shingleSquares);
+      console.log('[LOSS-PARSER] Overriding calculated squares with shingle line item:', shingleSquares, '(was', totalSquares, ')');
       result.raw.roof_sq = shingleSquares;
       result.measurements.roofSquares = shingleSquares;
+    } else {
+      console.log('[LOSS-PARSER] WARNING: No shingle line item found, using calculated squares:', totalSquares);
     }
     
     // ==========================================
@@ -423,6 +425,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     // Calculate shingles (bundles) - shingleSquares already includes waste
     const bundlesPerSq = 3;
     const shingleBundles = Math.ceil(shingleSquares * bundlesPerSq);
+    console.log('[LOSS-PARSER] BUNDLE CALCULATION: shingleSquares =', shingleSquares, '→ bundles =', shingleBundles);
     result.materials.push({
       name: MATERIALS.shingles.name,
       quantity: shingleBundles,

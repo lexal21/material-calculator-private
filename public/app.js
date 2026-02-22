@@ -631,43 +631,31 @@ function displayResults(data) {
       row.dataset.source = 'loss';
       row.classList.add('loss-item-row');
       
+      const total = (item.quantity || 0) * (item.unitPrice || 0);
+      
       row.innerHTML = `
         <td class="checkbox-cell no-print">
           <input type="checkbox" class="material-checkbox" data-row="${rowIndex}" onchange="toggleMaterialSelection(${rowIndex})">
         </td>
         <td data-label="Item">
-          <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="flex: 1;">${item.name}</span>
               <span style="background: #fbbf24; color: #78350f; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">FROM LOSS</span>
             </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <input 
-                type="text" 
-                class="editable-input" 
-                placeholder="Color..." 
-                value="${item.color || ''}"
-                data-row="${rowIndex}"
-                data-field="color"
-                onchange="updateLossItemColor(${rowIndex}, this.value)"
-                style="flex: 1; min-width: 120px;"
-              />
-              <input 
-                type="number" 
-                class="editable-input" 
-                placeholder="Unit price..." 
-                value="${item.unitPrice || 0}"
-                min="0"
-                step="0.01"
-                data-row="${rowIndex}"
-                data-field="unitPrice"
-                onchange="updateLossItemUnitPrice(${rowIndex}, parseFloat(this.value) || 0)"
-                style="flex: 1; min-width: 120px;"
-              />
-            </div>
+            <input 
+              type="text" 
+              class="editable-input" 
+              placeholder="Enter color..." 
+              value="${item.color || ''}"
+              data-row="${rowIndex}"
+              data-field="color"
+              onchange="updateLossItemColor(${rowIndex}, this.value)"
+              style="max-width: 200px; font-size: 13px;"
+            />
           </div>
         </td>
-        <td data-label="Quantity">
+        <td data-label="Quantity" class="editable-cell">
           <input 
             type="number" 
             class="editable-input quantity-input" 
@@ -676,13 +664,23 @@ function displayResults(data) {
             step="0.01"
             data-row="${rowIndex}"
             data-field="quantity"
-            onchange="updateLossItem(${rowIndex})"
+            onchange="updateLossItemAndRecalc(${rowIndex})"
           />
         </td>
         <td data-label="Unit">${item.unit}</td>
-        <td data-label="Color" style="padding: 8px;">
-          <!-- Removed, now in Item column -->
+        <td data-label="Unit Price" class="editable-cell">
+          $<input 
+            type="number" 
+            class="editable-input price-input" 
+            value="${(item.unitPrice || 0).toFixed(2)}" 
+            min="0"
+            step="0.01"
+            data-row="${rowIndex}"
+            data-field="unitPrice"
+            onchange="updateLossItemAndRecalc(${rowIndex})"
+          />
         </td>
+        <td data-label="Total" class="row-total">$${total.toFixed(2)}</td>
         <td class="delete-cell no-print">
           <button class="delete-btn" onclick="deleteLossItem(${rowIndex})">
             &#215;
@@ -1072,8 +1070,9 @@ function updateMaterialsTotals() {
 
 function recalculateTotals() {
   const materialsTotal = window.materialsData.reduce((sum, item) => sum + item.total, 0);
+  const lossTotal = (window.lossItems || []).reduce((sum, item) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
   const miscTotal = (window.miscTotals || []).reduce((sum, val) => sum + val, 0);
-  const subtotal = materialsTotal + miscTotal;
+  const subtotal = materialsTotal + lossTotal + miscTotal;
   const taxRate = (window.taxRate || 9) / 100;
   const tax = subtotal * taxRate;
   const grandTotal = subtotal + tax;
@@ -2671,20 +2670,40 @@ function saveLaborNotes() {
 // ========================================== 
 
 
-function updateLossItem(rowIndex) {
-  const row = document.querySelector(`tr[data-row="${rowIndex}"][data-source="loss"]`);
+function updateLossItemAndRecalc(rowIndex) {
+  if (!window.lossItems) return;
+  
+  const lossIndex = rowIndex - window.materialsData.length;
+  if (!window.lossItems[lossIndex]) return;
+  
+  // Get current values from inputs
+  const row = document.querySelector(`tr[data-row="${rowIndex}"]`);
   if (!row) return;
   
   const qtyInput = row.querySelector('input[data-field="quantity"]');
-  const quantity = parseFloat(qtyInput.value) || 0;
+  const priceInput = row.querySelector('input[data-field="unitPrice"]');
+  const totalCell = row.querySelector('.row-total');
   
-//Update stored data
-  if (window.lossItems) {
-    const lossIndex = rowIndex - window.materialsData.length;
-    if (window.lossItems[lossIndex]) {
-      window.lossItems[lossIndex].quantity = quantity;
-    }
+  const quantity = parseFloat(qtyInput.value) || 0;
+  const unitPrice = parseFloat(priceInput.value) || 0;
+  const total = quantity * unitPrice;
+  
+  // Update stored data
+  window.lossItems[lossIndex].quantity = quantity;
+  window.lossItems[lossIndex].unitPrice = unitPrice;
+  window.lossItems[lossIndex].total = total;
+  
+  // Update display
+  if (totalCell) {
+    totalCell.textContent = '$' + total.toFixed(2);
   }
+  
+  // Recalculate grand totals (includes loss items)
+  if (typeof recalculateTotals === 'function') {
+    recalculateTotals();
+  }
+  
+  console.log('[LOSS] Updated', window.lossItems[lossIndex].name, '→ qty:', quantity, 'price:', unitPrice, 'total:', total);
 }
 
 function updateLossItemColor(rowIndex, color) {
@@ -2693,16 +2712,6 @@ function updateLossItemColor(rowIndex, color) {
     if (window.lossItems[lossIndex]) {
       window.lossItems[lossIndex].color = color;
       console.log('[LOSS] Updated color for', window.lossItems[lossIndex].name, 'to', color);
-    }
-  }
-}
-
-function updateLossItemUnitPrice(rowIndex, unitPrice) {
-  if (window.lossItems) {
-    const lossIndex = rowIndex - window.materialsData.length;
-    if (window.lossItems[lossIndex]) {
-      window.lossItems[lossIndex].unitPrice = unitPrice;
-      console.log('[LOSS] Updated unit price for', window.lossItems[lossIndex].name, 'to $' + unitPrice.toFixed(2));
     }
   }
 }
