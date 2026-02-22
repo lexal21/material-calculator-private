@@ -191,14 +191,22 @@ const LossCompare = (() => {
     // Find roof report and loss sheet from dropped files
     var roofFile = null;
     var lossFile = null;
-    var chips = document.querySelectorAll('.lc-chip');
-    chips.forEach(function(chip, i) {
-      if (chip.dataset.type === 'loss') {
-        lossFile = droppedFiles[i];
+    // Detect file types server-side before routing
+    await Promise.all(droppedFiles.map(async function(file) {
+      var detectForm = new FormData();
+      detectForm.append('pdf', file);
+      var detectResp = await fetch('/api/detect-pdf-type', {
+        method: 'POST',
+        body: detectForm,
+        credentials: 'same-origin'
+      });
+      var detectData = await detectResp.json();
+      if (detectData.isLoss) {
+        lossFile = file;
       } else {
-        roofFile = droppedFiles[i];
+        roofFile = file;
       }
-    });
+    }));
 
     // SINGLE FILE: Always use /api/parse-loss (backend routes to correct parser)
     if (droppedFiles.length === 1) {

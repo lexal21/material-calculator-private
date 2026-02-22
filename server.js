@@ -796,6 +796,19 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
   }
 });
 
+// Detect PDF type (loss sheet vs roof report)
+app.post('/api/detect-pdf-type', upload.single('pdf'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ isLoss: false });
+  try {
+    const isLoss = await lossParser.isLossSheet(req.file.path);
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    res.json({ isLoss });
+  } catch (e) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    res.json({ isLoss: false });
+  }
+});
+
 // Only start server if not in Vercel (Vercel uses serverless functions)
 if (process.env.VERCEL !== '1') {
   app.listen(port, () => {
