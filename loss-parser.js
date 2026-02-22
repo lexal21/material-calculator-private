@@ -271,11 +271,83 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
-      // Pipe jacks / pipe boots
+      // Pipe jacks / pipe boots - quantity can be on same line OR next line
       if (/pipe\s+jack|flashing.*pipe|pipe.*boot/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(EA)/i);
-        if (match) {
-          lineItems.pipeBoots = { quantity: parseFloat(match[1]), unit: 'EA' };
+        const sameLine = line.match(/(\d+\.?\d*)\s*(EA)/i);
+        if (sameLine) {
+          lineItems.pipeBoots = { quantity: parseFloat(sameLine[1]), unit: 'EA' };
+        } else {
+          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(EA)/i);
+            if (nextMatch) {
+              lineItems.pipeBoots = { quantity: parseFloat(nextMatch[1]), unit: 'EA' };
+              break;
+            }
+          }
+        }
+      }
+      
+      // Fascia without R&R prefix (Griston and similar carriers)
+      if (!lineItems.fascia.length && /fascia/i.test(line) && !/R&R|Replace/i.test(line)) {
+        const sameLine = line.match(/(\d+\.?\d*)\s*(LF)/i);
+        if (sameLine) {
+          lineItems.fascia.push({ name: 'Fascia', quantity: parseFloat(sameLine[1]), unit: 'LF' });
+        } else {
+          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF)/i);
+            if (nextMatch) {
+              lineItems.fascia.push({ name: 'Fascia', quantity: parseFloat(nextMatch[1]), unit: 'LF' });
+              break;
+            }
+          }
+        }
+      }
+      
+      // Soffit without R&R prefix
+      if (!lineItems.soffit.length && /soffit/i.test(line) && !/R&R|Replace/i.test(line)) {
+        const sameLine = line.match(/(\d+\.?\d*)\s*(LF|SF)/i);
+        if (sameLine) {
+          lineItems.soffit.push({ name: 'Soffit', quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() });
+        } else {
+          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF|SF)/i);
+            if (nextMatch) {
+              lineItems.soffit.push({ name: 'Soffit', quantity: parseFloat(nextMatch[1]), unit: nextMatch[2].toUpperCase() });
+              break;
+            }
+          }
+        }
+      }
+      
+      // Gutters without R&R prefix
+      if (!lineItems.gutters.length && /gutter/i.test(line) && !/R&R|Replace/i.test(line)) {
+        const sameLine = line.match(/(\d+\.?\d*)\s*(LF)/i);
+        if (sameLine) {
+          lineItems.gutters.push({ name: 'Gutter', quantity: parseFloat(sameLine[1]), unit: 'LF' });
+        } else {
+          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF)/i);
+            if (nextMatch) {
+              lineItems.gutters.push({ name: 'Gutter', quantity: parseFloat(nextMatch[1]), unit: 'LF' });
+              break;
+            }
+          }
+        }
+      }
+      
+      // Downspouts without R&R prefix
+      if (!lineItems.downspouts.length && /downspout/i.test(line) && !/R&R|Replace/i.test(line)) {
+        const sameLine = line.match(/(\d+\.?\d*)\s*(LF|EA)/i);
+        if (sameLine) {
+          lineItems.downspouts.push({ name: 'Downspout', quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() });
+        } else {
+          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF|EA)/i);
+            if (nextMatch) {
+              lineItems.downspouts.push({ name: 'Downspout', quantity: parseFloat(nextMatch[1]), unit: nextMatch[2].toUpperCase() });
+              break;
+            }
+          }
         }
       }
       
