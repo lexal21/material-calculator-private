@@ -370,6 +370,64 @@ app.get('/api/diagnostic', requireAuth, (req, res) => {
   res.json(diagnostics);
 });
 
+// DEBUG: Extract raw text from uploaded PDF
+app.get('/api/debug-loss', upload.single('pdf'), async (req, res) => {
+  console.log('[DEBUG-LOSS] Request from:', req.user.email);
+  
+  if (!req.file) {
+    return res.status(400).send('No file uploaded. Use POST with multipart/form-data and a "pdf" field.');
+  }
+  
+  try {
+    const pdf = require('pdf-parse-fork');
+    const dataBuffer = fs.readFileSync(req.file.path);
+    const data = await pdf(dataBuffer);
+    
+    // Clean up temp file
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.send(data.text);
+  } catch (err) {
+    console.error('[DEBUG-LOSS] Error:', err);
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).send('Error extracting text: ' + err.message);
+  }
+});
+
+// Alternative: POST version for easier file upload
+app.post('/api/debug-loss', upload.single('pdf'), async (req, res) => {
+  console.log('[DEBUG-LOSS] Request from:', req.user.email);
+  
+  if (!req.file) {
+    return res.status(400).send('No file uploaded. Use POST with multipart/form-data and a "pdf" field.');
+  }
+  
+  try {
+    const pdf = require('pdf-parse-fork');
+    const dataBuffer = fs.readFileSync(req.file.path);
+    const data = await pdf(dataBuffer);
+    
+    // Clean up temp file
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.send(data.text);
+  } catch (err) {
+    console.error('[DEBUG-LOSS] Error:', err);
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).send('Error extracting text: ' + err.message);
+  }
+});
+
 // Parse complete loss sheet (standalone)
 app.post('/api/parse-loss', upload.single('pdf'), async (req, res) => {
   console.log('[PARSE-LOSS] Request from:', req.user.email);
