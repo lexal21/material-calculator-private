@@ -189,12 +189,12 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       pipeBoots: null,
       stepFlashing: null,
       lFlashing: null,
-      fascia: [],
+      fascia: null,
       siding: [],
       windowWrap: [],
-      soffit: [],
-      gutters: [],
-      downspouts: []
+      soffit: null,
+      gutters: null,
+      downspouts: null
     };
     
     for (let i = 0; i < lines.length; i++) {
@@ -288,15 +288,15 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Fascia without R&R prefix (Griston and similar carriers)
-      if (!lineItems.fascia.length && /fascia/i.test(line) && !/R&R|Replace/i.test(line)) {
+      if (!lineItems.fascia && /fascia/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean/i.test(line)) {
         const sameLine = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (sameLine) {
-          lineItems.fascia.push({ name: 'Fascia', quantity: parseFloat(sameLine[1]), unit: 'LF' });
+          lineItems.fascia = { quantity: parseFloat(sameLine[1]), unit: 'LF' };
         } else {
           for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
             const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF)/i);
             if (nextMatch) {
-              lineItems.fascia.push({ name: 'Fascia', quantity: parseFloat(nextMatch[1]), unit: 'LF' });
+              lineItems.fascia = { quantity: parseFloat(nextMatch[1]), unit: 'LF' };
               break;
             }
           }
@@ -304,15 +304,15 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Soffit without R&R prefix
-      if (!lineItems.soffit.length && /soffit/i.test(line) && !/R&R|Replace/i.test(line)) {
+      if (!lineItems.soffit && /soffit/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean/i.test(line)) {
         const sameLine = line.match(/(\d+\.?\d*)\s*(LF|SF)/i);
         if (sameLine) {
-          lineItems.soffit.push({ name: 'Soffit', quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() });
+          lineItems.soffit = { quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() };
         } else {
           for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
             const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF|SF)/i);
             if (nextMatch) {
-              lineItems.soffit.push({ name: 'Soffit', quantity: parseFloat(nextMatch[1]), unit: nextMatch[2].toUpperCase() });
+              lineItems.soffit = { quantity: parseFloat(nextMatch[1]), unit: nextMatch[2].toUpperCase() };
               break;
             }
           }
@@ -320,15 +320,15 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Gutters without R&R prefix
-      if (!lineItems.gutters.length && /gutter/i.test(line) && !/R&R|Replace/i.test(line)) {
+      if (!lineItems.gutters && /gutter/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean/i.test(line)) {
         const sameLine = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (sameLine) {
-          lineItems.gutters.push({ name: 'Gutter', quantity: parseFloat(sameLine[1]), unit: 'LF' });
+          lineItems.gutters = { quantity: parseFloat(sameLine[1]), unit: 'LF' };
         } else {
           for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
             const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF)/i);
             if (nextMatch) {
-              lineItems.gutters.push({ name: 'Gutter', quantity: parseFloat(nextMatch[1]), unit: 'LF' });
+              lineItems.gutters = { quantity: parseFloat(nextMatch[1]), unit: 'LF' };
               break;
             }
           }
@@ -336,15 +336,15 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Downspouts without R&R prefix
-      if (!lineItems.downspouts.length && /downspout/i.test(line) && !/R&R|Replace/i.test(line)) {
+      if (!lineItems.downspouts && /downspout/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean/i.test(line)) {
         const sameLine = line.match(/(\d+\.?\d*)\s*(LF|EA)/i);
         if (sameLine) {
-          lineItems.downspouts.push({ name: 'Downspout', quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() });
+          lineItems.downspouts = { quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() };
         } else {
           for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
             const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF|EA)/i);
             if (nextMatch) {
-              lineItems.downspouts.push({ name: 'Downspout', quantity: parseFloat(nextMatch[1]), unit: nextMatch[2].toUpperCase() });
+              lineItems.downspouts = { quantity: parseFloat(nextMatch[1]), unit: nextMatch[2].toUpperCase() };
               break;
             }
           }
@@ -412,13 +412,12 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
           const fasciaFound = findQuantityInNextLines(i, 'LF|SF');
           console.log('  Extraction result:', fasciaFound);
           
-          if (fasciaFound) {
-            lineItems.fascia.push({
-              name: line.replace(/R&R|Replace/i, '').trim() || 'Fascia',
+          if (fasciaFound && !lineItems.fascia) {
+            lineItems.fascia = {
               quantity: fasciaFound.quantity,
               unit: fasciaFound.unit
-            });
-            console.log('  ✅ Extracted:', lineItems.fascia[lineItems.fascia.length - 1]);
+            };
+            console.log('  ✅ Extracted:', lineItems.fascia);
           } else {
             console.log('  ❌ No quantity found in next 5 lines');
           }
@@ -451,36 +450,33 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         // Soffit
         if (/soffit/i.test(line)) {
           const soffitFound = findQuantityInNextLines(i, 'SF');
-          if (soffitFound) {
-            lineItems.soffit.push({
-              name: line.replace(/R&R|Replace/i, '').trim() || 'Soffit',
+          if (soffitFound && !lineItems.soffit) {
+            lineItems.soffit = {
               quantity: soffitFound.quantity,
               unit: soffitFound.unit
-            });
+            };
           }
         }
         
         // Gutters
         if (/gutter/i.test(line)) {
           const gutterFound = findQuantityInNextLines(i, 'LF');
-          if (gutterFound) {
-            lineItems.gutters.push({
-              name: line.replace(/R&R|Replace/i, '').trim() || 'Gutter',
+          if (gutterFound && !lineItems.gutters) {
+            lineItems.gutters = {
               quantity: gutterFound.quantity,
               unit: gutterFound.unit
-            });
+            };
           }
         }
         
         // Downspouts
         if (/downspout/i.test(line)) {
           const downspoutFound = findQuantityInNextLines(i, 'LF');
-          if (downspoutFound) {
-            lineItems.downspouts.push({
-              name: line.replace(/R&R|Replace/i, '').trim() || 'Downspout',
+          if (downspoutFound && !lineItems.downspouts) {
+            lineItems.downspouts = {
               quantity: downspoutFound.quantity,
               unit: downspoutFound.unit
-            });
+            };
           }
         }
         
@@ -786,17 +782,61 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     // BUILD LOSS ITEMS (FROM LOSS tagged)
     // ==========================================
     
-    [...lineItems.fascia, ...lineItems.siding, ...lineItems.windowWrap, 
-     ...lineItems.soffit, ...lineItems.gutters, ...lineItems.downspouts].forEach(item => {
+    // Add R&R items to lossItems (fascia, soffit, gutters, downspouts are objects; siding, windowWrap are arrays)
+    if (lineItems.fascia) {
+      result.lossItems.push({
+        name: 'Fascia',
+        quantity: lineItems.fascia.quantity,
+        unit: lineItems.fascia.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    [...lineItems.siding, ...lineItems.windowWrap].forEach(item => {
       result.lossItems.push({
         name: item.name,
         quantity: item.quantity,
         unit: item.unit,
-        unitPrice: 0,  // User must enter pricing for loss-sourced items
+        unitPrice: 0,
         source: 'loss',
         color: ''
       });
     });
+    
+    if (lineItems.soffit) {
+      result.lossItems.push({
+        name: 'Soffit',
+        quantity: lineItems.soffit.quantity,
+        unit: lineItems.soffit.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.gutters) {
+      result.lossItems.push({
+        name: 'Gutter',
+        quantity: lineItems.gutters.quantity,
+        unit: lineItems.gutters.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.downspouts) {
+      result.lossItems.push({
+        name: 'Downspout',
+        quantity: lineItems.downspouts.quantity,
+        unit: lineItems.downspouts.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
     
     // ==========================================
     // CALCULATE TOTALS
