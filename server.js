@@ -448,6 +448,21 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
   console.log('[UPLOAD] File received:', req.file.originalname, 'Size:', req.file.size, 'Path:', req.file.path);
 
   try {
+    // CHECK IF LOSS SHEET FIRST (before attempting roof report parse)
+    const isLoss = await lossParser.isLossSheet(req.file.path);
+    if (isLoss) {
+      console.log('[UPLOAD] Detected loss sheet - wrong endpoint');
+      // Clean up file
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(400).json({
+        error: 'Loss sheet detected',
+        message: 'This appears to be an insurance loss sheet. Please upload it on the Home tab instead of Materials/Labor.',
+        isLossSheet: true
+      });
+    }
+    
     const location = req.body.location || 'inland';
     const customPricing = req.body.pricing ? JSON.parse(req.body.pricing) : null;
     

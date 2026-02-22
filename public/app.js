@@ -226,7 +226,12 @@ async function handleFile(file) {
     if (data.success) {
       displayResults(data);
     } else {
-      showError(data.message || 'Failed to process PDF');
+      // Special handling for loss sheets uploaded to wrong tab
+      if (data.isLossSheet) {
+        showError(data.message + ' Click the "Home" tab at the top to upload loss sheets.');
+      } else {
+        showError(data.message || 'Failed to process PDF');
+      }
     }
   } catch (err) {
     showError('Network error: ' + err.message);
