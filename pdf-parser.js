@@ -26,6 +26,12 @@ async function parseRidgeTopPDF(pdfPath) {
     console.log('Successfully parsed NEW format!');
   }
   
+  // If both parsers failed, return null (not a valid Ridge Top PDF)
+  if (!measurements) {
+    console.log('Both parsers failed - not a valid Ridge Top PDF');
+    return null;
+  }
+  
   // Extract common fields
   measurements.address = extractAddress(text);
   measurements.order_number = extractOrderNumber(text);
@@ -472,6 +478,12 @@ async function parseAndCalculate(pdfPath, location = 'inland') {
   const calculator = require('./calculator');
   
   const rawMeasurements = await parseRidgeTopPDF(pdfPath);
+  
+  // If parsing failed (not a valid Ridge Top PDF), throw error
+  if (!rawMeasurements) {
+    throw new Error('Unable to parse PDF - not a valid Ridge Top roof report format');
+  }
+  
   const measurements = calculator.parseMeasurements(rawMeasurements);
   const materials = calculator.calculateMaterials(measurements, location);
   
