@@ -391,10 +391,15 @@ function startNewProject() {
     laborNotReadyDiv.style.display = 'block';
   }
   
-  // Clear file input
+  // Clear file input (legacy)
   const fileInput = document.getElementById('fileInput');
   if (fileInput) {
     fileInput.value = '';
+  }
+  
+  // Clear loss compare dropzone (uploaded files + preview)
+  if (typeof LossCompare !== 'undefined' && typeof LossCompare.clearAll === 'function') {
+    LossCompare.clearAll();
   }
   
   // Clear form inputs

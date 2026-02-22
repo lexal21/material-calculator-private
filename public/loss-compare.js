@@ -402,11 +402,51 @@ const LossCompare = (() => {
     }
   }
 
+  // -- Clear all uploaded files and reset UI --
+  function clearAll() {
+    // Clear files array
+    droppedFiles = [];
+    
+    // Clear file input
+    var input = document.getElementById('lc-fileInput');
+    if (input) {
+      input.value = '';
+    }
+    
+    // Clear file chips display
+    var chipsContainer = document.getElementById('lc-fileChips');
+    if (chipsContainer) {
+      chipsContainer.innerHTML = '';
+    }
+    
+    // Clear/hide results
+    var resultsContainer = document.getElementById('lc-results');
+    if (resultsContainer) {
+      resultsContainer.style.display = 'none';
+      resultsContainer.innerHTML = '';
+    }
+    
+    // Clear error
+    clearError();
+    
+    // Hide loading
+    var loadingEl = document.getElementById('lc-loading');
+    if (loadingEl) {
+      loadingEl.style.display = 'none';
+    }
+    
+    // Reset generate button
+    updateGenerateBtn();
+    
+    console.log('[LOSS-COMPARE] Cleared all uploaded files');
+  }
+
   // -- Public API --
   return {
     init: init,
     removeFile: removeFile,
-    handleFiles: handleFiles
+    handleFiles: handleFiles,
+    clearAll: clearAll
   };
 })();
 
