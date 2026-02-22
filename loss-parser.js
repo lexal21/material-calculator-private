@@ -282,9 +282,20 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // R&R items (only if contains R&R or Replace)
       if (/R&R|Replace/i.test(line)) {
-        // Fascia
+        // Fascia - DEBUG LOGGING ENABLED - Check current line, next 2 lines
         if (/fascia/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*(LF|SF)/i) || lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*(LF|SF)/i);
+          console.log('[LOSS-PARSER] FASCIA DEBUG:');
+          console.log('  Line [i-1]:', i > 0 ? lines[i - 1] : '(no prev line)');
+          console.log('  Line [i]  :', line);
+          console.log('  Line [i+1]:', i < lines.length - 1 ? lines[i + 1] : '(no next line)');
+          console.log('  Line [i+2]:', i < lines.length - 2 ? lines[i + 2] : '(no next line)');
+          
+          // Try current line, then next line, then line after that (for USAA format with O&P column)
+          const match = line.match(/(\d+\.?\d*)\s*(LF|SF)/i) || 
+                        lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*(LF|SF)/i) ||
+                        lines[i + 2]?.trim().match(/(\d+\.?\d*)\s*(LF|SF)/i);
+          console.log('  Match result:', match);
+          
           if (match) {
             const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*(LF|SF)/i)[0].trim();
             lineItems.fascia.push({
@@ -292,12 +303,17 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
               quantity: parseFloat(match[1]),
               unit: match[2].toUpperCase()
             });
+            console.log('  ✅ Extracted:', lineItems.fascia[lineItems.fascia.length - 1]);
+          } else {
+            console.log('  ❌ No match found');
           }
         }
         
-        // Siding
+        // Siding - Check current + next 2 lines
         if (/siding/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*SF/i) || lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*SF/i);
+          const match = line.match(/(\d+\.?\d*)\s*SF/i) || 
+                        lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*SF/i) ||
+                        lines[i + 2]?.trim().match(/(\d+\.?\d*)\s*SF/i);
           if (match) {
             const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*SF/i)[0].trim();
             lineItems.siding.push({
@@ -308,9 +324,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
           }
         }
         
-        // Window wrap
+        // Window wrap - Check current + next 2 lines
         if (/wrap.*window|window.*wrap/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*(EA|LF)/i) || lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*(EA|LF)/i);
+          const match = line.match(/(\d+\.?\d*)\s*(EA|LF)/i) || 
+                        lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*(EA|LF)/i) ||
+                        lines[i + 2]?.trim().match(/(\d+\.?\d*)\s*(EA|LF)/i);
           if (match) {
             const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*(EA|LF)/i)[0].trim();
             lineItems.windowWrap.push({
@@ -321,9 +339,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
           }
         }
         
-        // Soffit
+        // Soffit - Check current + next 2 lines
         if (/soffit/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*SF/i) || lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*SF/i);
+          const match = line.match(/(\d+\.?\d*)\s*SF/i) || 
+                        lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*SF/i) ||
+                        lines[i + 2]?.trim().match(/(\d+\.?\d*)\s*SF/i);
           if (match) {
             const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*SF/i)[0].trim();
             lineItems.soffit.push({
@@ -334,9 +354,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
           }
         }
         
-        // Gutters
+        // Gutters - Check current + next 2 lines
         if (/gutter/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*LF/i) || lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*LF/i);
+          const match = line.match(/(\d+\.?\d*)\s*LF/i) || 
+                        lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*LF/i) ||
+                        lines[i + 2]?.trim().match(/(\d+\.?\d*)\s*LF/i);
           if (match) {
             const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*LF/i)[0].trim();
             lineItems.gutters.push({
@@ -347,9 +369,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
           }
         }
         
-        // Downspouts
+        // Downspouts - Check current + next 2 lines
         if (/downspout/i.test(line)) {
-          const match = line.match(/(\d+\.?\d*)\s*LF/i) || lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*LF/i);
+          const match = line.match(/(\d+\.?\d*)\s*LF/i) || 
+                        lines[i + 1]?.trim().match(/(\d+\.?\d*)\s*LF/i) ||
+                        lines[i + 2]?.trim().match(/(\d+\.?\d*)\s*LF/i);
           if (match) {
             const desc = line.replace(/^\d+\.?\s*/, '').split(/\d+\.?\d*\s*LF/i)[0].trim();
             lineItems.downspouts.push({
