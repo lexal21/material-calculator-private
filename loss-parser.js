@@ -352,7 +352,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Siding without R&R prefix
-      if (!lineItems.siding && /vinyl\s+siding|hardboard\s+siding|siding.*lap|lap.*siding/i.test(line) && !/R&R|Replace/i.test(line)) {
+      if (!lineItems.siding && /vinyl\s+siding|hardboard\s+siding|siding.*lap|lap.*siding/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean/i.test(line)) {
         const sameLine = line.match(/(\d+\.?\d*)\s*(SQ|SF)/i);
         if (sameLine) {
           lineItems.siding = { quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() };
