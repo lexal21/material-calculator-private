@@ -22,7 +22,7 @@ node server.js
 
 Authentication:
 - Username: ARR
-- Password: 1carriageln
+- Password: [PASSWORD_REDACTED]
 
 ## Next Session Goals
 - Research 2026 UI/UX design trends

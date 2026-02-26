@@ -7,7 +7,7 @@
 
 ### Alex Allen
 - **Email:** alexallen@ashleyriverroofing.com
-- **Password:** Clemson91
+- **Password:** [PASSWORD_REDACTED]
 - **Hash:** `908e212865f04c4a5a98420df313e59852c174ac189fe37bb464d73be73536e4`
 - **Status:** ✅ ACTIVATED in server.js line 13
 
