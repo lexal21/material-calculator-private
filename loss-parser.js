@@ -619,6 +619,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     // EXTRACT LINE ITEMS FROM LOSS
     // ==========================================
     
+    console.log('[CROSS-REF DEBUG] Starting cross-reference extraction');
+    console.log('[CROSS-REF DEBUG] Raw parsedLineItems array:', JSON.stringify(parsedLineItems, null, 2));
+    
     let shingleSquares = totalSquares; // Default to calculated squares
     let tearOffSquares = 0;
     let iceWaterFoundOnLoss = false; // Track if ice & water was explicitly on loss sheet
@@ -646,6 +649,8 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     for (let i = startParsingAt; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
+      
+      console.log(`[CROSS-REF DEBUG] Line ${i}: "${line}"`);
       
       // Track if this line matched any cross-reference pattern
       let matchedPattern = false;
@@ -722,17 +727,33 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Fascia
-      if (!lineItems.fascia && /fascia/i.test(line) && !/Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line)) {
+      const fasciaPatternTest = /fascia/i.test(line);
+      const fasciaExcludeTest = !/Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line);
+      console.log(`[CROSS-REF DEBUG] Testing fascia pattern on line ${i}:`);
+      console.log(`  Line: "${line}"`);
+      console.log(`  /fascia/i matches: ${fasciaPatternTest}`);
+      console.log(`  Exclude pattern (Replace|paint|etc) does NOT match: ${fasciaExcludeTest}`);
+      console.log(`  lineItems.fascia already set: ${!!lineItems.fascia}`);
+      
+      if (!lineItems.fascia && fasciaPatternTest && fasciaExcludeTest) {
+        console.log(`  ✓ FASCIA PATTERN MATCHED! Attempting quantity extraction...`);
         const sameLine = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (sameLine) {
           lineItems.fascia = { quantity: parseFloat(sameLine[1]), unit: 'LF' };
+          console.log(`  ✓ Quantity found on same line:`, lineItems.fascia);
         } else {
+          console.log(`  No quantity on same line, checking next 3 lines...`);
           for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+            console.log(`    Next line [${j}]: "${lines[j].trim()}"`);
             const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF)/i);
             if (nextMatch) {
               lineItems.fascia = { quantity: parseFloat(nextMatch[1]), unit: 'LF' };
+              console.log(`    ✓ Quantity found on line ${j}:`, lineItems.fascia);
               break;
             }
+          }
+          if (!lineItems.fascia) {
+            console.log(`  ✗ No quantity found in next 3 lines`);
           }
         }
       }
