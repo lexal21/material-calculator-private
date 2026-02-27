@@ -1173,10 +1173,18 @@ module.exports = {
   processDocuments: async function(pdfPaths) {
     const results = { success: true, lossItems: [], supplementItems: [] };
     
-    for (const p of pdfPaths) {
+    console.log('[PROCESS-DOCS] Starting loop, total files:', pdfPaths.length);
+    console.log('[PROCESS-DOCS] File paths:', pdfPaths);
+    
+    for (let i = 0; i < pdfPaths.length; i++) {
+      const p = pdfPaths[i];
+      console.log(`[PROCESS-DOCS] Processing file ${i + 1}/${pdfPaths.length}: ${p}`);
+      
       const isLoss = await isLossSheet(p);
+      console.log(`[PROCESS-DOCS] isLossSheet() returned: ${isLoss} for ${p}`);
+      
       if (isLoss) {
-        console.log('[PROCESS-DOCS] Parsing loss sheet:', p);
+        console.log('[PROCESS-DOCS] ✓ Detected LOSS SHEET, parsing...');
         const parsed = await parseCompleteLossSheet(p);
         if (parsed.success) {
           results.lossItems = parsed.lossItems || [];
@@ -1184,12 +1192,20 @@ module.exports = {
           console.log('[PROCESS-DOCS] Extracted', results.lossItems.length, 'loss items');
           console.log('[PROCESS-DOCS] Extracted', results.supplementItems.length, 'supplement items (cross-referenced)');
           console.log('[PROCESS-DOCS] Supplement items:', JSON.stringify(results.supplementItems, null, 2));
+        } else {
+          console.log('[PROCESS-DOCS] ✗ Loss sheet parse failed:', parsed.message);
         }
       } else {
-        console.log('[PROCESS-DOCS] Detected roof report:', p);
+        console.log('[PROCESS-DOCS] ✓ Detected ROOF REPORT (not a loss sheet)');
         results.roofReport = { detected: true };
       }
     }
+    
+    console.log('[PROCESS-DOCS] Loop complete. Final results:', {
+      lossItems: results.lossItems.length,
+      supplementItems: results.supplementItems.length,
+      roofReport: !!results.roofReport
+    });
     
     return results;
   }
