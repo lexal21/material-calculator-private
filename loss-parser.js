@@ -229,7 +229,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     const dataBuffer = fs.readFileSync(pdfPath);
     const data = await extractPdfText(dataBuffer, pdfPath); // Pass path for OCR fallback
     const text = data.text;
-    const lines = text.split('\n');
+    let lines = text.split('\n');
     
     console.log('[LOSS-PARSER] Parsing complete loss sheet...');
     
