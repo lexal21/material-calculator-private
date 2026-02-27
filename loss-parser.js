@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const poppler = require('pdf-poppler');
+const { execSync } = require('child_process');
 const tesseract = require('node-tesseract-ocr');
 const { 
   MATERIALS,
@@ -36,18 +36,17 @@ async function ocrPage(pdfPath, pageNum) {
     
     console.log(`[LOSS-PARSER] OCR fallback: rendering page ${pageNum}...`);
     
-    const opts = {
-      format: 'png',
-      out_dir: outputDir,
-      out_prefix: `page${pageNum}`,
-      page: pageNum,
-      scale: 2048 // High resolution for better OCR
-    };
+    const outputPrefix = path.join(outputDir, `page${pageNum}`);
     
-    await poppler.convert(pdfPath, opts);
+    // Use pdftoppm directly (installed via nixpacks on Railway, bundled on Windows)
+    const pdftopmCmd = process.platform === 'win32'
+      ? `pdftoppm -png -f ${pageNum} -l ${pageNum} -scale-to 2048 "${pdfPath}" "${outputPrefix}"`
+      : `pdftoppm -png -f ${pageNum} -l ${pageNum} -scale-to 2048 "${pdfPath}" "${outputPrefix}"`;
     
-    // Find generated image
-    const files = fs.readdirSync(outputDir).filter(f => f.startsWith(`page${pageNum}`));
+    execSync(pdftopmCmd, { stdio: 'ignore' });
+    
+    // Find generated image (pdftoppm adds page number suffix)
+    const files = fs.readdirSync(outputDir).filter(f => f.startsWith(`page${pageNum}`) && f.endsWith('.png'));
     
     if (files.length === 0) {
       console.log(`[LOSS-PARSER] OCR: No image generated for page ${pageNum}`);
