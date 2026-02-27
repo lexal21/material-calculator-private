@@ -722,10 +722,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       skylights: null,
       skylightFlashingKit: null,
       turtleVents: null,
-      powerAtticFan: null,
-      satellite: null,
-      gableCornice: null,
-      gutters: null
+      powerAtticFan: null
     };
     
     // Loop through already-parsed line items and extract field-measured items
@@ -743,28 +740,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         lineItems.fascia = { quantity: qty, unit };
       }
       
-      // Gutters
-      if (!lineItems.gutters && /gutter|downspout.*aluminum|r&r.*gutter/i.test(desc) && !/labor minimum|clean|repair/i.test(desc)) {
-        console.log(`  ✓ GUTTER MATCHED`);
-        lineItems.gutters = { quantity: qty, unit };
-      }
-      
       // Pipe jacks/boots
       if (!lineItems.pipeBoots && /pipe\s+(jack|boot)|flashing.*pipe/i.test(desc)) {
         console.log(`  ✓ PIPE JACK MATCHED`);
         lineItems.pipeBoots = { quantity: qty, unit };
-      }
-      
-      // Satellite dish
-      if (!lineItems.satellite && /satellite|dish.*detach|digital.*satellite/i.test(desc)) {
-        console.log(`  ✓ SATELLITE MATCHED`);
-        lineItems.satellite = { quantity: qty, unit };
-      }
-      
-      // Gable cornice return
-      if (!lineItems.gableCornice && /gable.*cornice|cornice.*return/i.test(desc)) {
-        console.log(`  ✓ GABLE CORNICE MATCHED`);
-        lineItems.gableCornice = { quantity: qty, unit };
       }
       
       // Drip edge
@@ -1130,55 +1109,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       });
     }
     
-    if (lineItems.gutters) {
-      result.supplementItems.push({
-        name: 'Gutter',
-        quantity: lineItems.gutters.quantity,
-        unit: lineItems.gutters.unit,
-        unitPrice: 0,
-        source: 'loss',
-        color: ''
-      });
-    }
-    
-    if (lineItems.downspouts) {
-      result.supplementItems.push({
-        name: 'Downspout',
-        quantity: lineItems.downspouts.quantity,
-        unit: lineItems.downspouts.unit,
-        unitPrice: 0,
-        source: 'loss',
-        color: ''
-      });
-    }
-    
     if (lineItems.pipeBoots) {
       result.supplementItems.push({
         name: 'Pipe Jack',
         quantity: parseFloat(lineItems.pipeBoots.quantity),
         unit: lineItems.pipeBoots.unit,
-        unitPrice: 0,
-        source: 'loss',
-        color: ''
-      });
-    }
-    
-    if (lineItems.satellite) {
-      result.supplementItems.push({
-        name: 'Satellite Dish',
-        quantity: parseFloat(lineItems.satellite.quantity),
-        unit: lineItems.satellite.unit,
-        unitPrice: 0,
-        source: 'loss',
-        color: ''
-      });
-    }
-    
-    if (lineItems.gableCornice) {
-      result.supplementItems.push({
-        name: 'Gable Cornice Return',
-        quantity: parseFloat(lineItems.gableCornice.quantity),
-        unit: lineItems.gableCornice.unit,
         unitPrice: 0,
         source: 'loss',
         color: ''
