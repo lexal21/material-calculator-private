@@ -8,7 +8,6 @@ const parser = require('./pdf-parser');
 const lossParser = require('./loss-parser');
 const crypto = require('crypto');
 
-// HARDCODED USERS FOR VERCEL (stateless workaround)
 // After registration, update these with the hashes
 const HARDCODED_USERS = {
   'alexallen@ashleyriverroofing.com': {
@@ -809,13 +808,6 @@ app.post('/api/detect-pdf-type', upload.single('pdf'), async (req, res) => {
   }
 });
 
-// Only start server if not in Vercel (Vercel uses serverless functions)
-if (process.env.VERCEL !== '1') {
-  app.listen(port, () => {
-    console.log(`Material Calculator (Authenticated) running on port ${port}`);
-    console.log(`Approved users: ${Object.keys(HARDCODED_USERS).join(', ')}`);
-  });
-}
-
-// Export for Vercel
-module.exports = app;
+app.listen(port, () => {
+  console.log('Server running on port ' + port);
+});

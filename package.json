@@ -16,7 +16,6 @@
   "author": "Roofus",
   "license": "MIT",
   "dependencies": {
-    "@vercel/kv": "^3.0.0",
     "canvas": "^3.2.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.4",
