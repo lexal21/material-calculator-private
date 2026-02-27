@@ -122,6 +122,7 @@ const LossCompare = (() => {
         var binary = e.target.result;
         var text = extractTextFromBinary(binary);
 
+        // Primary check: scan extracted text for signatures
         for (var i = 0; i < LOSS_SHEET_SIGNATURES.length; i++) {
           if (text.indexOf(LOSS_SHEET_SIGNATURES[i]) !== -1) {
             var carrier = extractCarrierName(text);
@@ -133,7 +134,29 @@ const LossCompare = (() => {
           }
         }
 
-        // Default anything undetected to Roof Report
+        // Secondary check: scan raw binary for metadata strings (image-based PDFs)
+        var metadataPatterns = ['Griston', 'TYPTAP', 'Claim Number', 'Price List', 'SCBE', 'SCCO'];
+        for (var i = 0; i < metadataPatterns.length; i++) {
+          if (binary.indexOf(metadataPatterns[i]) !== -1) {
+            return resolve({
+              key: 'loss',
+              label: 'Loss Sheet',
+              cls: 'lc-badge-loss'
+            });
+          }
+        }
+
+        // Tertiary check: filename contains loss-related keywords
+        var lowerName = file.name.toLowerCase();
+        if (lowerName.indexOf('loss') !== -1 || lowerName.indexOf('claim') !== -1) {
+          return resolve({
+            key: 'loss',
+            label: 'Loss Sheet',
+            cls: 'lc-badge-loss'
+          });
+        }
+
+        // Default to Roof Report
         resolve({
           key: 'roof',
           label: 'Roof Report',
