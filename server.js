@@ -544,6 +544,12 @@ app.post('/api/loss-compare', uploadMulti.fields([
   try {
     const result = await lossParser.processDocuments(pdfPaths);
     console.log('[LOSS-COMPARE] SUCCESS');
+    console.log('[LOSS-COMPARE] Returning:', {
+      success: result.success,
+      lossItems: result.lossItems?.length || 0,
+      supplementItems: result.supplementItems?.length || 0,
+      roofReport: !!result.roofReport
+    });
     res.json(result);
   } catch (err) {
     console.error('[LOSS-COMPARE] ERROR:', err.message);

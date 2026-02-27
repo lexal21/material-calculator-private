@@ -1171,16 +1171,22 @@ module.exports = {
   parseLossSheet,
   isLossSheet,
   processDocuments: async function(pdfPaths) {
-    const results = { success: true, lossItems: [] };
+    const results = { success: true, lossItems: [], supplementItems: [] };
     
     for (const p of pdfPaths) {
       const isLoss = await isLossSheet(p);
       if (isLoss) {
+        console.log('[PROCESS-DOCS] Parsing loss sheet:', p);
         const parsed = await parseCompleteLossSheet(p);
         if (parsed.success) {
           results.lossItems = parsed.lossItems || [];
+          results.supplementItems = parsed.supplementItems || [];
+          console.log('[PROCESS-DOCS] Extracted', results.lossItems.length, 'loss items');
+          console.log('[PROCESS-DOCS] Extracted', results.supplementItems.length, 'supplement items (cross-referenced)');
+          console.log('[PROCESS-DOCS] Supplement items:', JSON.stringify(results.supplementItems, null, 2));
         }
       } else {
+        console.log('[PROCESS-DOCS] Detected roof report:', p);
         results.roofReport = { detected: true };
       }
     }
