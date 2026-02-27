@@ -468,6 +468,77 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     console.log('[LOSS-PARSER] DEBUG: Lines[1] length:', lines[1] ? lines[1].length : 0);
     console.log('[LOSS-PARSER] DEBUG: Lines[2] preview:', lines[2] ? lines[2].substring(0, 100) : 'N/A');
     
+    // FIX: Split concatenated lines (common in Linux PDF extraction)
+    const splitLines = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      if (line.length > 500) {
+        console.log(`[LOSS-PARSER] Splitting long line ${i} (${line.length} chars)`);
+        
+        // Split on numbered items: "1. ", "2. ", etc.
+        let segments = [line];
+        const numberedItemRegex = /(\d+\.\s+)/g;
+        let match;
+        const splits = [];
+        let lastIndex = 0;
+        
+        while ((match = numberedItemRegex.exec(line)) !== null) {
+          if (match.index > lastIndex) {
+            splits.push({ index: match.index, text: match[0] });
+          }
+          lastIndex = match.index + match[0].length;
+        }
+        
+        if (splits.length > 0) {
+          segments = [];
+          let currentIndex = 0;
+          for (let j = 0; j < splits.length; j++) {
+            if (j === 0 && splits[j].index > 0) {
+              segments.push(line.substring(0, splits[j].index));
+            }
+            const nextIndex = splits[j + 1]?.index || line.length;
+            segments.push(line.substring(splits[j].index, nextIndex));
+            currentIndex = nextIndex;
+          }
+        }
+        
+        // Further split on ALL CAPS section headers (at least 4 consecutive caps)
+        const finalSegments = [];
+        for (const seg of segments) {
+          const headerMatches = [];
+          const headerRegex = /([A-Z\s]{4,}:)/g;
+          let headerMatch;
+          let lastHeaderIndex = 0;
+          
+          while ((headerMatch = headerRegex.exec(seg)) !== null) {
+            headerMatches.push({ index: headerMatch.index, text: headerMatch[0] });
+          }
+          
+          if (headerMatches.length > 0) {
+            for (let k = 0; k < headerMatches.length; k++) {
+              if (k === 0 && headerMatches[k].index > 0) {
+                finalSegments.push(seg.substring(0, headerMatches[k].index));
+              }
+              const nextHeaderIndex = headerMatches[k + 1]?.index || seg.length;
+              finalSegments.push(seg.substring(headerMatches[k].index, nextHeaderIndex));
+            }
+          } else {
+            finalSegments.push(seg);
+          }
+        }
+        
+        const cleanedSegments = finalSegments.map(s => s.trim()).filter(s => s.length > 0);
+        console.log(`[LOSS-PARSER] Split into ${cleanedSegments.length} segments`);
+        splitLines.push(...cleanedSegments);
+      } else {
+        splitLines.push(line);
+      }
+    }
+    
+    console.log(`[LOSS-PARSER] After splitting: ${lines.length} → ${splitLines.length} lines`);
+    lines = splitLines;
+    
     for (let i = startParsingAt; i < lines.length; i++) {
       const line = lines[i].trim();
       
