@@ -531,7 +531,19 @@ app.post('/api/loss-compare', uploadMulti.fields([
   { name: 'pdf1', maxCount: 1 }
 ]), async (req, res) => {
   console.log('[LOSS-COMPARE] Request from:', req.user.email);
+  console.log('[LOSS-COMPARE] Raw req.files:', JSON.stringify(req.files, null, 2));
+  
   const files = req.files;
+  
+  if (!files) {
+    console.log('[LOSS-COMPARE] ERROR: req.files is null/undefined');
+    return res.status(400).json({ success: false, error: 'No files in request' });
+  }
+  
+  console.log('[LOSS-COMPARE] File keys present:', Object.keys(files));
+  if (files.pdf0) console.log('[LOSS-COMPARE] pdf0:', files.pdf0[0]?.originalname, 'Size:', files.pdf0[0]?.size);
+  if (files.pdf1) console.log('[LOSS-COMPARE] pdf1:', files.pdf1[0]?.originalname, 'Size:', files.pdf1[0]?.size);
+  
   const pdfPaths = [];
   if (files.pdf0 && files.pdf0[0]) pdfPaths.push(files.pdf0[0].path);
   if (files.pdf1 && files.pdf1[0]) pdfPaths.push(files.pdf1[0].path);
