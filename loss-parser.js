@@ -1,5 +1,7 @@
 const fs = require('fs');
-const pdf = require('pdf-parse-fork');
+const path = require('path');
+const poppler = require('pdf-poppler');
+const tesseract = require('node-tesseract-ocr');
 const { 
   MATERIALS,
   calculateRoofRunner,
@@ -8,6 +10,123 @@ const {
   calculateButtonCaps,
   calculatePlywood
 } = require('./calculator');
+
+// Add Tesseract to PATH (Windows only - Railway Linux has it in system PATH)
+if (process.platform === 'win32') {
+  process.env.PATH = `C:\\Program Files\\Tesseract-OCR;${process.env.PATH}`;
+}
+
+const tesseractConfig = {
+  lang: 'eng',
+  oem: 1,
+  psm: 6 // Assume uniform block of text
+};
+
+/**
+ * OCR a single page by rendering to PNG and running Tesseract
+ */
+async function ocrPage(pdfPath, pageNum) {
+  const outputDir = path.join(path.dirname(pdfPath), '.ocr-temp');
+  
+  try {
+    // Create temp directory
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+    
+    console.log(`[LOSS-PARSER] OCR fallback: rendering page ${pageNum}...`);
+    
+    const opts = {
+      format: 'png',
+      out_dir: outputDir,
+      out_prefix: `page${pageNum}`,
+      page: pageNum,
+      scale: 2048 // High resolution for better OCR
+    };
+    
+    await poppler.convert(pdfPath, opts);
+    
+    // Find generated image
+    const files = fs.readdirSync(outputDir).filter(f => f.startsWith(`page${pageNum}`));
+    
+    if (files.length === 0) {
+      console.log(`[LOSS-PARSER] OCR: No image generated for page ${pageNum}`);
+      return '';
+    }
+    
+    const imagePath = path.join(outputDir, files[0]);
+    
+    console.log(`[LOSS-PARSER] Running Tesseract on page ${pageNum}...`);
+    const text = await tesseract.recognize(imagePath, tesseractConfig);
+    
+    console.log(`[LOSS-PARSER] OCR extracted ${text.length} chars from page ${pageNum}`);
+    
+    return text;
+    
+  } catch (err) {
+    console.log(`[LOSS-PARSER] OCR error on page ${pageNum}:`, err.message);
+    return '';
+  } finally {
+    // Clean up temp files
+    try {
+      if (fs.existsSync(outputDir)) {
+        fs.rmSync(outputDir, { recursive: true, force: true });
+      }
+    } catch (cleanupErr) {
+      // Ignore cleanup errors
+    }
+  }
+}
+
+/**
+ * Hybrid PDF text extractor: tries normal extraction first, falls back to OCR for empty pages
+ */
+async function extractPdfText(dataBuffer, pdfPath = null) {
+  // Dynamic import for ESM module (legacy build for Node.js)
+  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(dataBuffer),
+    useSystemFonts: true,
+    disableFontFace: true,
+    standardFontDataUrl: null
+  });
+  
+  const pdfDocument = await loadingTask.promise;
+  const numPages = pdfDocument.numPages;
+  let fullText = '';
+  let ocrPagesCount = 0;
+  
+  console.log(`[LOSS-PARSER] Extracting text from ${numPages} pages...`);
+  
+  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    const page = await pdfDocument.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map(item => item.str).join(' ');
+    
+    // If page has no extractable text but we have a PDF path, try OCR
+    if (pageText.trim().length === 0 && pdfPath) {
+      console.log(`[LOSS-PARSER] Page ${pageNum} empty, attempting OCR...`);
+      const ocrText = await ocrPage(pdfPath, pageNum);
+      fullText += ocrText + '\n';
+      if (ocrText.length > 0) {
+        ocrPagesCount++;
+      }
+    } else {
+      fullText += pageText + '\n';
+    }
+  }
+  
+  if (ocrPagesCount > 0) {
+    console.log(`[LOSS-PARSER] OCR processed ${ocrPagesCount} page(s)`);
+  }
+  
+  return {
+    text: fullText,
+    numpages: numPages,
+    ocrPages: ocrPagesCount
+  };
+}
 
 // ==========================================
 // PARSER CONSTANTS & HELPERS
@@ -109,7 +228,7 @@ function isNoteLine(line) {
 async function parseCompleteLossSheet(pdfPath, options = {}) {
   try {
     const dataBuffer = fs.readFileSync(pdfPath);
-    const data = await pdf(dataBuffer);
+    const data = await extractPdfText(dataBuffer, pdfPath); // Pass path for OCR fallback
     const text = data.text;
     const lines = text.split('\n');
     
@@ -174,6 +293,37 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       _isAllstateFormat: isAllstateFormat,
       _startParsingAt: startParsingAt
     };
+    
+    // ==========================================
+    // DETECT CARRIER
+    // ==========================================
+    const carrierPatterns = [
+      { pattern: /ALLSTATE/i, name: 'Allstate' },
+      { pattern: /STATE\s+FARM/i, name: 'State Farm' },
+      { pattern: /USAA/i, name: 'USAA' },
+      { pattern: /FARMERS/i, name: 'Farmers' },
+      { pattern: /LIBERTY\s+MUTUAL/i, name: 'Liberty Mutual' },
+      { pattern: /PROGRESSIVE/i, name: 'Progressive' },
+      { pattern: /GEICO/i, name: 'GEICO' },
+      { pattern: /NATIONWIDE/i, name: 'Nationwide' },
+      { pattern: /TRAVELERS/i, name: 'Travelers' },
+      { pattern: /AMERICAN\s+FAMILY/i, name: 'American Family' },
+      { pattern: /TYPTAP|TYP\s*TAP/i, name: 'TYPTAP' },
+      { pattern: /GRISTON\s+CLAIM\s+MANAGEMENT/i, name: 'TYPTAP' }, // Griston manages TYPTAP claims
+      { pattern: /SAFECO/i, name: 'Safeco' },
+      { pattern: /MERCURY/i, name: 'Mercury' },
+      { pattern: /METLIFE/i, name: 'MetLife' },
+      { pattern: /HARTFORD/i, name: 'The Hartford' },
+      { pattern: /CHUBB/i, name: 'Chubb' }
+    ];
+    
+    for (const { pattern, name } of carrierPatterns) {
+      if (pattern.test(text)) {
+        result.raw.carrier = name;
+        console.log(`[LOSS-PARSER] Carrier detected: ${name}`);
+        break;
+      }
+    }
     
     // ==========================================
     // EXTRACT CUSTOMER INFO
@@ -306,6 +456,139 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     };
     
     console.log('[LOSS-PARSER] Measurements - Squares:', totalSquares, 'Ridge:', ridgeLength, 'Perimeter:', actualPerimeter);
+    
+    // ==========================================
+    // PARSE ORIGINAL LINE ITEMS FROM PDF TABLE
+    // ==========================================
+    const parsedLineItems = [];
+    let parsingLineItems = false;
+    
+    for (let i = startParsingAt; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Start parsing when we see the DESCRIPTION header
+      if (/^DESCRIPTION\s+QTY\s+UNIT/i.test(line)) {
+        parsingLineItems = true;
+        console.log('[LOSS-PARSER] Found line item table header at line', i);
+        continue;
+      }
+      
+      // Stop at totals/summary lines
+      if (shouldStopParsing(line)) {
+        break;
+      }
+      
+      if (!parsingLineItems) continue;
+      
+      // Parse numbered line items: "1. Description text QTY UNIT PRICE TAX RCV DEPREC ACV"
+      // Two-stage approach: match the basic structure, then manually parse the numeric fields
+      const basicMatch = line.match(/^(\d+)[.,]\s+(.+?)\s+(\d+\.?\d*)\s+(SQ|LF|EA|SF)\s+(.+)$/i);
+      
+      if (basicMatch) {
+        const [, itemNum, description, qty, unit, remaining] = basicMatch;
+        
+        // Parse remaining: "PRICE TAX RCV (DEPREC) ACV"
+        // Look for the depreciation in parentheses as an anchor point
+        const depMatch = remaining.match(/\(([^)]+)\)/);
+        if (depMatch) {
+          const deprecText = depMatch[1];
+          const beforeDep = remaining.substring(0, depMatch.index).trim();
+          const afterDep = remaining.substring(depMatch.index + depMatch[0].length).trim();
+          
+          // Clean up OCR spacing errors in numbers (e.g., "47 48" -> "47.48")
+          const cleanNumber = (val) => {
+            if (!val) return 0;
+            // Remove spaces and convert to number, handle OCR letter errors
+            const cleaned = val.replace(/\s+/g, '').replace(/[A-Z]/gi, '').replace(/,/g, '');
+            // If we have something like "4748", try to insert decimal
+            if (/^\d{3,}$/.test(cleaned) && !cleaned.includes('.')) {
+              return parseFloat(cleaned.slice(0, -2) + '.' + cleaned.slice(-2));
+            }
+            return parseFloat(cleaned) || 0;
+          };
+          
+          // Split beforeDep into PRICE, TAX, RCV (should be 3 numbers)
+          const beforeParts = beforeDep.split(/\s+/).filter(p => /[\d.,]/.test(p));
+          
+          // ACV is everything after the closing paren
+          const acvText = afterDep;
+          
+          if (beforeParts.length >= 3) {
+            parsedLineItems.push({
+              item_number: parseInt(itemNum),
+              description: description.trim(),
+              quantity: parseFloat(qty),
+              unit: unit.toUpperCase(),
+              unit_price: cleanNumber(beforeParts[0]),
+              tax: cleanNumber(beforeParts[1]),
+              rcv: cleanNumber(beforeParts.slice(2).join('')), // Handle case where RCV might be split
+              depreciation: cleanNumber(deprecText),
+              acv: cleanNumber(acvText)
+            });
+            
+            console.log(`[LOSS-PARSER] Parsed line item ${itemNum}: ${description.substring(0, 40)}...`);
+          }
+        }
+      }
+      // Handle multi-line descriptions where values might be on next line
+      else if (/^(\d+)[.,]\s+(.+)/.test(line)) {
+        const numMatch = line.match(/^(\d+)[.,]\s+(.+)/);
+        if (numMatch) {
+          const itemNum = numMatch[1];
+          let description = numMatch[2];
+          
+          // Check next line for the numeric values
+          const nextLine = lines[i + 1]?.trim();
+          if (nextLine) {
+            const valueMatch = nextLine.match(/^(\d+\.?\d*)\s+(SQ|LF|EA|SF)\s+(.+)$/i);
+            
+            if (valueMatch) {
+              const [, qty, unit, remaining] = valueMatch;
+              
+              // Parse remaining using same approach as single-line
+              const depMatch = remaining.match(/\(([^)]+)\)/);
+              if (depMatch) {
+                const deprecText = depMatch[1];
+                const beforeDep = remaining.substring(0, depMatch.index).trim();
+                const afterDep = remaining.substring(depMatch.index + depMatch[0].length).trim();
+                
+                const cleanNumber = (val) => {
+                  if (!val) return 0;
+                  const cleaned = val.replace(/\s+/g, '').replace(/[A-Z]/gi, '').replace(/,/g, '');
+                  if (/^\d{3,}$/.test(cleaned) && !cleaned.includes('.')) {
+                    return parseFloat(cleaned.slice(0, -2) + '.' + cleaned.slice(-2));
+                  }
+                  return parseFloat(cleaned) || 0;
+                };
+                
+                const beforeParts = beforeDep.split(/\s+/).filter(p => /[\d.,]/.test(p));
+                const acvText = afterDep;
+                
+                if (beforeParts.length >= 3) {
+                  parsedLineItems.push({
+                    item_number: parseInt(itemNum),
+                    description: description.trim(),
+                    quantity: parseFloat(qty),
+                    unit: unit.toUpperCase(),
+                    unit_price: cleanNumber(beforeParts[0]),
+                    tax: cleanNumber(beforeParts[1]),
+                    rcv: cleanNumber(beforeParts.slice(2).join('')),
+                    depreciation: cleanNumber(deprecText),
+                    acv: cleanNumber(acvText)
+                  });
+                  
+                  console.log(`[LOSS-PARSER] Parsed multi-line item ${itemNum}: ${description.substring(0, 40)}...`);
+                  i++; // Skip next line since we consumed it
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    console.log(`[LOSS-PARSER] Parsed ${parsedLineItems.length} original line items from PDF`);
+    result.lossItems = parsedLineItems;
     
     // ==========================================
     // EXTRACT LINE ITEMS FROM LOSS
@@ -948,12 +1231,13 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     result.labor.subtotal = result.labor.items.reduce((sum, item) => sum + item.total, 0);
     
     // ==========================================
-    // BUILD LOSS ITEMS (FROM LOSS tagged)
+    // BUILD SUPPLEMENT ITEMS (R&R items from loss)
     // ==========================================
+    result.supplementItems = [];
     
-    // Add R&R items to lossItems (fascia, soffit, gutters, downspouts are objects; siding, windowWrap are arrays)
+    // Add R&R items to supplementItems (fascia, soffit, gutters, downspouts are objects; siding, windowWrap are arrays)
     if (lineItems.fascia) {
-      result.lossItems.push({
+      result.supplementItems.push({
         name: 'Fascia',
         quantity: lineItems.fascia.quantity,
         unit: lineItems.fascia.unit,
@@ -964,7 +1248,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     }
     
     [...lineItems.siding, ...lineItems.windowWrap].forEach(item => {
-      result.lossItems.push({
+      result.supplementItems.push({
         name: item.name,
         quantity: item.quantity,
         unit: item.unit,
@@ -975,7 +1259,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     });
     
     if (lineItems.soffit) {
-      result.lossItems.push({
+      result.supplementItems.push({
         name: 'Soffit',
         quantity: lineItems.soffit.quantity,
         unit: lineItems.soffit.unit,
@@ -986,7 +1270,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     }
     
     if (lineItems.gutters) {
-      result.lossItems.push({
+      result.supplementItems.push({
         name: 'Gutter',
         quantity: lineItems.gutters.quantity,
         unit: lineItems.gutters.unit,
@@ -997,7 +1281,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     }
     
     if (lineItems.downspouts) {
-      result.lossItems.push({
+      result.supplementItems.push({
         name: 'Downspout',
         quantity: lineItems.downspouts.quantity,
         unit: lineItems.downspouts.unit,
@@ -1015,7 +1299,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     result.tax = result.subtotal * 0.09;
     result.grandTotal = result.subtotal + result.tax;
     
-    console.log('[LOSS-PARSER] Complete. Materials:', result.materials.length, 'Labor:', result.labor.items.length, 'Loss items:', result.lossItems.length);
+    // Store extracted text for debugging
+    result._debugText = text;
+    
+    console.log('[LOSS-PARSER] Complete. Materials:', result.materials.length, 'Labor:', result.labor.items.length, 'Loss items:', result.lossItems.length, 'Supplement items:', result.supplementItems.length);
     
     return result;
     
@@ -1036,7 +1323,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
 async function isLossSheet(pdfPath) {
   try {
     const dataBuffer = fs.readFileSync(pdfPath);
-    const data = await pdf(dataBuffer);
+    const data = await extractPdfText(dataBuffer, pdfPath);
     const text = data.text;
     
     // Strong loss sheet indicators
