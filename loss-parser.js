@@ -462,6 +462,12 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     const parsedLineItems = [];
     let parsingLineItems = false;
     
+    // DEBUG: Log line count and structure
+    console.log('[LOSS-PARSER] DEBUG: Total lines in text:', lines.length);
+    console.log('[LOSS-PARSER] DEBUG: Lines[0] length:', lines[0] ? lines[0].length : 0);
+    console.log('[LOSS-PARSER] DEBUG: Lines[1] length:', lines[1] ? lines[1].length : 0);
+    console.log('[LOSS-PARSER] DEBUG: Lines[2] preview:', lines[2] ? lines[2].substring(0, 100) : 'N/A');
+    
     for (let i = startParsingAt; i < lines.length; i++) {
       const line = lines[i].trim();
       
