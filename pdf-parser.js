@@ -1,6 +1,5 @@
 const fs = require('fs');
 const pdf = require('pdf-parse-fork');
-const { parseConcatenatedNumbers } = require('./parse-numbers');
 
 /**
  * Extract measurements from Ridge Top PDF report (supports old and new formats)
