@@ -616,11 +616,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     console.log('[LOSS-PARSER] =======================================');
     
     // ==========================================
-    // EXTRACT LINE ITEMS FROM LOSS
+    // EXTRACT LINE ITEMS FROM LOSS (using parsedLineItems)
     // ==========================================
     
-    console.log('[CROSS-REF DEBUG] Starting cross-reference extraction');
-    console.log('[CROSS-REF DEBUG] Raw parsedLineItems array:', JSON.stringify(parsedLineItems, null, 2));
+    console.log('[CROSS-REF DEBUG] Starting cross-reference extraction from parsedLineItems');
     
     let shingleSquares = totalSquares; // Default to calculated squares
     let tearOffSquares = 0;
@@ -643,380 +642,80 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       gutters: null
     };
     
-    // FIX 6: Track Ordinance and Law section
-    let inOrdinanceSection = false;
-    
-    for (let i = startParsingAt; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
+    // Loop through already-parsed line items and extract field-measured items
+    parsedLineItems.forEach((item, idx) => {
+      const desc = item.description.toLowerCase();
+      const qty = parseFloat(item.quantity);
+      const unit = item.unit;
       
-      console.log(`[CROSS-REF DEBUG] Line ${i}: "${line}"`);
-      
-      // Track if this line matched any cross-reference pattern
-      let matchedPattern = false;
-      
-      // FIX 7: Stop parsing at summary/total rows
-      if (shouldStopParsing(line)) {
-        console.log('[LOSS-PARSER] Stopping parse at summary line:', line);
-        break;
-      }
-      
-      // FIX 5: Skip category subheader lines
-      if (shouldSkipLine(line)) {
-        continue;
-      }
-      
-      // FIX 12: Skip inline note lines
-      if (isNoteLine(line)) {
-        continue;
-      }
-      
-      // FIX 6: Track Ordinance and Law section
-      if (/^ORDINANCE AND LAW$/i.test(line)) {
-        inOrdinanceSection = true;
-        console.log('[LOSS-PARSER] Entering Ordinance and Law section - items will be excluded');
-        continue;
-      }
-      // Exit Ordinance section when we hit a new major section
-      if (inOrdinanceSection && /^[A-Z\s]{10,}:$/i.test(line) && !/ORDINANCE/i.test(line)) {
-        inOrdinanceSection = false;
-        console.log('[LOSS-PARSER] Exiting Ordinance and Law section');
-      }
-      // Skip items in Ordinance section
-      if (inOrdinanceSection) {
-        continue;
-      }
-      
-      
-      // Drip edge
-      if (/drip\s*edge|gutter\s*apron|t-style\s*drip/i.test(line)) {
-        matchedPattern = true;
-        const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
-        if (match) {
-          lineItems.dripEdge = { quantity: parseFloat(match[1]), unit: 'LF' };
-        }
-      }
-      
-      // Ice & water shield detection
-      if (/ice.*water|ice\s*&\s*water/i.test(line)) {
-        iceWaterFoundOnLoss = true;
-        // Check current line and next line for SF quantity
-        const searchLine = /(\d+\.?\d*)\s*SF/i.test(line) ? line : (lines[i + 1] || '');
-        const sfMatch = searchLine.match(/(\d+\.?\d*)\s*SF/i);
-        if (sfMatch) {
-          const sfQty = parseFloat(sfMatch[1]);
-          result.measurements.valleyLength = Math.ceil(sfQty / 3);
-          console.log('[LOSS-PARSER] ICE & WATER SF FOUND:', sfQty, '→ valleyLength set to:', result.measurements.valleyLength);
-        }
-      }
-      
-      // Pipe jacks / pipe boots - quantity can be on same line OR next line
-      if (/pipe\s+jack|flashing.*pipe|pipe.*boot/i.test(line)) {
-        const sameLine = line.match(/(\d+\.?\d*)\s*(EA)/i);
-        if (sameLine) {
-          lineItems.pipeBoots = { quantity: parseFloat(sameLine[1]), unit: 'EA' };
-        } else {
-          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(EA)/i);
-            if (nextMatch) {
-              lineItems.pipeBoots = { quantity: parseFloat(nextMatch[1]), unit: 'EA' };
-              break;
-            }
-          }
-        }
-      }
+      console.log(`[CROSS-REF DEBUG] Item ${idx + 1}: "${item.description}"`);
+      console.log(`  Quantity: ${qty} ${unit}`);
       
       // Fascia
-      const fasciaPatternTest = /fascia/i.test(line);
-      const fasciaExcludeTest = !/Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line);
-      console.log(`[CROSS-REF DEBUG] Testing fascia pattern on line ${i}:`);
-      console.log(`  Line: "${line}"`);
-      console.log(`  /fascia/i matches: ${fasciaPatternTest}`);
-      console.log(`  Exclude pattern (Replace|paint|etc) does NOT match: ${fasciaExcludeTest}`);
-      console.log(`  lineItems.fascia already set: ${!!lineItems.fascia}`);
+      if (!lineItems.fascia && /fascia/i.test(desc) && !/replace|paint|caulk|seal|prime|clean|detach|reset/i.test(desc)) {
+        console.log(`  ✓ FASCIA MATCHED`);
+        lineItems.fascia = { quantity: qty, unit };
+      }
       
-      if (!lineItems.fascia && fasciaPatternTest && fasciaExcludeTest) {
-        console.log(`  ✓ FASCIA PATTERN MATCHED! Attempting quantity extraction...`);
-        const sameLine = line.match(/(\d+\.?\d*)\s*(LF)/i);
-        if (sameLine) {
-          lineItems.fascia = { quantity: parseFloat(sameLine[1]), unit: 'LF' };
-          console.log(`  ✓ Quantity found on same line:`, lineItems.fascia);
-        } else {
-          console.log(`  No quantity on same line, checking next 3 lines...`);
-          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-            console.log(`    Next line [${j}]: "${lines[j].trim()}"`);
-            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF)/i);
-            if (nextMatch) {
-              lineItems.fascia = { quantity: parseFloat(nextMatch[1]), unit: 'LF' };
-              console.log(`    ✓ Quantity found on line ${j}:`, lineItems.fascia);
-              break;
-            }
-          }
-          if (!lineItems.fascia) {
-            console.log(`  ✗ No quantity found in next 3 lines`);
-          }
+      // Gutters
+      if (!lineItems.gutters && /gutter|downspout.*aluminum|r&r.*gutter/i.test(desc) && !/labor minimum|clean|repair/i.test(desc)) {
+        console.log(`  ✓ GUTTER MATCHED`);
+        lineItems.gutters = { quantity: qty, unit };
+      }
+      
+      // Pipe jacks/boots
+      if (!lineItems.pipeBoots && /pipe\s+(jack|boot)|flashing.*pipe/i.test(desc)) {
+        console.log(`  ✓ PIPE JACK MATCHED`);
+        lineItems.pipeBoots = { quantity: qty, unit };
+      }
+      
+      // Satellite dish
+      if (!lineItems.satellite && /satellite|dish.*detach|digital.*satellite/i.test(desc)) {
+        console.log(`  ✓ SATELLITE MATCHED`);
+        lineItems.satellite = { quantity: qty, unit };
+      }
+      
+      // Gable cornice return
+      if (!lineItems.gableCornice && /gable.*cornice|cornice.*return/i.test(desc)) {
+        console.log(`  ✓ GABLE CORNICE MATCHED`);
+        lineItems.gableCornice = { quantity: qty, unit };
+      }
+      
+      // Drip edge
+      if (!lineItems.dripEdge && /drip\s*edge|gutter\s*apron|t-style\s*drip/i.test(desc)) {
+        console.log(`  ✓ DRIP EDGE MATCHED`);
+        lineItems.dripEdge = { quantity: qty, unit };
+      }
+      
+      // Soffit
+      if (!lineItems.soffit && /soffit/i.test(desc) && !/r&r|replace|paint|caulk|seal|prime|clean|detach|reset/i.test(desc)) {
+        console.log(`  ✓ SOFFIT MATCHED`);
+        lineItems.soffit = { quantity: qty, unit };
+      }
+      
+      // Ice & water shield detection (for valley length calculation)
+      if (/ice.*water|ice\s*&\s*water/i.test(desc)) {
+        iceWaterFoundOnLoss = true;
+        if (unit === 'SF') {
+          result.measurements.valleyLength = Math.ceil(qty / 3);
+          console.log(`  ✓ ICE & WATER MATCHED: ${qty} SF → valleyLength = ${result.measurements.valleyLength}`);
         }
       }
       
-      // Soffit without R&R prefix
-      if (!lineItems.soffit && /soffit/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line)) {
-        const sameLine = line.match(/(\d+\.?\d*)\s*(LF|SF)/i);
-        if (sameLine) {
-          lineItems.soffit = { quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() };
-        } else {
-          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF|SF)/i);
-            if (nextMatch) {
-              lineItems.soffit = { quantity: parseFloat(nextMatch[1]), unit: nextMatch[2].toUpperCase() };
-              break;
-            }
-          }
-        }
+      // Tear off (for labor calculation)
+      if (/tear\s*off|remove.*shingle|disposal.*shingle/i.test(desc) && unit === 'SQ') {
+        tearOffSquares = qty;
+        console.log(`  ✓ TEAR OFF MATCHED: ${qty} SQ`);
       }
       
-      
-      // Siding without R&R prefix
-      if (!lineItems.siding && /vinyl\s+siding|hardboard\s+siding|siding.*lap|lap.*siding/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line)) {
-        const sameLine = line.match(/(\d+\.?\d*)\s*(SQ|SF)/i);
-        if (sameLine) {
-          lineItems.siding = { quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() };
-        } else {
-          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(SQ|SF)/i);
-            if (nextMatch) {
-              lineItems.siding = { quantity: parseFloat(nextMatch[1]), unit: nextMatch[2].toUpperCase() };
-              break;
-            }
-          }
-        }
+      // Shingle squares (override calculated value)
+      if (/laminated|composition.*shingle|architectural.*shingle/i.test(desc) && unit === 'SQ' && !/(tear|remove|disposal)/i.test(desc)) {
+        shingleSquares = qty;
+        console.log(`  ✓ SHINGLE SQUARES MATCHED: ${qty} SQ`);
       }
-      
-      // Gutters (field-measured)
-      if (!lineItems.gutters && /gutter|downspout.*aluminum|r&r.*gutter/i.test(line) && !/labor minimum|clean|repair/i.test(line)) {
-        const sameLine = line.match(/(\d+\.?\d*)\s*(LF)/i);
-        if (sameLine) {
-          lineItems.gutters = { quantity: parseFloat(sameLine[1]), unit: 'LF' };
-        } else {
-          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF)/i);
-            if (nextMatch) {
-              lineItems.gutters = { quantity: parseFloat(nextMatch[1]), unit: 'LF' };
-              break;
-            }
-          }
-        }
-      }
-      
-      // Satellite dish (field-measured)
-      if (!lineItems.satellite && /satellite|dish.*detach|digital.*satellite/i.test(line)) {
-        const sameLine = line.match(/(\d+\.?\d*)\s*(EA)/i);
-        if (sameLine) {
-          lineItems.satellite = { quantity: parseFloat(sameLine[1]), unit: 'EA' };
-        } else {
-          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(EA)/i);
-            if (nextMatch) {
-              lineItems.satellite = { quantity: parseFloat(nextMatch[1]), unit: 'EA' };
-              break;
-            }
-          }
-        }
-      }
-      
-      // Gable cornice return (field-measured)
-      if (!lineItems.gableCornice && /gable.*cornice|cornice.*return/i.test(line)) {
-        const sameLine = line.match(/(\d+\.?\d*)\s*(EA)/i);
-        if (sameLine) {
-          lineItems.gableCornice = { quantity: parseFloat(sameLine[1]), unit: 'EA' };
-        } else {
-          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(EA)/i);
-            if (nextMatch) {
-              lineItems.gableCornice = { quantity: parseFloat(nextMatch[1]), unit: 'EA' };
-              break;
-            }
-          }
-        }
-      }
-      
-      // Window wrap
-      if (/window\s*wrap|wrap.*window/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
-        if (match) {
-          if (!lineItems.windowWrap) lineItems.windowWrap = [];
-          lineItems.windowWrap.push({ quantity: parseFloat(match[1]), unit: 'LF' });
-        }
-      }
-      
-      // Step flashing
-      if (/step\s+flashing/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
-        if (match) {
-          lineItems.stepFlashing = { quantity: parseFloat(match[1]), unit: 'LF' };
-        }
-      }
-      
-      // L flashing / trim coil
-      if (/l\s*flashing|flashing.*l\s*style|kick.?out\s*flashing|trim\s*coil/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
-        if (match) {
-          lineItems.lFlashing = { quantity: parseFloat(match[1]), unit: 'LF' };
-        }
-      }
-      
-      // Skylights
-      if (/skylight/i.test(line) && !/flashing|kit/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(EA)/i);
-        if (match) {
-          lineItems.skylights = { quantity: parseFloat(match[1]), unit: 'EA' };
-        }
-      }
-      
-      // Skylight flashing kit
-      if (/skylight.*flashing|flashing.*kit.*skylight/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(EA)/i);
-        if (match) {
-          lineItems.skylightFlashingKit = { quantity: parseFloat(match[1]), unit: 'EA' };
-        }
-      }
-      
-      // Turtle vents / box vents
-      if (/turtle\s*vent|box\s*vent|static\s*vent|exhaust\s*cap|roof\s*vent(?!.*ridge)(?!.*power)/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(EA)/i);
-        if (match) {
-          lineItems.turtleVents = { quantity: parseFloat(match[1]), unit: 'EA' };
-        }
-      }
-      
-      // Power attic fan / ventilator
-      if (/power.*attic|attic\s*vent.*power|attic.*ventilator|power\s*ventilator/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(EA)/i);
-        if (match) {
-          lineItems.powerAtticFan = { quantity: parseFloat(match[1]), unit: 'EA' };
-        }
-      }
-      
-      // R&R items (only if contains R&R or Replace)
-      // COLUMN-AGNOSTIC APPROACH: Find description line, then look for next line starting with number + unit
-      if (/R&R|Replace/i.test(line)) {
-        
-        // Helper: Find next line starting with number + unit (ignores column positions)
-        const findQuantityInNextLines = (startIndex, unitPattern) => {
-          // Check next 5 lines for a line starting with a number followed by the expected unit
-          for (let j = startIndex + 1; j < Math.min(startIndex + 6, lines.length); j++) {
-            const nextLine = lines[j].trim();
-            // Look for line starting with number (with optional whitespace/formatting)
-            const match = nextLine.match(new RegExp(`^\\s*(\\d+\\.?\\d*)\\s*(${unitPattern})`, 'i'));
-            if (match) {
-              return { quantity: parseFloat(match[1]), unit: match[2].toUpperCase() };
-            }
-          }
-          return null;
-        };
-        
-        // Fascia - DEBUG LOGGING ENABLED
-        if (/fascia/i.test(line)) {
-          console.log('[LOSS-PARSER] FASCIA DEBUG:');
-          console.log('  Description line:', line);
-          for (let j = i + 1; j <= Math.min(i + 5, lines.length - 1); j++) {
-            console.log(`  Next line [+${j-i}]:`, lines[j]);
-          }
-          
-          const fasciaFound = findQuantityInNextLines(i, 'LF|SF');
-          console.log('  Extraction result:', fasciaFound);
-          
-          if (fasciaFound && !lineItems.fascia) {
-            lineItems.fascia = {
-              quantity: fasciaFound.quantity,
-              unit: fasciaFound.unit
-            };
-            console.log('  ✅ Extracted:', lineItems.fascia);
-          } else {
-            console.log('  ❌ No quantity found in next 5 lines');
-          }
-        }
-        
-        // Siding
-        if (/siding/i.test(line)) {
-          const sidingFound = findQuantityInNextLines(i, 'SF');
-          if (sidingFound) {
-            lineItems.siding.push({
-              name: line.replace(/R&R|Replace/i, '').trim() || 'Siding',
-              quantity: sidingFound.quantity,
-              unit: sidingFound.unit
-            });
-          }
-        }
-        
-        // Window wrap
-        if (/wrap.*window|window.*wrap/i.test(line)) {
-          const wrapFound = findQuantityInNextLines(i, 'EA|LF');
-          if (wrapFound) {
-            lineItems.windowWrap.push({
-              name: line.replace(/R&R|Replace/i, '').trim() || 'Window Wrap',
-              quantity: wrapFound.quantity,
-              unit: wrapFound.unit
-            });
-          }
-        }
-        
-        // Soffit
-        if (/soffit/i.test(line)) {
-          const soffitFound = findQuantityInNextLines(i, 'SF');
-          if (soffitFound && !lineItems.soffit) {
-            lineItems.soffit = {
-              quantity: soffitFound.quantity,
-              unit: soffitFound.unit
-            };
-          }
-        }
-        
-        // Gutters
-        if (/gutter/i.test(line)) {
-          const gutterFound = findQuantityInNextLines(i, 'LF');
-          if (gutterFound && !lineItems.gutters) {
-            lineItems.gutters = {
-              quantity: gutterFound.quantity,
-              unit: gutterFound.unit
-            };
-          }
-        }
-        
-        // Downspouts
-        if (/downspout/i.test(line)) {
-          const downspoutFound = findQuantityInNextLines(i, 'LF');
-          if (downspoutFound && !lineItems.downspouts) {
-            lineItems.downspouts = {
-              quantity: downspoutFound.quantity,
-              unit: downspoutFound.unit
-            };
-          }
-        }
-        
-        // L flashing (from R&R section) - DEBUG LOGGING ENABLED
-        if (/l\s+flashing|flashing.*l\s|flashing.*galvanized/i.test(line)) {
-          console.log('[LOSS-PARSER] L FLASHING DEBUG:');
-          console.log('  Description line:', line);
-          for (let j = i + 1; j <= Math.min(i + 5, lines.length - 1); j++) {
-            console.log(`  Next line [+${j-i}]:`, lines[j]);
-          }
-          
-          const lFlashFound = findQuantityInNextLines(i, 'LF');
-          console.log('  Extraction result:', lFlashFound);
-          
-          if (lFlashFound) {
-            // Store in lineItems.lFlashing (not an array, just overwrite if found)
-            if (!lineItems.lFlashing) {
-              lineItems.lFlashing = { quantity: lFlashFound.quantity, unit: lFlashFound.unit };
-              console.log('  ✅ Extracted L flashing from R&R section:', lineItems.lFlashing);
-            }
-          } else {
-            console.log('  ❌ No quantity found in next 5 lines');
-          }
-        }
-      }
-    }
+    });
     
+    console.log('[CROSS-REF DEBUG] Cross-reference extraction complete');
     // Use shingle SQ as primary squares value
     if (shingleSquares !== totalSquares) {
       console.log('[LOSS-PARSER] Overriding calculated squares with shingle line item:', shingleSquares, '(was', totalSquares, ')');
