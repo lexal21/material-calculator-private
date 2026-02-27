@@ -610,6 +610,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     // DEBUG: Log all parsed descriptions for cross-reference matching
     console.log('[LOSS-PARSER] === ALL PARSED LINE ITEM DESCRIPTIONS ===');
+    console.log(`[LOSS-PARSER] Total parsed line items: ${parsedLineItems.length}`);
     parsedLineItems.forEach((item, idx) => {
       console.log(`  ${idx + 1}. ${item.description}`);
     });
@@ -620,6 +621,20 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     // ==========================================
     
     console.log('[CROSS-REF DEBUG] Starting cross-reference extraction from parsedLineItems');
+    console.log(`[CROSS-REF DEBUG] parsedLineItems.length = ${parsedLineItems.length}`);
+    if (parsedLineItems.length >= 3) {
+      console.log(`[CROSS-REF DEBUG] First 3 items:`);
+      console.log(`  1. ${parsedLineItems[0].description} (${parsedLineItems[0].quantity} ${parsedLineItems[0].unit})`);
+      console.log(`  2. ${parsedLineItems[1].description} (${parsedLineItems[1].quantity} ${parsedLineItems[1].unit})`);
+      console.log(`  3. ${parsedLineItems[2].description} (${parsedLineItems[2].quantity} ${parsedLineItems[2].unit})`);
+    } else if (parsedLineItems.length > 0) {
+      console.log(`[CROSS-REF DEBUG] Only ${parsedLineItems.length} item(s) parsed`);
+      parsedLineItems.forEach((item, idx) => {
+        console.log(`  ${idx + 1}. ${item.description} (${item.quantity} ${item.unit})`);
+      });
+    } else {
+      console.log(`[CROSS-REF DEBUG] ⚠️ WARNING: parsedLineItems is EMPTY!`);
+    }
     
     let shingleSquares = totalSquares; // Default to calculated squares
     let tearOffSquares = 0;

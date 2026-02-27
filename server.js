@@ -742,14 +742,18 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
     // PARSE LOSS SHEET ITEMS (if present)
     // ==========================================
     let lossItems = [];
+    let supplementItems = [];
     try {
       const isLoss = await lossParser.isLossSheet(req.file.path);
       if (isLoss) {
         console.log('[UPLOAD] Detected loss sheet, parsing exterior items...');
         const lossResult = await lossParser.parseLossSheet(req.file.path);
         if (lossResult.success) {
-          lossItems = lossResult.lossItems;
+          lossItems = lossResult.lossItems || [];
+          supplementItems = lossResult.supplementItems || [];
           console.log('[UPLOAD] Found', lossItems.length, 'loss items');
+          console.log('[UPLOAD] Found', supplementItems.length, 'supplement items (cross-referenced field-measured items)');
+          console.log('[UPLOAD] Supplement items:', JSON.stringify(supplementItems, null, 2));
         }
       }
     } catch (lossErr) {
@@ -773,7 +777,8 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
         items: laborItems,
         subtotal: laborSubtotal
       },
-      lossItems: lossItems, // NEW: loss sheet items
+      lossItems: lossItems, // Raw parsed line items from loss sheet
+      supplementItems: supplementItems, // Cross-referenced field-measured items (fascia, gutters, pipe jacks, etc.)
       subtotal: subtotal,
       tax: tax,
       grandTotal: grandTotal
