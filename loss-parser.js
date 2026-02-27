@@ -634,7 +634,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       skylights: null,
       skylightFlashingKit: null,
       turtleVents: null,
-      powerAtticFan: null
+      powerAtticFan: null,
+      satellite: null,
+      gableCornice: null,
+      gutters: null
     };
     
     // FIX 6: Track Ordinance and Law section
@@ -761,6 +764,54 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
             const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(SQ|SF)/i);
             if (nextMatch) {
               lineItems.siding = { quantity: parseFloat(nextMatch[1]), unit: nextMatch[2].toUpperCase() };
+              break;
+            }
+          }
+        }
+      }
+      
+      // Gutters (field-measured)
+      if (!lineItems.gutters && /gutter|downspout.*aluminum|r&r.*gutter/i.test(line) && !/labor minimum|clean|repair/i.test(line)) {
+        const sameLine = line.match(/(\d+\.?\d*)\s*(LF)/i);
+        if (sameLine) {
+          lineItems.gutters = { quantity: parseFloat(sameLine[1]), unit: 'LF' };
+        } else {
+          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF)/i);
+            if (nextMatch) {
+              lineItems.gutters = { quantity: parseFloat(nextMatch[1]), unit: 'LF' };
+              break;
+            }
+          }
+        }
+      }
+      
+      // Satellite dish (field-measured)
+      if (!lineItems.satellite && /satellite|dish.*detach|digital.*satellite/i.test(line)) {
+        const sameLine = line.match(/(\d+\.?\d*)\s*(EA)/i);
+        if (sameLine) {
+          lineItems.satellite = { quantity: parseFloat(sameLine[1]), unit: 'EA' };
+        } else {
+          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(EA)/i);
+            if (nextMatch) {
+              lineItems.satellite = { quantity: parseFloat(nextMatch[1]), unit: 'EA' };
+              break;
+            }
+          }
+        }
+      }
+      
+      // Gable cornice return (field-measured)
+      if (!lineItems.gableCornice && /gable.*cornice|cornice.*return/i.test(line)) {
+        const sameLine = line.match(/(\d+\.?\d*)\s*(EA)/i);
+        if (sameLine) {
+          lineItems.gableCornice = { quantity: parseFloat(sameLine[1]), unit: 'EA' };
+        } else {
+          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(EA)/i);
+            if (nextMatch) {
+              lineItems.gableCornice = { quantity: parseFloat(nextMatch[1]), unit: 'EA' };
               break;
             }
           }
@@ -1239,7 +1290,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     // ==========================================
     result.supplementItems = [];
     
-    // Add R&R items to supplementItems (fascia, soffit, gutters, downspouts are objects; siding, windowWrap are arrays)
+    // Field-measured items pulled directly from loss sheet (NOT from roof report)
     if (lineItems.fascia) {
       result.supplementItems.push({
         name: 'Fascia',
@@ -1289,6 +1340,39 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         name: 'Downspout',
         quantity: lineItems.downspouts.quantity,
         unit: lineItems.downspouts.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.pipeBoots) {
+      result.supplementItems.push({
+        name: 'Pipe Jack',
+        quantity: parseFloat(lineItems.pipeBoots.quantity),
+        unit: lineItems.pipeBoots.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.satellite) {
+      result.supplementItems.push({
+        name: 'Satellite Dish',
+        quantity: parseFloat(lineItems.satellite.quantity),
+        unit: lineItems.satellite.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.gableCornice) {
+      result.supplementItems.push({
+        name: 'Gable Cornice Return',
+        quantity: parseFloat(lineItems.gableCornice.quantity),
+        unit: lineItems.gableCornice.unit,
         unitPrice: 0,
         source: 'loss',
         color: ''
