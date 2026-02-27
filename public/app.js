@@ -616,15 +616,15 @@ function displayResults(data) {
   window.materialsData = data.materials;
   
   // ==========================================
-  // APPEND LOSS ITEMS (if present)
+  // APPEND SUPPLEMENT ITEMS (cross-referenced field-measured items from loss sheet)
   // ==========================================
-  if (data.lossItems && data.lossItems.length > 0) {
-    console.log('[LOSS] Appending', data.lossItems.length, 'loss sheet items to materials table');
+  if (data.supplementItems && data.supplementItems.length > 0) {
+    console.log('[SUPPLEMENT] Appending', data.supplementItems.length, 'supplement items to materials table');
     
     // Use tableBody already declared above
     const startIndex = data.materials.length; // Start numbering after regular materials
     
-    data.lossItems.forEach((item, idx) => {
+    data.supplementItems.forEach((item, idx) => {
       const rowIndex = startIndex + idx;
       const row = document.createElement('tr');
       row.dataset.row = rowIndex;
@@ -691,8 +691,8 @@ function displayResults(data) {
       tableBody.appendChild(row);
     });
     
-//Store loss items globally
-    window.lossItems = data.lossItems;
+//Store supplement items globally
+    window.supplementItems = data.supplementItems;
   }
   
 //Store labor data
@@ -2726,7 +2726,7 @@ function deleteLossItem(rowIndex) {
   
 //Re-render materials table
   if (window.currentPDFData) {
-    window.currentPDFData.lossItems = window.lossItems || [];
+    window.currentPDFData.supplementItems = window.supplementItems || [];
     displayResults(window.currentPDFData);
   }
 }
