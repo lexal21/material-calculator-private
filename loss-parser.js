@@ -589,6 +589,13 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     console.log(`[LOSS-PARSER] Parsed ${parsedLineItems.length} original line items from PDF`);
     result.lossItems = parsedLineItems;
     
+    // DEBUG: Log all parsed descriptions for cross-reference matching
+    console.log('[LOSS-PARSER] === ALL PARSED LINE ITEM DESCRIPTIONS ===');
+    parsedLineItems.forEach((item, idx) => {
+      console.log(`  ${idx + 1}. ${item.description}`);
+    });
+    console.log('[LOSS-PARSER] =======================================');
+    
     // ==========================================
     // EXTRACT LINE ITEMS FROM LOSS
     // ==========================================
@@ -617,6 +624,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     for (let i = startParsingAt; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
+      
+      // Track if this line matched any cross-reference pattern
+      let matchedPattern = false;
       
       // FIX 7: Stop parsing at summary/total rows
       if (shouldStopParsing(line)) {
@@ -653,6 +663,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Drip edge
       if (/drip\s*edge|gutter\s*apron|t-style\s*drip/i.test(line)) {
+        matchedPattern = true;
         const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (match) {
           lineItems.dripEdge = { quantity: parseFloat(match[1]), unit: 'LF' };
@@ -1006,6 +1017,21 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         total: pieces * MATERIALS.ridge_vent.price
       });
     }
+    
+    // DEBUG: Log cross-reference matching results
+    console.log('[LOSS-PARSER] === CROSS-REFERENCE MATCHING RESULTS ===');
+    Object.keys(lineItems).forEach(key => {
+      if (Array.isArray(lineItems[key])) {
+        if (lineItems[key].length > 0) {
+          console.log(`  ✓ ${key}: ${lineItems[key].length} item(s)`);
+        }
+      } else if (lineItems[key]) {
+        console.log(`  ✓ ${key}: ${lineItems[key].quantity} ${lineItems[key].unit}`);
+      } else {
+        console.log(`  ✗ ${key}: not found`);
+      }
+    });
+    console.log('[LOSS-PARSER] =======================================');
     
     // Drip edge - use correct formula: ceil(perimeter / 10) + 3
     if (lineItems.dripEdge) {
