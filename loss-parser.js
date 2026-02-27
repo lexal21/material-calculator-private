@@ -597,10 +597,6 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     let tearOffSquares = 0;
     let iceWaterFoundOnLoss = false; // Track if ice & water was explicitly on loss sheet
     const lineItems = {
-      shingles: null,
-      underlayment: null,
-      hipRidge: null,
-      ridgeVent: null,
       dripEdge: null,
       pipeBoots: null,
       stepFlashing: null,
@@ -609,8 +605,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       siding: [],
       windowWrap: [],
       soffit: null,
-      gutters: null,
-      downspouts: null
+      skylights: null,
+      skylightFlashingKit: null,
+      turtleVents: null,
+      powerAtticFan: null
     };
     
     // FIX 6: Track Ordinance and Law section
@@ -652,57 +650,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         continue;
       }
       
-      // Shingles (primary source of SQ measurement)
-      if (/comp.*shingle|laminated.*shingle|shingle.*rfg|3.?tab.*shingle|architectural.*shingle/i.test(line)) {
-        // Check current line first, then next line
-        const searchLine = /(\d+\.?\d*)\s*SQ/i.test(line) ? line : (lines[i + 1] || '');
-        const match = searchLine.match(/(\d+\.?\d*)\s*SQ/i);
-        if (match) {
-          const val = parseFloat(match[1]);
-          // Only use if greater than what we have (waste-adjusted shingle SQ is always > raw squares)
-          if (val > shingleSquares) {
-            shingleSquares = val;
-            lineItems.shingles = { quantity: shingleSquares, unit: 'SQ' };
-            console.log('[LOSS-PARSER] SHINGLE SQ EXTRACTED:', shingleSquares);
-          }
-        }
-      }
-      
-      // Tear off (extract for labor only)
-      if (/tear\s*off|remove.*shingle/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(SQ)/i);
-        if (match) {
-          tearOffSquares = parseFloat(match[1]);
-        }
-      }
-      
-      // Roofing felt / underlayment
-      if (/roofing\s+felt|underlayment|15.*felt|30.*felt/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(SQ)/i);
-        if (match) {
-          lineItems.underlayment = { quantity: parseFloat(match[1]), unit: 'SQ' };
-        }
-      }
-      
-      // Hip/Ridge cap
-      if (/hip.*ridge.*cap|ridge.*cap/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
-        if (match) {
-          lineItems.hipRidge = { quantity: parseFloat(match[1]), unit: 'LF' };
-          console.log('[LOSS-PARSER] Found hip/ridge cap:', match[1], 'LF from line:', line);
-        }
-      }
-      
-      // Ridge vent
-      if (/ridge\s+vent/i.test(line)) {
-        const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
-        if (match) {
-          lineItems.ridgeVent = { quantity: parseFloat(match[1]), unit: 'LF' };
-        }
-      }
       
       // Drip edge
-      if (/drip\s+edge/i.test(line)) {
+      if (/drip\s*edge|gutter\s*apron|t-style\s*drip/i.test(line)) {
         const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (match) {
           lineItems.dripEdge = { quantity: parseFloat(match[1]), unit: 'LF' };
@@ -738,8 +688,8 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
-      // Fascia without R&R prefix (Griston and similar carriers)
-      if (!lineItems.fascia && /fascia/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line)) {
+      // Fascia
+      if (!lineItems.fascia && /fascia/i.test(line) && !/Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line)) {
         const sameLine = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (sameLine) {
           lineItems.fascia = { quantity: parseFloat(sameLine[1]), unit: 'LF' };
@@ -770,37 +720,6 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
-      // Gutters without R&R prefix
-      if (!lineItems.gutters && /gutter/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line)) {
-        const sameLine = line.match(/(\d+\.?\d*)\s*(LF)/i);
-        if (sameLine) {
-          lineItems.gutters = { quantity: parseFloat(sameLine[1]), unit: 'LF' };
-        } else {
-          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF)/i);
-            if (nextMatch) {
-              lineItems.gutters = { quantity: parseFloat(nextMatch[1]), unit: 'LF' };
-              break;
-            }
-          }
-        }
-      }
-      
-      // Downspouts without R&R prefix
-      if (!lineItems.downspouts && /downspout/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean/i.test(line)) {
-        const sameLine = line.match(/(\d+\.?\d*)\s*(LF|EA)/i);
-        if (sameLine) {
-          lineItems.downspouts = { quantity: parseFloat(sameLine[1]), unit: sameLine[2].toUpperCase() };
-        } else {
-          for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-            const nextMatch = lines[j].trim().match(/^(\d+\.?\d*)\s*(LF|EA)/i);
-            if (nextMatch) {
-              lineItems.downspouts = { quantity: parseFloat(nextMatch[1]), unit: nextMatch[2].toUpperCase() };
-              break;
-            }
-          }
-        }
-      }
       
       // Siding without R&R prefix
       if (!lineItems.siding && /vinyl\s+siding|hardboard\s+siding|siding.*lap|lap.*siding/i.test(line) && !/R&R|Replace|paint|caulk|seal|prime|clean|detach|reset/i.test(line)) {
@@ -818,6 +737,15 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
+      // Window wrap
+      if (/window\s*wrap|wrap.*window/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
+        if (match) {
+          if (!lineItems.windowWrap) lineItems.windowWrap = [];
+          lineItems.windowWrap.push({ quantity: parseFloat(match[1]), unit: 'LF' });
+        }
+      }
+      
       // Step flashing
       if (/step\s+flashing/i.test(line)) {
         const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
@@ -827,10 +755,42 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // L flashing / trim coil
-      if (/flashing.*14|l\s+flashing|trim\s+coil/i.test(line)) {
+      if (/l\s*flashing|flashing.*l\s*style|kick.?out\s*flashing|trim\s*coil/i.test(line)) {
         const match = line.match(/(\d+\.?\d*)\s*(LF)/i);
         if (match) {
           lineItems.lFlashing = { quantity: parseFloat(match[1]), unit: 'LF' };
+        }
+      }
+      
+      // Skylights
+      if (/skylight/i.test(line) && !/flashing|kit/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(EA)/i);
+        if (match) {
+          lineItems.skylights = { quantity: parseFloat(match[1]), unit: 'EA' };
+        }
+      }
+      
+      // Skylight flashing kit
+      if (/skylight.*flashing|flashing.*kit.*skylight/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(EA)/i);
+        if (match) {
+          lineItems.skylightFlashingKit = { quantity: parseFloat(match[1]), unit: 'EA' };
+        }
+      }
+      
+      // Turtle vents / box vents
+      if (/turtle\s*vent|box\s*vent|static\s*vent|exhaust\s*cap|roof\s*vent(?!.*ridge)(?!.*power)/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(EA)/i);
+        if (match) {
+          lineItems.turtleVents = { quantity: parseFloat(match[1]), unit: 'EA' };
+        }
+      }
+      
+      // Power attic fan / ventilator
+      if (/power.*attic|attic\s*vent.*power|attic.*ventilator|power\s*ventilator/i.test(line)) {
+        const match = line.match(/(\d+\.?\d*)\s*(EA)/i);
+        if (match) {
+          lineItems.powerAtticFan = { quantity: parseFloat(match[1]), unit: 'EA' };
         }
       }
       
