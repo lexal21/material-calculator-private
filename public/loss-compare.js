@@ -312,8 +312,10 @@ const LossCompare = (() => {
 
         if (lossResp2.ok) {
           var lossData2 = await lossResp2.json();
-          if (lossData2.success && lossData2.lossItems && lossData2.lossItems.length > 0) {
-            uploadData.lossItems = lossData2.lossItems;
+          console.log('[LOSS-COMPARE] Response data:', lossData2);
+          if (lossData2.success && lossData2.supplementItems && lossData2.supplementItems.length > 0) {
+            console.log('[LOSS-COMPARE] Received', lossData2.supplementItems.length, 'supplement items from API');
+            uploadData.supplementItems = lossData2.supplementItems;
           }
         }
       }
