@@ -16,7 +16,13 @@ const LossCompare = (() => {
     'Citizens Property', 'Security First', 'Tower Hill',
     'David Morse', 'Pilot Catastrophe', 'Eberl Claims', 'Crawford', 'Sedgwick',
     'Gallagher Bassett', 'Xactimate', 'Symbility',
-    'Replacement Cost Value', 'Actual Cash Value', 'Recoverable Depreciation',
+    // Additional carriers
+    'AAA Insurance', 'Members Insurance', 'Universal Insurance Company', 'acg.aaa.com',
+    'National Catastrophe Team', 'Griston', 'Griston Claim Management', 'gristonclaim.com',
+    'TyptAp', 'Typtap Insurance',
+    // Universal Xactimate fallbacks — these appear in ALL loss sheets regardless of carrier
+    'Claim Number:', 'Price List:', 'UNIT PRICE', 'Replacement Cost Value', 
+    'Line Item Total', 'Actual Cash Value', 'Recoverable Depreciation',
     'Net Claim', 'Deductible', 'Policy Number', 'Date of Loss', 'Cause of Loss',
     'Line Item Total', 'Price List'
   ];

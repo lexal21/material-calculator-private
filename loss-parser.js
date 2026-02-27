@@ -9,6 +9,96 @@ const {
   calculatePlywood
 } = require('./calculator');
 
+// ==========================================
+// PARSER CONSTANTS & HELPERS
+// ==========================================
+
+// FIX 3: Allstate boilerplate markers
+const ALLSTATE_BOILERPLATE_START = 'Your guide to reading your adjuster summary';
+const ALLSTATE_BOILERPLATE_END = 'This is a sample guide to your adjuster summary';
+
+// FIX 5: Category subheader patterns to skip
+const SKIP_PATTERNS = [
+  /^DWELLING$/,
+  /^ORDINANCE AND LAW$/,
+  /^FULL ROOF REPLACEMENT$/,
+  /^Roof Components$/,
+  /^Shingles & Felt:$/,
+  /^Starter and Drip:$/,
+  /^Ridge & Hip:$/,
+  /^Flashing & Metal:$/,
+  /^Roof Elements:$/,
+  /^Content Manipulation$/,
+  /^Masking$/,
+  /^Ceiling Repair$/,
+  /^Wall Repair$/,
+  /^General Items$/,
+  /^Labor Minimums Applied$/,
+  // Catch-all: ALL CAPS line with no digits
+  /^[A-Z][A-Z\s\-&:]+$/
+];
+
+// FIX 7: Parse stop markers
+const PARSE_STOP_MARKERS = [
+  'Factor Detail',
+  'Roof Surface Payment Schedule',
+  'Unfactored Items',
+  'Your guide to contents depreciation recovery',
+  'Dwelling Totals:',
+  'Ordinance and Law Totals:',
+  'Totals: Dwelling Roof',
+  'Total: Exterior',
+  'Total: Dwelling',
+  'Line Item Totals:',
+  'Area Dwelling Total:',
+  'Totals: Labor Minimums Applied'
+];
+
+// FIX 12: Inline note patterns to skip
+const NOTE_PATTERNS = [
+  /^Per newly enforced/i,
+  /^Auto Calculated Waste/i,
+  /^Options:/i,
+  /^Orig\. Desc/i,
+  /^https?:\/\//i,
+  /^\[%\]/,
+  /^\[M\]/
+];
+
+// FIX 9: Strip Allstate data markers from numeric columns
+function stripAllstateMarkers(value) {
+  if (!value) return value;
+  return value.replace(/\[M\]/g, '').replace(/\[%\]/g, '').trim();
+}
+
+// FIX 10: Parse depreciation values in parentheses
+function parseDepreciation(val) {
+  if (!val) return 0;
+  const clean = val.toString().replace(/[(),\s]/g, '');
+  return parseFloat(clean) || 0;
+}
+
+// FIX 11: Strip commas from numeric values
+function parseAmount(val) {
+  if (!val) return 0;
+  return parseFloat(val.toString().replace(/[,$\s]/g, '')) || 0;
+}
+
+// FIX 5: Check if line should be skipped (category subheader)
+function shouldSkipLine(line) {
+  return SKIP_PATTERNS.some(pattern => pattern.test(line.trim()));
+}
+
+// FIX 7: Check if parsing should stop at this line
+function shouldStopParsing(line) {
+  return PARSE_STOP_MARKERS.some(marker => line.includes(marker));
+}
+
+// FIX 12: Check if line is an inline note
+function isNoteLine(line) {
+  return NOTE_PATTERNS.some(pattern => pattern.test(line.trim()));
+}
+
 /**
  * Parse insurance loss sheet completely - extracts customer info, measurements, line items
  * Returns same structure as /upload route for compatibility with displayResults()
@@ -25,6 +115,48 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     console.log('[LOSS-PARSER] Parsing complete loss sheet...');
     
+    // FIX 2: Detect Allstate extended column format
+    const isAllstateFormat = text.includes('AGE/LIFE') && text.includes('DEP %');
+    if (isAllstateFormat) {
+      console.log('[LOSS-PARSER] Allstate extended column format detected');
+    }
+    
+    // FIX 3: Skip Allstate consumer guide boilerplate pages
+    let startParsingAt = 0;
+    if (text.includes(ALLSTATE_BOILERPLATE_START)) {
+      console.log('[LOSS-PARSER] Allstate boilerplate detected, skipping...');
+      const lastBoilerplateEnd = text.lastIndexOf(ALLSTATE_BOILERPLATE_END);
+      if (lastBoilerplateEnd > 0) {
+        // Find line index where boilerplate ends
+        let charCount = 0;
+        for (let i = 0; i < lines.length; i++) {
+          charCount += lines[i].length + 1; // +1 for newline
+          if (charCount >= lastBoilerplateEnd) {
+            startParsingAt = i + 1;
+            console.log('[LOSS-PARSER] Skipping first', startParsingAt, 'lines (Allstate boilerplate)');
+            break;
+          }
+        }
+      }
+    }
+    
+    // FIX 4: Skip Griston cover letter pages
+    let gristonEstimateStart = -1;
+    for (let i = startParsingAt; i < Math.min(startParsingAt + 200, lines.length); i++) {
+      const line = lines[i].trim();
+      const nextLine = lines[i + 1]?.trim() || '';
+      // Find page with both "Claim Number:" and "Price List:" - marks start of Xactimate estimate
+      if (line.includes('Claim Number:') && 
+          (nextLine.includes('Price List:') || lines[i + 2]?.trim().includes('Price List:'))) {
+        gristonEstimateStart = i;
+        console.log('[LOSS-PARSER] Griston estimate start detected at line', i);
+        break;
+      }
+    }
+    if (gristonEstimateStart > startParsingAt) {
+      startParsingAt = gristonEstimateStart;
+    }
+    
     // Initialize result structure
     const result = {
       success: true,
@@ -38,13 +170,15 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       lossItems: [],
       subtotal: 0,
       tax: 0,
-      grandTotal: 0
+      grandTotal: 0,
+      _isAllstateFormat: isAllstateFormat,
+      _startParsingAt: startParsingAt
     };
     
     // ==========================================
     // EXTRACT CUSTOMER INFO
     // ==========================================
-    for (let i = 0; i < lines.length; i++) {
+    for (let i = startParsingAt; i < lines.length; i++) {
       const line = lines[i].trim();
       
       // Insured name
@@ -74,7 +208,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     let perimeterLength = 0;
     let dripEdgeEaveRake = 0;
     
-    for (let i = 0; i < lines.length; i++) {
+    for (let i = startParsingAt; i < lines.length; i++) {
       const line = lines[i].trim();
       
       // Number of Squares (main roof) - handles "25.54Number of Squares" (no space)
@@ -197,9 +331,44 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       downspouts: null
     };
     
-    for (let i = 0; i < lines.length; i++) {
+    // FIX 6: Track Ordinance and Law section
+    let inOrdinanceSection = false;
+    
+    for (let i = startParsingAt; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
+      
+      // FIX 7: Stop parsing at summary/total rows
+      if (shouldStopParsing(line)) {
+        console.log('[LOSS-PARSER] Stopping parse at summary line:', line);
+        break;
+      }
+      
+      // FIX 5: Skip category subheader lines
+      if (shouldSkipLine(line)) {
+        continue;
+      }
+      
+      // FIX 12: Skip inline note lines
+      if (isNoteLine(line)) {
+        continue;
+      }
+      
+      // FIX 6: Track Ordinance and Law section
+      if (/^ORDINANCE AND LAW$/i.test(line)) {
+        inOrdinanceSection = true;
+        console.log('[LOSS-PARSER] Entering Ordinance and Law section - items will be excluded');
+        continue;
+      }
+      // Exit Ordinance section when we hit a new major section
+      if (inOrdinanceSection && /^[A-Z\s]{10,}:$/i.test(line) && !/ORDINANCE/i.test(line)) {
+        inOrdinanceSection = false;
+        console.log('[LOSS-PARSER] Exiting Ordinance and Law section');
+      }
+      // Skip items in Ordinance section
+      if (inOrdinanceSection) {
+        continue;
+      }
       
       // Shingles (primary source of SQ measurement)
       if (/comp.*shingle|laminated.*shingle|shingle.*rfg|3.?tab.*shingle|architectural.*shingle/i.test(line)) {
