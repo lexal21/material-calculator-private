@@ -467,9 +467,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Start parsing when we see the DESCRIPTION header
       // Handle both spaced "DESCRIPTION QTY UNIT" and merged "DESCRIPTIONQUANTITYUNIT"
-      if (/DESCRIPTION.*UNIT.*RCV/i.test(line)) {
+      // Must contain DESCRIPTION, (QUANTITY or QTY), UNIT, PRICE, and (RCV or ACV) in that order
+      if (/DESCRIPTION.*(?:QUANTITY|QTY).*UNIT.*PRICE.*(?:RCV|ACV)/i.test(line) && line.length < 300) {
         parsingLineItems = true;
-        console.log('[LOSS-PARSER] Found line item table header at line', i, ':', line.substring(0, 80));
+        console.log('[LOSS-PARSER] Found line item table header at line', i, ':', line.substring(0, 100));
         continue;
       }
       
