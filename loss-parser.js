@@ -553,7 +553,32 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     }
     
     console.log(`[LOSS-PARSER] After splitting: ${lines.length} → ${splitLines.length} lines`);
-    lines = splitLines;
+    
+    // Further split lines that contain PARSE_STOP_MARKERS
+    // Example: "6. Drywall labor minimum* 1.00 EA ... 378.87 Dwelling Totals: 90.7"
+    // Should split into: ["6. Drywall labor minimum* ...", "Dwelling Totals: 90.7"]
+    const finalLines = [];
+    for (const line of splitLines) {
+      let remaining = line;
+      let foundMarker = false;
+      
+      for (const marker of PARSE_STOP_MARKERS) {
+        const idx = remaining.indexOf(marker);
+        if (idx > -1 && idx > 10) { // Must have content before the marker
+          finalLines.push(remaining.substring(0, idx).trim());
+          finalLines.push(remaining.substring(idx).trim());
+          foundMarker = true;
+          break;
+        }
+      }
+      
+      if (!foundMarker) {
+        finalLines.push(remaining);
+      }
+    }
+    
+    console.log(`[LOSS-PARSER] After stop-marker splitting: ${splitLines.length} → ${finalLines.length} lines`);
+    lines = finalLines;
     
 
     
@@ -601,11 +626,21 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
 
       
-      // Stop at totals/summary lines - but ONLY after we've started parsing line items
-      // This prevents early exit when there are multiple sections (e.g., Travelers interior→roof)
+      // Pause at totals/summary lines (reset parsing flag to wait for next section)
+      // Multi-section PDFs have intermediate totals between sections
       if (parsingLineItems && shouldStopParsing(line)) {
-        console.log('[LOSS-PARSER] Stopping at totals/summary line:', i);
-        break;
+        console.log('[LOSS-PARSER] Pausing at totals/summary line', i, '- will resume at next header/item');
+        parsingLineItems = false;
+        continue;
+      }
+      
+      // Fallback: Start parsing if we encounter a numbered item even without a header
+      // Handles sections that start directly with "1. Item description 10.5 LF ..."
+      if (!parsingLineItems && /^\d+\.\s+.+?\s+\d+\.?\d*\s+(SQ|LF|EA|SF)\s+/i.test(line)) {
+        console.log('[LOSS-PARSER] ✓ Found numbered line item without header at line', i, '- starting parse');
+        console.log('[LOSS-PARSER] Line:', line.substring(0, 100));
+        parsingLineItems = true;
+        // Fall through to parse this line
       }
       
       if (!parsingLineItems) continue;
