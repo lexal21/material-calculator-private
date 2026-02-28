@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: material-calculator
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      # Mount uploads directory for persistent storage during development
+      - ./uploads:/app/uploads
+      # Mount test-pdfs for easy access
+      - ./test-pdfs:/app/test-pdfs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+
+  # Optional: Add a development service with hot-reload
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: material-calculator-dev
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    volumes:
+      # Mount entire project for hot-reload during development
+      - .:/app
+      - /app/node_modules  # Don't overwrite node_modules
+    command: npm start
+    restart: unless-stopped
+    profiles:
+      - dev
+
+networks:
+  default:
+    name: material-calculator-network

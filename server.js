@@ -833,6 +833,11 @@ app.post('/api/detect-pdf-type', upload.single('pdf'), async (req, res) => {
   }
 });
 
+// Health check endpoint for Docker/Railway
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.listen(port, () => {
   console.log('Server running on port ' + port);
 });
