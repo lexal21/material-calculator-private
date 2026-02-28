@@ -156,23 +156,12 @@ const SKIP_PATTERNS = [
   /^[A-Z][A-Z\s\-&:]+$/
 ];
 
-// FIX 7: Parse stop markers
+// FIX 7: Parse stop markers (document-end only, not intermediate section totals)
 const PARSE_STOP_MARKERS = [
   'Factor Detail',
   'Roof Surface Payment Schedule',
   'Unfactored Items',
-  'Your guide to contents depreciation recovery',
-  'Dwelling Totals:',
-  'Ordinance and Law Totals:',
-  'Totals: Dwelling Roof',
-  'Totals: Other Exterior',
-  'Totals: Shed',
-  'Totals: Other Structures',
-  'Total: Exterior',
-  'Total: Dwelling',
-  'Line Item Totals:',
-  'Area Dwelling Total:',
-  'Totals: Labor Minimums Applied'
+  'Your guide to contents depreciation recovery'
 ];
 
 // FIX 12: Inline note patterns to skip
@@ -583,7 +572,17 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     console.log(`[LOSS-PARSER] After stop-marker splitting: ${splitLines.length} → ${finalLines.length} lines`);
     lines = finalLines;
     
-
+    // DEBUG: Pre-scan for all numbered items before parsing
+    const foundItemNumbers = new Set();
+    const parsedItemNumbers = new Set();
+    for (let i = startParsingAt; i < lines.length; i++) {
+      const line = lines[i].trim();
+      const itemMatch = line.match(/^(\d+)\.\s/);
+      if (itemMatch) {
+        foundItemNumbers.add(parseInt(itemMatch[1]));
+      }
+    }
+    console.log('[LOSS-PARSER] Pre-scan: Found', foundItemNumbers.size, 'numbered items (1-' + Math.max(...foundItemNumbers) + ')');
     
     for (let i = startParsingAt; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -629,16 +628,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
 
       
-      // Pause at totals/summary lines (reset parsing flag to wait for next section)
-      // Multi-section PDFs have intermediate totals between sections
+      // Stop at document-end markers (appendices, payment schedules, etc.)
       if (parsingLineItems && shouldStopParsing(line)) {
-        console.log('[LOSS-PARSER] Pausing at totals/summary line', i, '- will resume at next header/item');
-        console.log('[LOSS-PARSER] Next 5 lines after totals:');
-        for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
-          console.log(`  [${j}] ${lines[j].substring(0, 100)}`);
-        }
-        parsingLineItems = false;
-        continue;
+        console.log('[LOSS-PARSER] Stopping at document-end marker:', line.substring(0, 50));
+        break;
       }
       
       // Fallback: Start parsing if we encounter a numbered item even without a header
@@ -650,6 +643,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         // Fall through to parse this line
       }
       
+      // Skip lines when not in parsing mode
       if (!parsingLineItems) continue;
       
       // Parse numbered line items: "1. Description text QTY UNIT PRICE TAX RCV DEPREC ACV"
@@ -667,9 +661,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       if (basicMatch) {
         const [, itemNum, description, qty, unit, remaining] = basicMatch;
         
-        // Parse remaining: "PRICE TAX RCV (DEPREC) ACV"
-        // Look for the depreciation in parentheses as an anchor point
-        const depMatch = remaining.match(/\(([^)]+)\)/);
+        // Parse remaining: "PRICE TAX RCV (DEPREC) ACV" or "PRICE TAX RCV <DEPREC> ACV"
+        // Look for depreciation in parentheses () or angle brackets <> (Travelers format)
+        const depMatch = remaining.match(/[\(<]([^)>]+)[\)>]/);
         if (depMatch) {
           const deprecText = depMatch[1];
           const beforeDep = remaining.substring(0, depMatch.index).trim();
@@ -706,6 +700,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
               acv: cleanNumber(acvText)
             });
             
+            parsedItemNumbers.add(parseInt(itemNum)); // Track successfully parsed item
             console.log(`[LOSS-PARSER] Parsed line item ${itemNum}: ${description.substring(0, 40)}...`);
           }
         }
@@ -726,7 +721,8 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
               const [, qty, unit, remaining] = valueMatch;
               
               // Parse remaining using same approach as single-line
-              const depMatch = remaining.match(/\(([^)]+)\)/);
+              // Support both parentheses () and angle brackets <> (Travelers format)
+              const depMatch = remaining.match(/[\(<]([^)>]+)[\)>]/);
               if (depMatch) {
                 const deprecText = depMatch[1];
                 const beforeDep = remaining.substring(0, depMatch.index).trim();
@@ -757,6 +753,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
                     acv: cleanNumber(acvText)
                   });
                   
+                  parsedItemNumbers.add(parseInt(itemNum)); // Track successfully parsed item
                   console.log(`[LOSS-PARSER] Parsed multi-line item ${itemNum}: ${description.substring(0, 40)}...`);
                   i++; // Skip next line since we consumed it
                 }
@@ -768,6 +765,30 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     }
     
     console.log(`[LOSS-PARSER] Parsed ${parsedLineItems.length} original line items from PDF`);
+    
+    // DEBUG: Show which numbered items were found but not parsed
+    const skippedItems = Array.from(foundItemNumbers).filter(num => !parsedItemNumbers.has(num)).sort((a, b) => a - b);
+    if (skippedItems.length > 0) {
+      console.log(`[LOSS-PARSER] ⚠️  WARNING: ${skippedItems.length} numbered items were SKIPPED:`);
+      console.log(`[LOSS-PARSER] Skipped item numbers: ${skippedItems.join(', ')}`);
+      
+      // Show first few skipped items with context
+      const maxShow = 5;
+      console.log(`[LOSS-PARSER] First ${Math.min(maxShow, skippedItems.length)} skipped items:`);
+      for (let skip = 0; skip < Math.min(maxShow, skippedItems.length); skip++) {
+        const itemNum = skippedItems[skip];
+        for (let i = startParsingAt; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line.startsWith(`${itemNum}. `)) {
+            console.log(`  [${itemNum}] ${line.substring(0, 120)}`);
+            break;
+          }
+        }
+      }
+    } else {
+      console.log(`[LOSS-PARSER] ✓ All ${foundItemNumbers.size} numbered items successfully parsed`);
+    }
+    
     result.lossItems = parsedLineItems;
     
     // DEBUG: Log all parsed descriptions for cross-reference matching
