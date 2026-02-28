@@ -165,6 +165,9 @@ const PARSE_STOP_MARKERS = [
   'Dwelling Totals:',
   'Ordinance and Law Totals:',
   'Totals: Dwelling Roof',
+  'Totals: Other Exterior',
+  'Totals: Shed',
+  'Totals: Other Structures',
   'Total: Exterior',
   'Total: Dwelling',
   'Line Item Totals:',
@@ -630,6 +633,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       // Multi-section PDFs have intermediate totals between sections
       if (parsingLineItems && shouldStopParsing(line)) {
         console.log('[LOSS-PARSER] Pausing at totals/summary line', i, '- will resume at next header/item');
+        console.log('[LOSS-PARSER] Next 5 lines after totals:');
+        for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
+          console.log(`  [${j}] ${lines[j].substring(0, 100)}`);
+        }
         parsingLineItems = false;
         continue;
       }
@@ -648,6 +655,14 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       // Parse numbered line items: "1. Description text QTY UNIT PRICE TAX RCV DEPREC ACV"
       // Two-stage approach: match the basic structure, then manually parse the numeric fields
       const basicMatch = line.match(/^(\d+)[.,]\s+(.+?)\s+(\d+\.?\d*)\s+(SQ|LF|EA|SF)\s+(.+)$/i);
+      
+      // DEBUG: Log lines that look like items but don't match
+      if (/^\d+\.\s+/.test(line) && !basicMatch && i >= 120 && i <= 140) {
+        console.log(`[LOSS-PARSER] Line ${i} looks like item but doesn't match regex:`);
+        console.log(`  Line: "${line.substring(0, 150)}"`);
+        console.log(`  Starts with number: ${/^\d+\.\s+/.test(line)}`);
+        console.log(`  Has unit (EA|LF|SQ|SF): ${/(EA|LF|SQ|SF)/i.test(line)}`);
+      }
       
       if (basicMatch) {
         const [, itemNum, description, qty, unit, remaining] = basicMatch;
