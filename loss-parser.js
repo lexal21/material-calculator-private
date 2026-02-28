@@ -823,7 +823,6 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     let tearOffSquares = 0;
     let iceWaterFoundOnLoss = false; // Track if ice & water was explicitly on loss sheet
     const lineItems = {
-      dripEdge: null,
       pipeBoots: null,
       stepFlashing: null,
       lFlashing: null,
@@ -857,7 +856,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
-      // Pipe jacks/boots (sum duplicates)
+      // Pipe jacks/boots (sum ALL variations - 1.5", 2", 3", 4" etc - into single total count)
       if (/pipe\s+(jack|boot)|flashing.*pipe/i.test(desc)) {
         console.log(`  ✓ PIPE JACK MATCHED`);
         if (lineItems.pipeBoots) {
@@ -865,17 +864,6 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
           console.log(`    Summing with existing: ${lineItems.pipeBoots.quantity} ${unit}`);
         } else {
           lineItems.pipeBoots = { quantity: qty, unit };
-        }
-      }
-      
-      // Drip edge (sum duplicates - e.g., main house + shed)
-      if (/drip\s*edge|gutter\s*apron|t-style\s*drip/i.test(desc)) {
-        console.log(`  ✓ DRIP EDGE MATCHED`);
-        if (lineItems.dripEdge) {
-          lineItems.dripEdge.quantity += qty;
-          console.log(`    Summing with existing: ${lineItems.dripEdge.quantity} ${unit}`);
-        } else {
-          lineItems.dripEdge = { quantity: qty, unit };
         }
       }
       
@@ -1332,17 +1320,6 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         name: 'Pipe Jack',
         quantity: parseFloat(lineItems.pipeBoots.quantity),
         unit: lineItems.pipeBoots.unit,
-        unitPrice: 0,
-        source: 'loss',
-        color: ''
-      });
-    }
-    
-    if (lineItems.dripEdge) {
-      result.supplementItems.push({
-        name: 'Drip Edge',
-        quantity: parseFloat(lineItems.dripEdge.quantity),
-        unit: lineItems.dripEdge.unit,
         unitPrice: 0,
         source: 'loss',
         color: ''

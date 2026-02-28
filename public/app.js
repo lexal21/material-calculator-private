@@ -1071,8 +1071,9 @@ function updateMaterialsTotals() {
 function recalculateTotals() {
   const materialsTotal = window.materialsData.reduce((sum, item) => sum + item.total, 0);
   const lossTotal = (window.lossItems || []).reduce((sum, item) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
+  const supplementTotal = (window.supplementItems || []).reduce((sum, item) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
   const miscTotal = (window.miscTotals || []).reduce((sum, val) => sum + val, 0);
-  const subtotal = materialsTotal + lossTotal + miscTotal;
+  const subtotal = materialsTotal + lossTotal + supplementTotal + miscTotal;
   const taxRate = (window.taxRate || 9) / 100;
   const tax = subtotal * taxRate;
   const grandTotal = subtotal + tax;
@@ -2265,7 +2266,23 @@ function saveLaborPDF() {
 
 function buildMaterialsPDF() {
   const raw = window.currentRawMeasurements || {};
-  const materials = window.materialsData || [];
+  const regularMaterials = window.materialsData || [];
+  const supplementItems = window.supplementItems || [];
+  
+  // Merge regular materials and supplement items for PDF output
+  const materials = [...regularMaterials];
+  
+  // Add supplement items with calculated totals
+  supplementItems.forEach(item => {
+    const total = (item.quantity || 0) * (item.unitPrice || 0);
+    materials.push({
+      name: item.name + (item.color ? ` (${item.color})` : ''),
+      quantity: item.quantity || 0,
+      unit: item.unit || 'EA',
+      unitPrice: item.unitPrice || 0,
+      total: total
+    });
+  });
   
 //Calculate totals
   const subtotal = materials.reduce((sum, item) => sum + (item.total || 0), 0);
@@ -2671,10 +2688,10 @@ function saveLaborNotes() {
 
 
 function updateLossItemAndRecalc(rowIndex) {
-  if (!window.lossItems) return;
+  if (!window.supplementItems) return;
   
   const lossIndex = rowIndex - window.materialsData.length;
-  if (!window.lossItems[lossIndex]) return;
+  if (!window.supplementItems[lossIndex]) return;
   
   // Get current values from inputs
   const row = document.querySelector(`tr[data-row="${rowIndex}"]`);
@@ -2689,39 +2706,39 @@ function updateLossItemAndRecalc(rowIndex) {
   const total = quantity * unitPrice;
   
   // Update stored data
-  window.lossItems[lossIndex].quantity = quantity;
-  window.lossItems[lossIndex].unitPrice = unitPrice;
-  window.lossItems[lossIndex].total = total;
+  window.supplementItems[lossIndex].quantity = quantity;
+  window.supplementItems[lossIndex].unitPrice = unitPrice;
+  window.supplementItems[lossIndex].total = total;
   
   // Update display
   if (totalCell) {
     totalCell.textContent = '$' + total.toFixed(2);
   }
   
-  // Recalculate grand totals (includes loss items)
+  // Recalculate grand totals (includes supplement items)
   if (typeof recalculateTotals === 'function') {
     recalculateTotals();
   }
   
-  console.log('[LOSS] Updated', window.lossItems[lossIndex].name, '→ qty:', quantity, 'price:', unitPrice, 'total:', total);
+  console.log('[SUPPLEMENT] Updated', window.supplementItems[lossIndex].name, '→ qty:', quantity, 'price:', unitPrice, 'total:', total);
 }
 
 function updateLossItemColor(rowIndex, color) {
-  if (window.lossItems) {
+  if (window.supplementItems) {
     const lossIndex = rowIndex - window.materialsData.length;
-    if (window.lossItems[lossIndex]) {
-      window.lossItems[lossIndex].color = color;
-      console.log('[LOSS] Updated color for', window.lossItems[lossIndex].name, 'to', color);
+    if (window.supplementItems[lossIndex]) {
+      window.supplementItems[lossIndex].color = color;
+      console.log('[SUPPLEMENT] Updated color for', window.supplementItems[lossIndex].name, 'to', color);
     }
   }
 }
 
 function deleteLossItem(rowIndex) {
-  if (!confirm('Delete this loss item?')) return;
+  if (!confirm('Delete this supplement item?')) return;
   
   const lossIndex = rowIndex - window.materialsData.length;
-  if (window.lossItems && window.lossItems[lossIndex]) {
-    window.lossItems.splice(lossIndex, 1);
+  if (window.supplementItems && window.supplementItems[lossIndex]) {
+    window.supplementItems.splice(lossIndex, 1);
   }
   
 //Re-render materials table
