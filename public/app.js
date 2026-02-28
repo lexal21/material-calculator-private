@@ -2756,14 +2756,121 @@ function deleteLossItem(rowIndex) {
   if (!confirm('Delete this supplement item?')) return;
   
   const lossIndex = rowIndex - window.materialsData.length;
-  if (window.supplementItems && window.supplementItems[lossIndex]) {
-    window.supplementItems.splice(lossIndex, 1);
+  
+  // Validate index
+  if (!window.supplementItems || !window.supplementItems[lossIndex]) {
+    console.error('[DELETE] Invalid supplement item index:', lossIndex);
+    return;
   }
   
-//Re-render materials table
-  if (window.currentPDFData) {
-    window.currentPDFData.supplementItems = window.supplementItems || [];
-    displayResults(window.currentPDFData);
+  // Store state for undo
+  window.deletedSupplementItem = {
+    item: JSON.parse(JSON.stringify(window.supplementItems[lossIndex])),
+    index: lossIndex,
+    allItems: JSON.parse(JSON.stringify(window.supplementItems))
+  };
+  
+  console.log('[DELETE] Removing supplement item at index', lossIndex, ':', window.supplementItems[lossIndex].name);
+  console.log('[DELETE] Before deletion, supplementItems.length:', window.supplementItems.length);
+  
+  // Delete the specific item
+  window.supplementItems.splice(lossIndex, 1);
+  
+  console.log('[DELETE] After deletion, supplementItems.length:', window.supplementItems.length);
+  
+  // Re-render with complete data object
+  displayResults({
+    materials: window.materialsData || [],
+    supplementItems: window.supplementItems || [],
+    measurements: window.currentMeasurements || {},
+    raw: window.currentRawMeasurements || {},
+    labor: window.laborData || { items: [], subtotal: 0 },
+    success: true
+  });
+  
+  console.log('[DELETE] Deleted supplement item. Remaining:', window.supplementItems.length);
+  
+  // Show undo notification
+  showUndoNotification('Supplement item deleted');
+}
+
+function showUndoNotification(message) {
+  // Remove any existing notification
+  const existing = document.getElementById('undoNotification');
+  if (existing) existing.remove();
+  
+  // Create notification
+  const notification = document.createElement('div');
+  notification.id = 'undoNotification';
+  notification.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    animation: slideUp 0.3s ease;
+  `;
+  
+  notification.innerHTML = `
+    <span>${message}</span>
+    <button onclick="undoSupplementDelete()" style="
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    ">UNDO</button>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.style.animation = 'slideDown 0.3s ease';
+      setTimeout(() => notification.remove(), 300);
+    }
+  }, 5000);
+}
+
+function undoSupplementDelete() {
+  if (!window.deletedSupplementItem) {
+    alert('Nothing to undo');
+    return;
   }
+  
+  console.log('[UNDO] Restoring supplement items');
+  
+  // Restore the entire supplement items array to the state before deletion
+  window.supplementItems = JSON.parse(JSON.stringify(window.deletedSupplementItem.allItems));
+  
+  // Clear undo state
+  window.deletedSupplementItem = null;
+  
+  // Re-render
+  displayResults({
+    materials: window.materialsData || [],
+    supplementItems: window.supplementItems || [],
+    measurements: window.currentMeasurements || {},
+    raw: window.currentRawMeasurements || {},
+    labor: window.laborData || { items: [], subtotal: 0 },
+    success: true
+  });
+  
+  // Remove notification
+  const notification = document.getElementById('undoNotification');
+  if (notification) notification.remove();
+  
+  console.log('[UNDO] Restored. supplementItems.length:', window.supplementItems.length);
 }
 
