@@ -722,10 +722,14 @@ function displayResults(data) {
   
 //Add totals in separate section (won't repeat on print)
   const totalsTable = document.getElementById('totalsTable');
+  const subtotal = data.subtotal || 0;
+  const tax = data.tax || 0;
+  const grandTotal = data.grandTotal || 0;
+  
   totalsTable.innerHTML = `
     <tr class="subtotal-row">
       <td colspan="2"><strong>SUBTOTAL</strong></td>
-      <td id="subtotalCell" style="text-align: right;"><strong>$${data.subtotal.toFixed(2)}</strong></td>
+      <td id="subtotalCell" style="text-align: right;"><strong>$${subtotal.toFixed(2)}</strong></td>
     </tr>
     <tr class="tax-row">
       <td>
@@ -751,11 +755,11 @@ function displayResults(data) {
         /><!--
         --><span style="margin-left: 2px;">%</span>
       </td>
-      <td id="taxCell" style="text-align: right;">$${data.tax.toFixed(2)}</td>
+      <td id="taxCell" style="text-align: right;">$${tax.toFixed(2)}</td>
     </tr>
     <tr class="grand-total-row">
       <td colspan="2"><strong style="font-size: 1.2em;">GRAND TOTAL</strong></td>
-      <td id="grandTotal" style="text-align: right; font-size: 1.2em; color: #2B7BA3;"><strong>$${data.grandTotal.toFixed(2)}</strong></td>
+      <td id="grandTotal" style="text-align: right; font-size: 1.2em; color: #2B7BA3;"><strong>$${grandTotal.toFixed(2)}</strong></td>
     </tr>
   `;
   
@@ -2771,20 +2775,33 @@ function deleteLossItem(supplementId) {
   
   const itemToDelete = window.supplementItems[itemIndex];
   
-  // Store state for undo
-  window.deletedSupplementItem = {
+  // Initialize undo stack if it doesn't exist
+  if (!window.supplementUndoStack) {
+    window.supplementUndoStack = [];
+  }
+  
+  // Push deletion action onto undo stack
+  window.supplementUndoStack.push({
+    type: 'delete',
     item: JSON.parse(JSON.stringify(itemToDelete)),
     index: itemIndex,
-    allItems: JSON.parse(JSON.stringify(window.supplementItems))
-  };
+    timestamp: Date.now()
+  });
   
   console.log('[DELETE] Removing supplement item:', itemToDelete.name, '(ID:', supplementId, ')');
-  console.log('[DELETE] Before deletion, supplementItems.length:', window.supplementItems.length);
+  console.log('[DELETE] Index:', itemIndex, 'Stack depth:', window.supplementUndoStack.length);
   
   // Delete the specific item by index
   window.supplementItems.splice(itemIndex, 1);
   
   console.log('[DELETE] After deletion, supplementItems.length:', window.supplementItems.length);
+  
+  // Calculate totals before re-rendering
+  const materialsTotal = (window.materialsData || []).reduce((sum, item) => sum + (item.total || 0), 0);
+  const supplementTotal = (window.supplementItems || []).reduce((sum, item) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
+  const subtotal = materialsTotal + supplementTotal;
+  const tax = subtotal * 0.09;
+  const grandTotal = subtotal + tax;
   
   // Re-render with complete data object
   displayResults({
@@ -2793,6 +2810,9 @@ function deleteLossItem(supplementId) {
     measurements: window.currentMeasurements || {},
     raw: window.currentRawMeasurements || {},
     labor: window.laborData || { items: [], subtotal: 0 },
+    subtotal: subtotal,
+    tax: tax,
+    grandTotal: grandTotal,
     success: true
   });
   
@@ -2851,19 +2871,31 @@ function showUndoNotification(message) {
   }, 5000);
 }
 
-function undoSupplementDelete() {
-  if (!window.deletedSupplementItem) {
+window.undoSupplementDelete = function() {
+  // Check if undo stack exists and has actions
+  if (!window.supplementUndoStack || window.supplementUndoStack.length === 0) {
     alert('Nothing to undo');
     return;
   }
   
-  console.log('[UNDO] Restoring supplement items');
+  // Pop the last action from the stack
+  const lastAction = window.supplementUndoStack.pop();
   
-  // Restore the entire supplement items array to the state before deletion
-  window.supplementItems = JSON.parse(JSON.stringify(window.deletedSupplementItem.allItems));
+  console.log('[UNDO] Restoring:', lastAction.item.name);
+  console.log('[UNDO] Re-inserting at index:', lastAction.index);
+  console.log('[UNDO] Remaining undo actions:', window.supplementUndoStack.length);
   
-  // Clear undo state
-  window.deletedSupplementItem = null;
+  // Re-insert the deleted item at its original position
+  window.supplementItems.splice(lastAction.index, 0, lastAction.item);
+  
+  console.log('[UNDO] After restore, supplementItems.length:', window.supplementItems.length);
+  
+  // Calculate totals before re-rendering
+  const materialsTotal = (window.materialsData || []).reduce((sum, item) => sum + (item.total || 0), 0);
+  const supplementTotal = (window.supplementItems || []).reduce((sum, item) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
+  const subtotal = materialsTotal + supplementTotal;
+  const tax = subtotal * 0.09;
+  const grandTotal = subtotal + tax;
   
   // Re-render
   displayResults({
@@ -2872,6 +2904,9 @@ function undoSupplementDelete() {
     measurements: window.currentMeasurements || {},
     raw: window.currentRawMeasurements || {},
     labor: window.laborData || { items: [], subtotal: 0 },
+    subtotal: subtotal,
+    tax: tax,
+    grandTotal: grandTotal,
     success: true
   });
   
@@ -2879,6 +2914,11 @@ function undoSupplementDelete() {
   const notification = document.getElementById('undoNotification');
   if (notification) notification.remove();
   
-  console.log('[UNDO] Restored. supplementItems.length:', window.supplementItems.length);
-}
+  // If there are more actions in the stack, show another undo notification
+  if (window.supplementUndoStack.length > 0) {
+    setTimeout(() => {
+      showUndoNotification(`${window.supplementUndoStack.length} more action(s) to undo`);
+    }, 300);
+  }
+};
 
