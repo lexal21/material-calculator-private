@@ -640,7 +640,16 @@ function displayResults(data) {
         <td data-label="Item">
           <div style="display: flex; flex-direction: column; gap: 6px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="flex: 1;">${item.name}</span>
+              <input 
+                type="text" 
+                class="editable-input" 
+                value="${item.name}"
+                data-row="${rowIndex}"
+                data-field="name"
+                onchange="updateLossItemName(${rowIndex}, this.value)"
+                style="flex: 1; font-size: 14px;"
+                placeholder="Item name"
+              />
               <span style="background: #fbbf24; color: #78350f; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">FROM LOSS</span>
             </div>
             <input 
@@ -2721,6 +2730,16 @@ function updateLossItemAndRecalc(rowIndex) {
   }
   
   console.log('[SUPPLEMENT] Updated', window.supplementItems[lossIndex].name, '→ qty:', quantity, 'price:', unitPrice, 'total:', total);
+}
+
+function updateLossItemName(rowIndex, name) {
+  if (window.supplementItems) {
+    const lossIndex = rowIndex - window.materialsData.length;
+    if (window.supplementItems[lossIndex]) {
+      window.supplementItems[lossIndex].name = name;
+      console.log('[SUPPLEMENT] Updated name to', name);
+    }
+  }
 }
 
 function updateLossItemColor(rowIndex, color) {

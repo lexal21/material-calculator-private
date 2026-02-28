@@ -1315,15 +1315,19 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       });
     }
     
+    // Pipe jacks - create one separate row per item (don't sum, split into individual rows)
     if (lineItems.pipeBoots) {
-      result.supplementItems.push({
-        name: 'Pipe Jack',
-        quantity: parseFloat(lineItems.pipeBoots.quantity),
-        unit: lineItems.pipeBoots.unit,
-        unitPrice: 0,
-        source: 'loss',
-        color: ''
-      });
+      const totalCount = Math.floor(parseFloat(lineItems.pipeBoots.quantity));
+      for (let i = 0; i < totalCount; i++) {
+        result.supplementItems.push({
+          name: 'Pipe Jack',
+          quantity: 1,
+          unit: 'EA',
+          unitPrice: 0,
+          source: 'loss',
+          color: ''
+        });
+      }
     }
     
     if (lineItems.stepFlashing) {
