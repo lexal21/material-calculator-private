@@ -629,6 +629,7 @@ function displayResults(data) {
       const row = document.createElement('tr');
       row.dataset.row = rowIndex;
       row.dataset.source = 'loss';
+      row.dataset.supplementId = item.id; // Store unique ID for proper deletion
       row.classList.add('loss-item-row');
       
       const total = (item.quantity || 0) * (item.unitPrice || 0);
@@ -644,9 +645,9 @@ function displayResults(data) {
                 type="text" 
                 class="editable-input" 
                 value="${item.name}"
-                data-row="${rowIndex}"
+                data-supplement-id="${item.id}"
                 data-field="name"
-                onchange="updateLossItemName(${rowIndex}, this.value)"
+                onchange="updateLossItemName('${item.id}', this.value)"
                 style="flex: 1; font-size: 14px;"
                 placeholder="Item name"
               />
@@ -657,9 +658,9 @@ function displayResults(data) {
               class="editable-input" 
               placeholder="Enter color..." 
               value="${item.color || ''}"
-              data-row="${rowIndex}"
+              data-supplement-id="${item.id}"
               data-field="color"
-              onchange="updateLossItemColor(${rowIndex}, this.value)"
+              onchange="updateLossItemColor('${item.id}', this.value)"
               style="max-width: 200px; font-size: 13px;"
             />
           </div>
@@ -671,9 +672,9 @@ function displayResults(data) {
             value="${item.quantity}" 
             min="0"
             step="0.01"
-            data-row="${rowIndex}"
+            data-supplement-id="${item.id}"
             data-field="quantity"
-            onchange="updateLossItemAndRecalc(${rowIndex})"
+            onchange="updateLossItemAndRecalc('${item.id}')"
           />
         </td>
         <td data-label="Unit">${item.unit}</td>
@@ -684,14 +685,14 @@ function displayResults(data) {
             value="${(item.unitPrice || 0).toFixed(2)}" 
             min="0"
             step="0.01"
-            data-row="${rowIndex}"
+            data-supplement-id="${item.id}"
             data-field="unitPrice"
-            onchange="updateLossItemAndRecalc(${rowIndex})"
+            onchange="updateLossItemAndRecalc('${item.id}')"
           />
         </td>
         <td data-label="Total" class="row-total">$${total.toFixed(2)}</td>
         <td class="delete-cell no-print">
-          <button class="delete-btn" onclick="deleteLossItem(${rowIndex})">
+          <button class="delete-btn" onclick="deleteLossItem('${item.id}')">
             &#215;
           </button>
         </td>
@@ -2696,14 +2697,18 @@ function saveLaborNotes() {
 // ========================================== 
 
 
-function updateLossItemAndRecalc(rowIndex) {
+function updateLossItemAndRecalc(supplementId) {
   if (!window.supplementItems) return;
   
-  const lossIndex = rowIndex - window.materialsData.length;
-  if (!window.supplementItems[lossIndex]) return;
+  // Find item by unique ID
+  const item = window.supplementItems.find(i => i.id === supplementId);
+  if (!item) {
+    console.error('[UPDATE] Supplement item not found with ID:', supplementId);
+    return;
+  }
   
-  // Get current values from inputs
-  const row = document.querySelector(`tr[data-row="${rowIndex}"]`);
+  // Get current values from inputs using data-supplement-id
+  const row = document.querySelector(`tr[data-supplement-id="${supplementId}"]`);
   if (!row) return;
   
   const qtyInput = row.querySelector('input[data-field="quantity"]');
@@ -2715,9 +2720,9 @@ function updateLossItemAndRecalc(rowIndex) {
   const total = quantity * unitPrice;
   
   // Update stored data
-  window.supplementItems[lossIndex].quantity = quantity;
-  window.supplementItems[lossIndex].unitPrice = unitPrice;
-  window.supplementItems[lossIndex].total = total;
+  item.quantity = quantity;
+  item.unitPrice = unitPrice;
+  item.total = total;
   
   // Update display
   if (totalCell) {
@@ -2729,52 +2734,55 @@ function updateLossItemAndRecalc(rowIndex) {
     recalculateTotals();
   }
   
-  console.log('[SUPPLEMENT] Updated', window.supplementItems[lossIndex].name, '→ qty:', quantity, 'price:', unitPrice, 'total:', total);
+  console.log('[SUPPLEMENT] Updated', item.name, '→ qty:', quantity, 'price:', unitPrice, 'total:', total);
 }
 
-function updateLossItemName(rowIndex, name) {
-  if (window.supplementItems) {
-    const lossIndex = rowIndex - window.materialsData.length;
-    if (window.supplementItems[lossIndex]) {
-      window.supplementItems[lossIndex].name = name;
-      console.log('[SUPPLEMENT] Updated name to', name);
-    }
+function updateLossItemName(supplementId, name) {
+  if (!window.supplementItems) return;
+  
+  const item = window.supplementItems.find(i => i.id === supplementId);
+  if (item) {
+    item.name = name;
+    console.log('[SUPPLEMENT] Updated name to', name);
   }
 }
 
-function updateLossItemColor(rowIndex, color) {
-  if (window.supplementItems) {
-    const lossIndex = rowIndex - window.materialsData.length;
-    if (window.supplementItems[lossIndex]) {
-      window.supplementItems[lossIndex].color = color;
-      console.log('[SUPPLEMENT] Updated color for', window.supplementItems[lossIndex].name, 'to', color);
-    }
+function updateLossItemColor(supplementId, color) {
+  if (!window.supplementItems) return;
+  
+  const item = window.supplementItems.find(i => i.id === supplementId);
+  if (item) {
+    item.color = color;
+    console.log('[SUPPLEMENT] Updated color for', item.name, 'to', color);
   }
 }
 
-function deleteLossItem(rowIndex) {
+function deleteLossItem(supplementId) {
   if (!confirm('Delete this supplement item?')) return;
   
-  const lossIndex = rowIndex - window.materialsData.length;
+  // Find item by unique ID instead of fragile array index calculation
+  const itemIndex = window.supplementItems.findIndex(item => item.id === supplementId);
   
-  // Validate index
-  if (!window.supplementItems || !window.supplementItems[lossIndex]) {
-    console.error('[DELETE] Invalid supplement item index:', lossIndex);
+  // Validate
+  if (itemIndex === -1) {
+    console.error('[DELETE] Supplement item not found with ID:', supplementId);
     return;
   }
   
+  const itemToDelete = window.supplementItems[itemIndex];
+  
   // Store state for undo
   window.deletedSupplementItem = {
-    item: JSON.parse(JSON.stringify(window.supplementItems[lossIndex])),
-    index: lossIndex,
+    item: JSON.parse(JSON.stringify(itemToDelete)),
+    index: itemIndex,
     allItems: JSON.parse(JSON.stringify(window.supplementItems))
   };
   
-  console.log('[DELETE] Removing supplement item at index', lossIndex, ':', window.supplementItems[lossIndex].name);
+  console.log('[DELETE] Removing supplement item:', itemToDelete.name, '(ID:', supplementId, ')');
   console.log('[DELETE] Before deletion, supplementItems.length:', window.supplementItems.length);
   
-  // Delete the specific item
-  window.supplementItems.splice(lossIndex, 1);
+  // Delete the specific item by index
+  window.supplementItems.splice(itemIndex, 1);
   
   console.log('[DELETE] After deletion, supplementItems.length:', window.supplementItems.length);
   

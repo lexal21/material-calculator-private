@@ -1281,9 +1281,13 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     // ==========================================
     result.supplementItems = [];
     
+    // Helper to generate unique IDs
+    const generateSupplementId = () => `supplement_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     // Field-measured items pulled directly from loss sheet (NOT from roof report)
     if (lineItems.fascia) {
       result.supplementItems.push({
+        id: generateSupplementId(),
         name: 'Fascia',
         quantity: lineItems.fascia.quantity,
         unit: lineItems.fascia.unit,
@@ -1295,6 +1299,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     [...lineItems.siding, ...lineItems.windowWrap].forEach(item => {
       result.supplementItems.push({
+        id: generateSupplementId(),
         name: item.name,
         quantity: item.quantity,
         unit: item.unit,
@@ -1306,6 +1311,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     if (lineItems.soffit) {
       result.supplementItems.push({
+        id: generateSupplementId(),
         name: 'Soffit',
         quantity: lineItems.soffit.quantity,
         unit: lineItems.soffit.unit,
@@ -1320,6 +1326,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       const totalCount = Math.floor(parseFloat(lineItems.pipeBoots.quantity));
       for (let i = 0; i < totalCount; i++) {
         result.supplementItems.push({
+          id: generateSupplementId(),
           name: 'Pipe Jack',
           quantity: 1,
           unit: 'EA',
@@ -1332,6 +1339,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     if (lineItems.stepFlashing) {
       result.supplementItems.push({
+        id: generateSupplementId(),
         name: 'Step Flashing',
         quantity: parseFloat(lineItems.stepFlashing.quantity),
         unit: lineItems.stepFlashing.unit,
@@ -1343,6 +1351,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     if (lineItems.lFlashing) {
       result.supplementItems.push({
+        id: generateSupplementId(),
         name: 'L Flashing',
         quantity: parseFloat(lineItems.lFlashing.quantity),
         unit: lineItems.lFlashing.unit,
@@ -1354,6 +1363,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     if (lineItems.skylights) {
       result.supplementItems.push({
+        id: generateSupplementId(),
         name: 'Skylight',
         quantity: parseFloat(lineItems.skylights.quantity),
         unit: lineItems.skylights.unit,
@@ -1365,6 +1375,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     if (lineItems.skylightFlashingKit) {
       result.supplementItems.push({
+        id: generateSupplementId(),
         name: 'Skylight Flashing Kit',
         quantity: parseFloat(lineItems.skylightFlashingKit.quantity),
         unit: lineItems.skylightFlashingKit.unit,
@@ -1376,6 +1387,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     if (lineItems.turtleVents) {
       result.supplementItems.push({
+        id: generateSupplementId(),
         name: 'Turtle Vent',
         quantity: parseFloat(lineItems.turtleVents.quantity),
         unit: lineItems.turtleVents.unit,
@@ -1387,6 +1399,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     if (lineItems.powerAtticFan) {
       result.supplementItems.push({
+        id: generateSupplementId(),
         name: 'Power Attic Fan',
         quantity: parseFloat(lineItems.powerAtticFan.quantity),
         unit: lineItems.powerAtticFan.unit,
