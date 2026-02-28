@@ -228,7 +228,23 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
   try {
     const dataBuffer = fs.readFileSync(pdfPath);
     const data = await extractPdfText(dataBuffer, pdfPath); // Pass path for OCR fallback
-    const text = data.text;
+    let text = data.text;
+    
+    // Strip boilerplate explanation pages before parsing
+    // Match from the boilerplate heading until we find a page break (form feed \f) or estimate section
+    const boilerplatePatterns = [
+      /Understanding Your Property Estimate[\s\S]*?(?=\f|ESTIMATE|Estimate:|Item\s+\d+\.|\n\n\n)/gi,
+      /Guide to Understanding Your Property Estimate[\s\S]*?(?=\f|ESTIMATE|Estimate:|Item\s+\d+\.|\n\n\n)/gi
+    ];
+    
+    for (const pattern of boilerplatePatterns) {
+      const beforeLength = text.length;
+      text = text.replace(pattern, '\n\n');
+      if (text.length < beforeLength) {
+        console.log('[LOSS-PARSER] Stripped', beforeLength - text.length, 'chars of boilerplate');
+      }
+    }
+    
     let lines = text.split('\n');
     
     console.log('[LOSS-PARSER] Parsing complete loss sheet...');
@@ -539,6 +555,8 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     console.log(`[LOSS-PARSER] After splitting: ${lines.length} → ${splitLines.length} lines`);
     lines = splitLines;
     
+
+    
     for (let i = startParsingAt; i < lines.length; i++) {
       const line = lines[i].trim();
       
@@ -553,17 +571,40 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         });
       }
       
-      // Start parsing when we see the DESCRIPTION header
-      // Handle both spaced "DESCRIPTION QTY UNIT" and merged "DESCRIPTIONQUANTITYUNIT"
-      // Must contain DESCRIPTION, (QUANTITY or QTY), UNIT, PRICE, and (RCV or ACV) in that order
+      // Start parsing when we see the table header
+      // Pattern 1: Standard format with DESCRIPTION (Heritage, Allstate, etc.)
       if (/DESCRIPTION.*(?:QUANTITY|QTY).*UNIT.*PRICE.*(?:RCV|ACV)/i.test(line) && line.length < 300) {
         parsingLineItems = true;
-        console.log('[LOSS-PARSER] ✓ Found line item table header at line', i);
+        console.log('[LOSS-PARSER] ✓ Found line item table header at line', i, '(standard format)');
         continue;
       }
       
-      // Stop at totals/summary lines
-      if (shouldStopParsing(line)) {
+      // Pattern 2: Travelers format without DESCRIPTION or PRICE
+      // Must have QUANTITY, UNIT, TAX, RCV and age/condition columns (order flexible)
+      // Two common formats:
+      //   A) QUANTITY UNIT TAX RCV AGE/LIFE COND DEP% DEPREC ACV
+      //   B) QUANTITY UNIT RCV DEPREC ACV TAX AGE/LIFE
+      const hasTravelersColumns = /\bQUANTITY\b/i.test(line) &&
+                                  /\bUNIT\b/i.test(line) &&
+                                  /\bTAX\b/i.test(line) &&
+                                  /\bRCV\b/i.test(line) &&
+                                  /\b(?:AGE|LIFE|COND|DEP)\b/i.test(line);
+      
+      if (hasTravelersColumns && 
+          !/^\d+\.\s/.test(line) && // Not a numbered line item
+          line.length < 300) {
+        parsingLineItems = true;
+        console.log('[LOSS-PARSER] ✓ Found line item table header at line', i, '(Travelers format)');
+        console.log('[LOSS-PARSER] Header text:', line.substring(0, 150));
+        continue;
+      }
+      
+
+      
+      // Stop at totals/summary lines - but ONLY after we've started parsing line items
+      // This prevents early exit when there are multiple sections (e.g., Travelers interior→roof)
+      if (parsingLineItems && shouldStopParsing(line)) {
+        console.log('[LOSS-PARSER] Stopping at totals/summary line:', i);
         break;
       }
       
@@ -734,28 +775,134 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       console.log(`[CROSS-REF DEBUG] Item ${idx + 1}: "${item.description}"`);
       console.log(`  Quantity: ${qty} ${unit}`);
       
-      // Fascia
-      if (!lineItems.fascia && /fascia/i.test(desc) && !/replace|paint|caulk|seal|prime|clean|detach|reset/i.test(desc)) {
+      // Fascia (sum duplicates - e.g., main house + shed)
+      if (/fascia/i.test(desc) && !/replace|paint|caulk|seal|prime|clean|detach|reset/i.test(desc)) {
         console.log(`  ✓ FASCIA MATCHED`);
-        lineItems.fascia = { quantity: qty, unit };
+        if (lineItems.fascia) {
+          lineItems.fascia.quantity += qty;
+          console.log(`    Summing with existing: ${lineItems.fascia.quantity} ${unit}`);
+        } else {
+          lineItems.fascia = { quantity: qty, unit };
+        }
       }
       
-      // Pipe jacks/boots
-      if (!lineItems.pipeBoots && /pipe\s+(jack|boot)|flashing.*pipe/i.test(desc)) {
+      // Pipe jacks/boots (sum duplicates)
+      if (/pipe\s+(jack|boot)|flashing.*pipe/i.test(desc)) {
         console.log(`  ✓ PIPE JACK MATCHED`);
-        lineItems.pipeBoots = { quantity: qty, unit };
+        if (lineItems.pipeBoots) {
+          lineItems.pipeBoots.quantity += qty;
+          console.log(`    Summing with existing: ${lineItems.pipeBoots.quantity} ${unit}`);
+        } else {
+          lineItems.pipeBoots = { quantity: qty, unit };
+        }
       }
       
-      // Drip edge
-      if (!lineItems.dripEdge && /drip\s*edge|gutter\s*apron|t-style\s*drip/i.test(desc)) {
+      // Drip edge (sum duplicates - e.g., main house + shed)
+      if (/drip\s*edge|gutter\s*apron|t-style\s*drip/i.test(desc)) {
         console.log(`  ✓ DRIP EDGE MATCHED`);
-        lineItems.dripEdge = { quantity: qty, unit };
+        if (lineItems.dripEdge) {
+          lineItems.dripEdge.quantity += qty;
+          console.log(`    Summing with existing: ${lineItems.dripEdge.quantity} ${unit}`);
+        } else {
+          lineItems.dripEdge = { quantity: qty, unit };
+        }
       }
       
-      // Soffit
-      if (!lineItems.soffit && /soffit/i.test(desc) && !/r&r|replace|paint|caulk|seal|prime|clean|detach|reset/i.test(desc)) {
+      // Soffit (sum duplicates)
+      if (/soffit/i.test(desc) && !/r&r|replace|paint|caulk|seal|prime|clean|detach|reset/i.test(desc)) {
         console.log(`  ✓ SOFFIT MATCHED`);
-        lineItems.soffit = { quantity: qty, unit };
+        if (lineItems.soffit) {
+          lineItems.soffit.quantity += qty;
+          console.log(`    Summing with existing: ${lineItems.soffit.quantity} ${unit}`);
+        } else {
+          lineItems.soffit = { quantity: qty, unit };
+        }
+      }
+      
+      // Step flashing (sum duplicates)
+      if (/step\s*flashing/i.test(desc)) {
+        console.log(`  ✓ STEP FLASHING MATCHED`);
+        if (lineItems.stepFlashing) {
+          lineItems.stepFlashing.quantity += qty;
+          console.log(`    Summing with existing: ${lineItems.stepFlashing.quantity} ${unit}`);
+        } else {
+          lineItems.stepFlashing = { quantity: qty, unit };
+        }
+      }
+      
+      // L flashing / trim coil / counterflashing / apron flashing (sum duplicates)
+      if (/l\s*flashing|flashing.*l\s*style|kick.?out\s*flashing|trim\s*coil|counterflashing|counter\s*flashing|apron\s*flashing/i.test(desc)) {
+        console.log(`  ✓ L FLASHING / TRIM COIL MATCHED`);
+        if (lineItems.lFlashing) {
+          lineItems.lFlashing.quantity += qty;
+          console.log(`    Summing with existing: ${lineItems.lFlashing.quantity} ${unit}`);
+        } else {
+          lineItems.lFlashing = { quantity: qty, unit };
+        }
+      }
+      
+      // Siding (sum duplicates - array format for multiple types)
+      if (/vinyl\s*siding|hardboard\s*siding|siding.*lap|lap.*siding/i.test(desc) && !/r&r|replace|paint|caulk|seal/i.test(desc)) {
+        console.log(`  ✓ SIDING MATCHED`);
+        lineItems.siding.push({
+          name: desc.includes('vinyl') ? 'Vinyl Siding' : desc.includes('hardboard') ? 'Hardboard Siding' : 'Siding',
+          quantity: qty,
+          unit: unit
+        });
+      }
+      
+      // Window wrap (sum duplicates - array format)
+      if (/window.*wrap|trim.*window|window.*trim/i.test(desc)) {
+        console.log(`  ✓ WINDOW WRAP MATCHED`);
+        lineItems.windowWrap.push({
+          name: 'Window Wrap',
+          quantity: qty,
+          unit: unit
+        });
+      }
+      
+      // Skylights (sum duplicates)
+      if (/skylight/i.test(desc) && !/flashing/i.test(desc)) {
+        console.log(`  ✓ SKYLIGHT MATCHED`);
+        if (lineItems.skylights) {
+          lineItems.skylights.quantity += qty;
+          console.log(`    Summing with existing: ${lineItems.skylights.quantity} ${unit}`);
+        } else {
+          lineItems.skylights = { quantity: qty, unit };
+        }
+      }
+      
+      // Skylight flashing kit (sum duplicates)
+      if (/skylight.*flashing|flashing.*skylight|skylight.*kit/i.test(desc)) {
+        console.log(`  ✓ SKYLIGHT FLASHING KIT MATCHED`);
+        if (lineItems.skylightFlashingKit) {
+          lineItems.skylightFlashingKit.quantity += qty;
+          console.log(`    Summing with existing: ${lineItems.skylightFlashingKit.quantity} ${unit}`);
+        } else {
+          lineItems.skylightFlashingKit = { quantity: qty, unit };
+        }
+      }
+      
+      // Turtle vents (sum duplicates)
+      if (/turtle.*vent|static.*vent|roof.*vent/i.test(desc) && !/ridge\s*vent/i.test(desc)) {
+        console.log(`  ✓ TURTLE VENT MATCHED`);
+        if (lineItems.turtleVents) {
+          lineItems.turtleVents.quantity += qty;
+          console.log(`    Summing with existing: ${lineItems.turtleVents.quantity} ${unit}`);
+        } else {
+          lineItems.turtleVents = { quantity: qty, unit };
+        }
+      }
+      
+      // Power attic fan (sum duplicates)
+      if (/power.*fan|attic.*fan|powered.*vent/i.test(desc)) {
+        console.log(`  ✓ POWER ATTIC FAN MATCHED`);
+        if (lineItems.powerAtticFan) {
+          lineItems.powerAtticFan.quantity += qty;
+          console.log(`    Summing with existing: ${lineItems.powerAtticFan.quantity} ${unit}`);
+        } else {
+          lineItems.powerAtticFan = { quantity: qty, unit };
+        }
       }
       
       // Ice & water shield detection (for valley length calculation)
@@ -1114,6 +1261,83 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         name: 'Pipe Jack',
         quantity: parseFloat(lineItems.pipeBoots.quantity),
         unit: lineItems.pipeBoots.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.dripEdge) {
+      result.supplementItems.push({
+        name: 'Drip Edge',
+        quantity: parseFloat(lineItems.dripEdge.quantity),
+        unit: lineItems.dripEdge.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.stepFlashing) {
+      result.supplementItems.push({
+        name: 'Step Flashing',
+        quantity: parseFloat(lineItems.stepFlashing.quantity),
+        unit: lineItems.stepFlashing.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.lFlashing) {
+      result.supplementItems.push({
+        name: 'L Flashing',
+        quantity: parseFloat(lineItems.lFlashing.quantity),
+        unit: lineItems.lFlashing.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.skylights) {
+      result.supplementItems.push({
+        name: 'Skylight',
+        quantity: parseFloat(lineItems.skylights.quantity),
+        unit: lineItems.skylights.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.skylightFlashingKit) {
+      result.supplementItems.push({
+        name: 'Skylight Flashing Kit',
+        quantity: parseFloat(lineItems.skylightFlashingKit.quantity),
+        unit: lineItems.skylightFlashingKit.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.turtleVents) {
+      result.supplementItems.push({
+        name: 'Turtle Vent',
+        quantity: parseFloat(lineItems.turtleVents.quantity),
+        unit: lineItems.turtleVents.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.powerAtticFan) {
+      result.supplementItems.push({
+        name: 'Power Attic Fan',
+        quantity: parseFloat(lineItems.powerAtticFan.quantity),
+        unit: lineItems.powerAtticFan.unit,
         unitPrice: 0,
         source: 'loss',
         color: ''
