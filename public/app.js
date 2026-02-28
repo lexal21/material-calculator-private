@@ -481,10 +481,39 @@ function displayResults(data) {
 //Display materials with editable quantities and prices
   const tableBody = document.getElementById('materialsTable');
   
+  // DEBUG: Confirm we're targeting the correct element
+  console.log('[DISPLAY] DEBUG: Target element verification:');
+  console.log('  getElementById("materialsTable"):', tableBody);
+  console.log('  Element ID:', tableBody?.id);
+  console.log('  Element tagName:', tableBody?.tagName);
+  console.log('  Element exists?', !!tableBody);
+  console.log('  Current children count:', tableBody?.children.length);
+  console.log('  Element reference:', tableBody);
+  
+  // Check for duplicate IDs (bad practice but could be the issue)
+  const allElementsWithSameId = document.querySelectorAll('#materialsTable');
+  console.log('[DISPLAY] Elements with id="materialsTable":', allElementsWithSameId.length);
+  if (allElementsWithSameId.length > 1) {
+    console.error('[DISPLAY] MULTIPLE ELEMENTS WITH SAME ID!');
+    allElementsWithSameId.forEach((el, idx) => {
+      console.error(`  Element ${idx}:`, el, 'children:', el.children.length);
+    });
+  }
+  
+  // Check if element is visible
+  const computedStyle = window.getComputedStyle(tableBody);
+  console.log('[DISPLAY] Element visibility:');
+  console.log('  display:', computedStyle.display);
+  console.log('  visibility:', computedStyle.visibility);
+  console.log('  opacity:', computedStyle.opacity);
+  
 //Build dropdown options from all materials
   const materialOptions = (window.ALL_MATERIALS || []).map(mat => 
     `<option value="${mat.name}" data-unit="${mat.unit}" data-price="${mat.price}">${mat.name}</option>`
   ).join('');
+  
+  console.log('[DISPLAY] About to set innerHTML with', data.materials.length, 'materials');
+  console.log('[DISPLAY] innerHTML length before:', tableBody.innerHTML.length);
   
   tableBody.innerHTML = data.materials.map((item, index) => {
     const pluralUnit = pluralizeUnit(item.unit, item.quantity);
@@ -547,6 +576,15 @@ function displayResults(data) {
     </tr>
   `;
   }).join('');
+  
+  console.log('[DISPLAY] innerHTML assignment completed');
+  console.log('[DISPLAY] innerHTML length after:', tableBody.innerHTML.length);
+  console.log('[DISPLAY] tableBody.children.length:', tableBody.children.length);
+  console.log('[DISPLAY] Expected children:', data.materials.length);
+  
+  // Verify the element is still the same reference
+  const verifyTableBody = document.getElementById('materialsTable');
+  console.log('[DISPLAY] Element reference matches?', tableBody === verifyTableBody);
   
 //Additional items dropdown options - dynamically built from ALL_MATERIALS + current pricing
   const additionalItemOptions = buildAdditionalItemOptions();
@@ -614,6 +652,13 @@ function displayResults(data) {
   
 //Store original data for recalculation
   window.materialsData = data.materials;
+  
+  // DEBUG: Check table state before appending supplements
+  console.log('[DISPLAY] DEBUG: Table state after materials render:');
+  console.log('  tableBody.children.length:', tableBody.children.length);
+  console.log('  Expected:', data.materials.length);
+  const allRowsBefore = document.querySelectorAll('tr[data-row]');
+  console.log('  DOM tr[data-row] count:', allRowsBefore.length);
   
   // ==========================================
   // APPEND SUPPLEMENT ITEMS (cross-referenced field-measured items from loss sheet)
@@ -701,8 +746,37 @@ function displayResults(data) {
       tableBody.appendChild(row);
     });
     
+    // DEBUG: Check table state after appending supplements
+    console.log('[DISPLAY] DEBUG: Table state after supplement append:');
+    console.log('  tableBody.children.length:', tableBody.children.length);
+    console.log('  Expected:', data.materials.length + data.supplementItems.length);
+    const allRowsAfter = document.querySelectorAll('tr[data-row]');
+    console.log('  DOM tr[data-row] count:', allRowsAfter.length);
+    
+    // Force browser repaint/reflow
+    void tableBody.offsetHeight;
+    
 //Store supplement items globally
     window.supplementItems = data.supplementItems;
+  } else {
+    console.log('[DISPLAY] No supplement items to append');
+  }
+  
+  // DEBUG: Final DOM check
+  console.log('[DISPLAY] DEBUG: Final table state:');
+  console.log('  Total tbody children:', tableBody.children.length);
+  const finalRows = document.querySelectorAll('tr[data-row]');
+  console.log('  Total tr[data-row] in DOM:', finalRows.length);
+  console.log('  Checking for duplicates...');
+  const rowNumbers = Array.from(finalRows).map(r => r.dataset.row);
+  const uniqueRowNumbers = new Set(rowNumbers);
+  if (rowNumbers.length !== uniqueRowNumbers.size) {
+    console.error('[DISPLAY] DUPLICATE ROWS DETECTED!');
+    console.error('  Total rows:', rowNumbers.length);
+    console.error('  Unique row numbers:', uniqueRowNumbers.size);
+    console.error('  Row numbers:', rowNumbers);
+  } else {
+    console.log('[DISPLAY] No duplicates. All rows unique.');
   }
   
 //Store labor data
@@ -860,6 +934,7 @@ function deleteMaterialRow(rowIndex) {
   if (typeof displayResults === 'function') {
     displayResults({
       materials: window.materialsData,
+      supplementItems: window.supplementItems || [],
       measurements: window.currentMeasurements || {},
       raw: window.currentRawMeasurements || {},
       labor: window.laborData,
@@ -897,28 +972,60 @@ function deleteSelectedMaterials() {
     return;
   }
   
-  if (!confirm('Delete ' + checkboxes.length + ' selected material(s)?')) {
+  if (!confirm('Delete ' + checkboxes.length + ' selected item(s)?')) {
     return;
   }
   
-  const indices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.row)).sort((a, b) => b - a);
-  indices.forEach(index => {
+  // Separate regular material rows from supplement rows
+  const materialIndices = [];
+  const supplementIds = [];
+  
+  Array.from(checkboxes).forEach(cb => {
+    const row = cb.closest('tr');
+    if (row && row.dataset.supplementId) {
+      supplementIds.push(row.dataset.supplementId);
+    } else {
+      const idx = parseInt(cb.dataset.row);
+      if (!isNaN(idx)) materialIndices.push(idx);
+    }
+  });
+  
+  // Delete regular materials (high to low to preserve indices)
+  materialIndices.sort((a, b) => b - a).forEach(index => {
     if (window.materialsData && window.materialsData[index]) {
       window.materialsData.splice(index, 1);
     }
   });
   
-  if (typeof displayResults === 'function') {
-    displayResults({
-      materials: window.materialsData,
-      measurements: window.currentMeasurements || {},
-      raw: window.currentRawMeasurements || {},
-      labor: window.laborData,
-      success: true
-    });
+  // Delete supplement items by ID
+  supplementIds.forEach(id => {
+    const idx = (window.supplementItems || []).findIndex(item => item.id === id);
+    if (idx !== -1) {
+      if (!window.supplementUndoStack) window.supplementUndoStack = [];
+      window.supplementUndoStack.push({
+        type: 'delete',
+        item: JSON.parse(JSON.stringify(window.supplementItems[idx])),
+        index: idx,
+        timestamp: Date.now()
+      });
+      window.supplementItems.splice(idx, 1);
+    }
+  });
+  
+  displayResults({
+    materials: window.materialsData,
+    supplementItems: window.supplementItems || [],
+    measurements: window.currentMeasurements || {},
+    raw: window.currentRawMeasurements || {},
+    labor: window.laborData,
+    success: true
+  });
+  
+  if (supplementIds.length > 0) {
+    showUndoNotification(supplementIds.length === 1 ? 'Supplement item deleted' : supplementIds.length + ' supplement items deleted');
   }
   
-  console.log('[MATERIALS] Deleted', indices.length, 'items');
+  console.log('[MATERIALS] Deleted', materialIndices.length, 'materials,', supplementIds.length, 'supplement items');
 }
 
 function deleteMiscRow(miscNum) {
@@ -2046,6 +2153,9 @@ function applyMaterialsManufacturerSystem() {
   if (typeof displayResults === 'function') {
     displayResults({
       materials: materials,
+      supplementItems: window.supplementItems || [],
+      measurements: window.currentMeasurements || {},
+      raw: window.currentRawMeasurements || {},
       labor: window.laborData,
       success: true
     });
@@ -2168,6 +2278,7 @@ function addMaterialFromModal() {
   if (typeof displayResults === 'function') {
     displayResults({
       materials: window.materialsData,
+      supplementItems: window.supplementItems || [],
       measurements: window.currentMeasurements || {},
       raw: window.currentRawMeasurements || {},
       labor: window.laborData,
@@ -2788,6 +2899,8 @@ function deleteLossItem(supplementId) {
     timestamp: Date.now()
   });
   
+  console.log('[UNDO] Stack after push:', JSON.stringify(window.supplementUndoStack));
+  
   console.log('[DELETE] Removing supplement item:', itemToDelete.name, '(ID:', supplementId, ')');
   console.log('[DELETE] Index:', itemIndex, 'Stack depth:', window.supplementUndoStack.length);
   
@@ -2803,8 +2916,15 @@ function deleteLossItem(supplementId) {
   const tax = subtotal * 0.09;
   const grandTotal = subtotal + tax;
   
-  // Re-render with complete data object
-  displayResults({
+  // DEBUG: Log exact state being passed to displayResults
+  console.log('========== BEFORE displayResults() ==========');
+  console.log('[DELETE] window.supplementItems.length:', window.supplementItems.length);
+  console.log('[DELETE] window.supplementItems contents:');
+  window.supplementItems.forEach((item, idx) => {
+    console.log(`  [${idx}] ${item.name} - ${item.quantity} ${item.unit} - ID: ${item.id}`);
+  });
+  console.log('[DELETE] Object being passed to displayResults:');
+  const dataObject = {
     materials: window.materialsData || [],
     supplementItems: window.supplementItems || [],
     measurements: window.currentMeasurements || {},
@@ -2814,7 +2934,17 @@ function deleteLossItem(supplementId) {
     tax: tax,
     grandTotal: grandTotal,
     success: true
-  });
+  };
+  console.log('  materials.length:', dataObject.materials.length);
+  console.log('  supplementItems.length:', dataObject.supplementItems.length);
+  console.log('  supplementItems array:', dataObject.supplementItems);
+  console.log('  subtotal:', dataObject.subtotal);
+  console.log('  tax:', dataObject.tax);
+  console.log('  grandTotal:', dataObject.grandTotal);
+  console.log('=============================================');
+  
+  // Re-render with complete data object
+  displayResults(dataObject);
   
   console.log('[DELETE] Deleted supplement item. Remaining:', window.supplementItems.length);
   
@@ -2849,7 +2979,7 @@ function showUndoNotification(message) {
   
   notification.innerHTML = `
     <span>${message}</span>
-    <button onclick="undoSupplementDelete()" style="
+    <button onclick="undoLastAction()" style="
       background: #3b82f6;
       color: white;
       border: none;
@@ -2871,7 +3001,9 @@ function showUndoNotification(message) {
   }, 5000);
 }
 
-window.undoSupplementDelete = function() {
+window.undoLastAction = function() {
+  console.log('[UNDO] Stack at time of click:', JSON.stringify(window.supplementUndoStack));
+  
   // Check if undo stack exists and has actions
   if (!window.supplementUndoStack || window.supplementUndoStack.length === 0) {
     alert('Nothing to undo');
@@ -2881,14 +3013,20 @@ window.undoSupplementDelete = function() {
   // Pop the last action from the stack
   const lastAction = window.supplementUndoStack.pop();
   
+  console.log('[UNDO] BEFORE restore:');
+  console.log('  supplementItems.length:', window.supplementItems?.length || 0);
   console.log('[UNDO] Restoring:', lastAction.item.name);
   console.log('[UNDO] Re-inserting at index:', lastAction.index);
   console.log('[UNDO] Remaining undo actions:', window.supplementUndoStack.length);
   
   // Re-insert the deleted item at its original position
+  // Ensure we're operating on the current global array reference
+  window.supplementItems = window.supplementItems || [];
   window.supplementItems.splice(lastAction.index, 0, lastAction.item);
   
-  console.log('[UNDO] After restore, supplementItems.length:', window.supplementItems.length);
+  console.log('[UNDO] AFTER restore:');
+  console.log('  supplementItems.length:', window.supplementItems.length);
+  console.log('  Restored item:', lastAction.item.name, '-', lastAction.item.quantity, lastAction.item.unit);
   
   // Calculate totals before re-rendering
   const materialsTotal = (window.materialsData || []).reduce((sum, item) => sum + (item.total || 0), 0);
@@ -2896,6 +3034,10 @@ window.undoSupplementDelete = function() {
   const subtotal = materialsTotal + supplementTotal;
   const tax = subtotal * 0.09;
   const grandTotal = subtotal + tax;
+  
+  console.log('[UNDO] Calling displayResults with:');
+  console.log('  supplementItems.length:', window.supplementItems.length);
+  console.log('  subtotal:', subtotal.toFixed(2));
   
   // Re-render
   displayResults({

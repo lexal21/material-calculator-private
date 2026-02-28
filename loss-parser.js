@@ -626,7 +626,13 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         continue;
       }
       
-
+      // Pattern 3: Xactimate format header (no DESCRIPTION column)
+      // "QUANTITY UNIT TAX RCV AGE/LIFE COND. DEP % DEPREC. ACV"
+      if (/^QUANTITY\s+UNIT\s+TAX\s+RCV/i.test(line) && line.length < 300) {
+        parsingLineItems = true;
+        console.log('[LOSS-PARSER] ✓ Found Xactimate column header at line', i, '(Xactimate format)');
+        continue;
+      }
       
       // Stop at document-end markers (appendices, payment schedules, etc.)
       if (parsingLineItems && shouldStopParsing(line)) {
@@ -635,12 +641,20 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Fallback: Start parsing if we encounter a numbered item even without a header
-      // Handles sections that start directly with "1. Item description 10.5 LF ..."
-      if (!parsingLineItems && /^\d+\.\s+.+?\s+\d+\.?\d*\s+(SQ|LF|EA|SF)\s+/i.test(line)) {
-        console.log('[LOSS-PARSER] ✓ Found numbered line item without header at line', i, '- starting parse');
-        console.log('[LOSS-PARSER] Line:', line.substring(0, 100));
-        parsingLineItems = true;
-        // Fall through to parse this line
+      // Single-line format: "1. Description 10.5 LF 52.47 0.00 ..."
+      // Two-line format (Xactimate): "1. Description" then next line "10.5 LF 52.47 0.00 ..."
+      if (!parsingLineItems) {
+        const isSingleLineItem = /^\d+\.\s+.+?\s+\d+\.?\d*\s+(SQ|LF|EA|SF)\s+/i.test(line);
+        const isNumberedDesc = /^(\d+)[.,]\s+.{5,}/.test(line);
+        const nextLineHasValues = /^\d+\.?\d*\s+(SQ|LF|EA|SF)\s+/i.test(lines[i + 1]?.trim() || '');
+        
+        if (isSingleLineItem || (isNumberedDesc && nextLineHasValues)) {
+          console.log('[LOSS-PARSER] ✓ Found numbered line item without header at line', i, '- starting parse');
+          console.log('[LOSS-PARSER] Format:', isSingleLineItem ? 'single-line' : 'two-line (Xactimate)');
+          console.log('[LOSS-PARSER] Line:', line.substring(0, 100));
+          parsingLineItems = true;
+          // Fall through to parse this line
+        }
       }
       
       // Skip lines when not in parsing mode
