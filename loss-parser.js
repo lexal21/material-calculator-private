@@ -656,7 +656,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Parse numbered line items: "1. Description text QTY UNIT PRICE TAX RCV DEPREC ACV"
       // Two-stage approach: match the basic structure, then manually parse the numeric fields
-      const basicMatch = line.match(/^(\d+[a-z]?)(?:[.,]\s+|\s{2,})(.+?)\s+(?:Dwelling|Other Struc[^\s]*\s+)?(\d+\.?\d*)\s*(?:\$[\d,.]+\s+)?(SQ|LF|EA|SF)\s+(.+)$/i);
+      const basicMatch = line.match(/^(\d+[a-z]?)(?:[.,]\s+|\s{2,})(.+?)\s+(?:Dwelling|Other Struc[^\s]*\s+)?(\d+\.?\d*)\s*(?:\$[\d,.]+\s+)?(SQ|LF|EA|SF)\s+\$[\d,.]+\s+\$[\d,.]+\s+\$([\d,.]+)/i);
       
       // TEMP DEBUG: Log exact line text for items 15 and 16 (pipe jacks)
       const itemNumCheck = line.match(/^(\d+[a-z]?)(?:\.\s|\s{2,})/i);
@@ -678,79 +678,21 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       if (basicMatch) {
-        const [, itemNum, description, qty, unit, remaining] = basicMatch;
+        const [, itemNum, description, qty, unit, rcvCapture] = basicMatch;
         
-        // Parse remaining: "PRICE TAX RCV (DEPREC) ACV" or "PRICE TAX RCV <DEPREC> ACV"
-        // Look for depreciation in parentheses () or angle brackets <> (Travelers format)
-        const depMatch = remaining.match(/[\(<]([^)>]+)[\)>]/);
-        if (depMatch) {
-          const deprecText = depMatch[1];
-          const beforeDep = remaining.substring(0, depMatch.index).trim();
-          const afterDep = remaining.substring(depMatch.index + depMatch[0].length).trim();
-          
-          // Clean up OCR spacing errors in numbers (e.g., "47 48" -> "47.48")
-          const cleanNumber = (val) => {
-            if (!val) return 0;
-            // Remove spaces and convert to number, handle OCR letter errors
-            const cleaned = val.replace(/\s+/g, '').replace(/[A-Z]/gi, '').replace(/,/g, '');
-            // If we have something like "4748", try to insert decimal
-            if (/^\d{3,}$/.test(cleaned) && !cleaned.includes('.')) {
-              return parseFloat(cleaned.slice(0, -2) + '.' + cleaned.slice(-2));
-            }
-            return parseFloat(cleaned) || 0;
-          };
-          
-          // Split beforeDep into PRICE, TAX, RCV (should be 3 numbers)
-          // beforeParts could be: PRICE TAX RCV (3 parts) or PRICE TAX O&P RCV (4 parts)
-          const beforeParts = beforeDep.split(/\s+/).filter(p => /[\d.,]/.test(p));
-          
-          // If 4 parts, O&P is index 2 and RCV is index 3 — drop O&P
-          if (beforeParts.length === 4) {
-            beforeParts.splice(2, 1); // remove O&P, leaving PRICE TAX RCV
-          }
-          
-          // ACV is everything after the closing paren
-          const acvText = afterDep;
-          
-          if (beforeParts.length >= 3) {
-            parsedLineItems.push({
-              item_number: parseInt(itemNum),
-              description: description.trim(),
-              quantity: parseFloat(qty),
-              unit: unit.toUpperCase(),
-              unit_price: cleanNumber(beforeParts[0]),
-              tax: cleanNumber(beforeParts[1]),
-              rcv: cleanNumber(beforeParts.slice(2).join('')), // Handle case where RCV might be split
-              depreciation: cleanNumber(deprecText),
-              acv: cleanNumber(acvText)
-            });
-            
-            parsedItemNumbers.add(parseInt(itemNum)); // Track successfully parsed item
-            console.log(`[LOSS-PARSER] Parsed line item ${itemNum}: ${description.substring(0, 40)}...`);
-          }
-        } else {
-          // No parentheses - SageSure format: $RCV $DEPREC $ACV (space-separated)
-          const parts = remaining.split(/\s+/).filter(p => p.length > 0);
-          const cleanNumber = (val) => {
-            if (!val) return 0;
-            return parseFloat(val.replace(/[$,]/g, '')) || 0;
-          };
-          
-          parsedLineItems.push({
-            item_number: parseInt(itemNum),
-            description: description.trim(),
-            quantity: parseFloat(qty),
-            unit: unit.toUpperCase(),
-            unit_price: 0, // Not in this column format
-            tax: 0,
-            rcv: cleanNumber(parts[0]),
-            depreciation: cleanNumber(parts[1]),
-            acv: cleanNumber(parts[2])
-          });
-          
-          parsedItemNumbers.add(parseInt(itemNum));
-          console.log(`[LOSS-PARSER] Parsed line item ${itemNum}: ${description.substring(0, 40)}...`);
-        }
+        // Parse RCV from captured group
+        const rcv = parseFloat((rcvCapture || '0').replace(/[,$]/g, '')) || 0;
+        
+        parsedLineItems.push({
+          item_number: parseInt(itemNum),
+          description: description.trim(),
+          quantity: parseFloat(qty),
+          unit: unit.toUpperCase(),
+          rcv: rcv
+        });
+        
+        parsedItemNumbers.add(parseInt(itemNum)); // Track successfully parsed item
+        console.log(`[LOSS-PARSER] Parsed line item ${itemNum}: ${description.substring(0, 40)}... RCV: $${rcv}`);
       }
       // Handle multi-line descriptions where values might be on next line
       else if (/^(\d+[a-z]?)[.,]\s+(.+)/i.test(line)) {
@@ -762,56 +704,23 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
           // Check next line for the numeric values
           const nextLine = lines[i + 1]?.trim();
           if (nextLine) {
-            const valueMatch = nextLine.match(/^(\d+\.?\d*)\s+(SQ|LF|EA|SF)\s+(.+)$/i);
+            const valueMatch = nextLine.match(/^(\d+\.?\d*)\s+(SQ|LF|EA|SF)\s+\$[\d,.]+\s+\$[\d,.]+\s+\$([\d,.]+)/i);
             
             if (valueMatch) {
-              const [, qty, unit, remaining] = valueMatch;
+              const [, qty, unit, rcvCapture] = valueMatch;
+              const rcv = parseFloat((rcvCapture || '0').replace(/[,$]/g, '')) || 0;
               
-              // Parse remaining using same approach as single-line
-              // Support both parentheses () and angle brackets <> (Travelers format)
-              const depMatch = remaining.match(/[\(<]([^)>]+)[\)>]/);
-              if (depMatch) {
-                const deprecText = depMatch[1];
-                const beforeDep = remaining.substring(0, depMatch.index).trim();
-                const afterDep = remaining.substring(depMatch.index + depMatch[0].length).trim();
-                
-                const cleanNumber = (val) => {
-                  if (!val) return 0;
-                  const cleaned = val.replace(/\s+/g, '').replace(/[A-Z]/gi, '').replace(/,/g, '');
-                  if (/^\d{3,}$/.test(cleaned) && !cleaned.includes('.')) {
-                    return parseFloat(cleaned.slice(0, -2) + '.' + cleaned.slice(-2));
-                  }
-                  return parseFloat(cleaned) || 0;
-                };
-                
-                // beforeParts could be: PRICE TAX RCV (3 parts) or PRICE TAX O&P RCV (4 parts)
-                const beforeParts = beforeDep.split(/\s+/).filter(p => /[\d.,]/.test(p));
-                
-                // If 4 parts, O&P is index 2 and RCV is index 3 — drop O&P
-                if (beforeParts.length === 4) {
-                  beforeParts.splice(2, 1); // remove O&P, leaving PRICE TAX RCV
-                }
-                
-                const acvText = afterDep;
-                
-                if (beforeParts.length >= 3) {
-                  parsedLineItems.push({
-                    item_number: parseInt(itemNum),
-                    description: description.trim(),
-                    quantity: parseFloat(qty),
-                    unit: unit.toUpperCase(),
-                    unit_price: cleanNumber(beforeParts[0]),
-                    tax: cleanNumber(beforeParts[1]),
-                    rcv: cleanNumber(beforeParts.slice(2).join('')),
-                    depreciation: cleanNumber(deprecText),
-                    acv: cleanNumber(acvText)
-                  });
-                  
-                  parsedItemNumbers.add(parseInt(itemNum)); // Track successfully parsed item
-                  console.log(`[LOSS-PARSER] Parsed multi-line item ${itemNum}: ${description.substring(0, 40)}...`);
-                  i++; // Skip next line since we consumed it
-                }
-              }
+              parsedLineItems.push({
+                item_number: parseInt(itemNum),
+                description: description.trim(),
+                quantity: parseFloat(qty),
+                unit: unit.toUpperCase(),
+                rcv: rcv
+              });
+              
+              parsedItemNumbers.add(parseInt(itemNum)); // Track successfully parsed item
+              console.log(`[LOSS-PARSER] Parsed multi-line item ${itemNum}: ${description.substring(0, 40)}... RCV: $${rcv}`);
+              i++; // Skip next line since we consumed it
             }
           }
         }
