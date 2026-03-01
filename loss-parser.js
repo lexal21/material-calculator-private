@@ -664,6 +664,15 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
+      // TEMP DEBUG: Check if items 15-16 are being skipped before parsing
+      const debugItemCheck = line.match(/^(15|16)\s{2,}/);
+      if (debugItemCheck) {
+        console.log(`[TEMP DEBUG] Item ${debugItemCheck[1]} encountered at line ${i}, parsingLineItems=${parsingLineItems}`);
+        if (!parsingLineItems) {
+          console.log(`  ⚠️ SKIPPED - parsing not started yet`);
+        }
+      }
+      
       // Skip lines when not in parsing mode
       if (!parsingLineItems) continue;
       
@@ -673,11 +682,13 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // TEMP DEBUG: Log exact line text for items 15 and 16 (pipe jacks)
       const itemNumCheck = line.match(/^(\d+[a-z]?)(?:\.\s|\s{2,})/i);
-      if (itemNumCheck && (itemNumCheck[1] === '15' || itemNumCheck[1] === '16') && !basicMatch) {
-        console.log(`[TEMP DEBUG] Item ${itemNumCheck[1]} failed basicMatch:`);
-        console.log(`  Line length: ${line.length}`);
+      if (itemNumCheck && (itemNumCheck[1] === '15' || itemNumCheck[1] === '16')) {
+        console.log(`[TEMP DEBUG] Item ${itemNumCheck[1]} at line ${i}:`);
         console.log(`  Line text: "${line}"`);
-        console.log(`  Char codes: ${line.split('').slice(0, 100).map((c, i) => `[${i}]${c}(${c.charCodeAt(0)})`).join(' ')}`);
+        console.log(`  basicMatch result: ${basicMatch ? 'MATCHED' : 'NULL'}`);
+        if (basicMatch) {
+          console.log(`  Captures: [1]="${basicMatch[1]}" [2]="${basicMatch[2]}" [3]="${basicMatch[3]}" [4]="${basicMatch[4]}" [5]="${basicMatch[5].substring(0, 50)}"`);
+        }
       }
       
       // DEBUG: Log lines that look like items but don't match
