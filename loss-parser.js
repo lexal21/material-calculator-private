@@ -1322,7 +1322,22 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       });
     }
     
-    [...lineItems.siding, ...lineItems.windowWrap].forEach(item => {
+    // Siding - sum all siding lines into one item
+    const totalSidingSF = lineItems.siding.reduce((sum, s) => sum + s.quantity, 0);
+    if (totalSidingSF > 0) {
+      result.supplementItems.push({
+        id: generateSupplementId(),
+        name: 'Siding',
+        quantity: totalSidingSF,
+        unit: 'SF',
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    // Window wrap - keep individual items
+    lineItems.windowWrap.forEach(item => {
       result.supplementItems.push({
         id: generateSupplementId(),
         name: item.name,
@@ -1335,7 +1350,6 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     });
     
     // House wrap - only add if total siding > 250 SF
-    const totalSidingSF = lineItems.siding.reduce((sum, s) => sum + s.quantity, 0);
     if (lineItems.houseWrap && totalSidingSF > 250) {
       result.supplementItems.push({
         id: generateSupplementId(),
