@@ -750,6 +750,28 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
             parsedItemNumbers.add(parseInt(itemNum)); // Track successfully parsed item
             console.log(`[LOSS-PARSER] Parsed line item ${itemNum}: ${description.substring(0, 40)}...`);
           }
+        } else {
+          // No parentheses - SageSure format: $RCV $DEPREC $ACV (space-separated)
+          const parts = remaining.split(/\s+/).filter(p => p.length > 0);
+          const cleanNumber = (val) => {
+            if (!val) return 0;
+            return parseFloat(val.replace(/[$,]/g, '')) || 0;
+          };
+          
+          parsedLineItems.push({
+            item_number: parseInt(itemNum),
+            description: description.trim(),
+            quantity: parseFloat(qty),
+            unit: unit.toUpperCase(),
+            unit_price: 0, // Not in this column format
+            tax: 0,
+            rcv: cleanNumber(parts[0]),
+            depreciation: cleanNumber(parts[1]),
+            acv: cleanNumber(parts[2])
+          });
+          
+          parsedItemNumbers.add(parseInt(itemNum));
+          console.log(`[LOSS-PARSER] Parsed line item ${itemNum}: ${description.substring(0, 40)}...`);
         }
       }
       // Handle multi-line descriptions where values might be on next line
