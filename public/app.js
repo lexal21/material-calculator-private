@@ -2508,7 +2508,7 @@ async function buildMaterialsPDF() {
 //Add cover page if cover photo exists
   if (coverPhoto && coverPhoto.data) {
     content.push(
-      { image: arrLogo, width: 180, alignment: 'center', margin: [0, 60, 0, 24] },
+      { image: arrLogo, fit: [180, 180], alignment: 'center', margin: [0, 60, 0, 24] },
       { text: 'MATERIAL LIST', style: 'coverTitle', alignment: 'center', margin: [0, 0, 0, 24] },
       { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#0891b2' }], margin: [0, 0, 0, 24] },
       { text: customerName, fontSize: 18, bold: true, alignment: 'center', margin: [0, 0, 0, 6] },
