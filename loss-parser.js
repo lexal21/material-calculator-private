@@ -916,6 +916,10 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     // Loop through already-parsed line items and extract field-measured items
     parsedLineItems.forEach((item, idx) => {
       const desc = item.description.toLowerCase();
+      
+      // Strip SageSure action prefixes before matching
+      const cleanDesc = desc.replace(/^(Replace|Remove|Tear Out|Rem\/Reset|Detach\s*&\s*Reset)\s*-\s*/i, '').trim();
+      
       const qty = parseFloat(item.quantity);
       const unit = item.unit;
       
@@ -929,7 +933,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       console.log(`  Quantity: ${qty} ${unit}`);
       
       // Fascia (sum duplicates - e.g., main house + shed)
-      if (/fascia/i.test(desc) && !/replace|paint|caulk|seal|prime|clean|detach|reset/i.test(desc)) {
+      if (/fascia/i.test(cleanDesc) && !/replace|paint|caulk|seal|prime|clean|detach|reset/i.test(cleanDesc)) {
         console.log(`  ✓ FASCIA MATCHED`);
         if (lineItems.fascia) {
           lineItems.fascia.quantity += qty;
@@ -940,7 +944,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Pipe jacks/boots (sum ALL variations - 1.5", 2", 3", 4" etc - into single total count)
-      if (/pipe\s+(jack|boot)|flashing.*pipe/i.test(desc)) {
+      if (/pipe\s+(jack|boot)|flashing.*pipe/i.test(cleanDesc)) {
         console.log(`  ✓ PIPE JACK MATCHED`);
         if (lineItems.pipeBoots) {
           lineItems.pipeBoots.quantity += qty;
@@ -951,7 +955,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Soffit (sum duplicates)
-      if (/soffit/i.test(desc) && !/r&r|replace|paint|caulk|seal|prime|clean|detach|reset/i.test(desc)) {
+      if (/soffit/i.test(cleanDesc) && !/r&r|replace|paint|caulk|seal|prime|clean|detach|reset/i.test(cleanDesc)) {
         console.log(`  ✓ SOFFIT MATCHED`);
         if (lineItems.soffit) {
           lineItems.soffit.quantity += qty;
@@ -962,7 +966,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Step flashing (sum duplicates)
-      if (/step\s*flashing/i.test(desc)) {
+      if (/step\s*flashing/i.test(cleanDesc)) {
         console.log(`  ✓ STEP FLASHING MATCHED`);
         if (lineItems.stepFlashing) {
           lineItems.stepFlashing.quantity += qty;
@@ -973,7 +977,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // L flashing / trim coil / counterflashing / apron flashing (sum duplicates)
-      if (/l\s*flashing|flashing.*l\s*style|kick.?out\s*flashing|trim\s*coil|counterflashing|counter\s*flashing|apron\s*flashing/i.test(desc)) {
+      if (/l\s*flashing|flashing.*l\s*style|kick.?out\s*flashing|trim\s*coil|counterflashing|counter\s*flashing|apron\s*flashing/i.test(cleanDesc)) {
         console.log(`  ✓ L FLASHING / TRIM COIL MATCHED`);
         if (lineItems.lFlashing) {
           lineItems.lFlashing.quantity += qty;
@@ -984,17 +988,17 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Siding (sum duplicates - array format for multiple types)
-      if (/vinyl\s*siding|hardboard\s*siding|siding.*lap|lap.*siding|siding.*vinyl/i.test(desc) && !/r&r|replace|paint|caulk|seal/i.test(desc)) {
+      if (/vinyl\s*siding|hardboard\s*siding|siding.*lap|lap.*siding|siding.*vinyl/i.test(cleanDesc) && !/r&r|replace|paint|caulk|seal/i.test(cleanDesc)) {
         console.log(`  ✓ SIDING MATCHED`);
         lineItems.siding.push({
-          name: desc.includes('vinyl') ? 'Vinyl Siding' : desc.includes('hardboard') ? 'Hardboard Siding' : 'Siding',
+          name: cleanDesc.includes('vinyl') ? 'Vinyl Siding' : cleanDesc.includes('hardboard') ? 'Hardboard Siding' : 'Siding',
           quantity: qty,
           unit: unit
         });
       }
       
       // House wrap
-      if (/house\s*wrap|air.*moisture.*barrier|moisture.*barrier/i.test(desc)) {
+      if (/house\s*wrap|air.*moisture.*barrier|moisture.*barrier/i.test(cleanDesc)) {
         console.log(`  ✓ HOUSE WRAP MATCHED`);
         if (lineItems.houseWrap) {
           lineItems.houseWrap.quantity += qty;
@@ -1004,7 +1008,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Window wrap (sum duplicates - array format)
-      if (/window.*wrap|trim.*window|window.*trim/i.test(desc)) {
+      if (/window.*wrap|trim.*window|window.*trim/i.test(cleanDesc)) {
         console.log(`  ✓ WINDOW WRAP MATCHED`);
         lineItems.windowWrap.push({
           name: 'Window Wrap',
@@ -1014,7 +1018,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Skylights (sum duplicates)
-      if (/skylight/i.test(desc) && !/flashing/i.test(desc)) {
+      if (/skylight/i.test(cleanDesc) && !/flashing/i.test(cleanDesc)) {
         console.log(`  ✓ SKYLIGHT MATCHED`);
         if (lineItems.skylights) {
           lineItems.skylights.quantity += qty;
@@ -1025,7 +1029,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Skylight flashing kit (sum duplicates)
-      if (/skylight.*flashing|flashing.*skylight|skylight.*kit/i.test(desc)) {
+      if (/skylight.*flashing|flashing.*skylight|skylight.*kit/i.test(cleanDesc)) {
         console.log(`  ✓ SKYLIGHT FLASHING KIT MATCHED`);
         if (lineItems.skylightFlashingKit) {
           lineItems.skylightFlashingKit.quantity += qty;
@@ -1036,7 +1040,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Turtle vents (sum duplicates)
-      if (/turtle.*vent|static.*vent|roof.*vent/i.test(desc) && !/ridge\s*vent/i.test(desc)) {
+      if (/turtle.*vent|static.*vent|roof.*vent/i.test(cleanDesc) && !/ridge\s*vent/i.test(cleanDesc)) {
         console.log(`  ✓ TURTLE VENT MATCHED`);
         if (lineItems.turtleVents) {
           lineItems.turtleVents.quantity += qty;
@@ -1047,7 +1051,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Power attic fan (sum duplicates)
-      if (/power.*fan|attic.*fan|powered.*vent/i.test(desc)) {
+      if (/power.*fan|attic.*fan|powered.*vent/i.test(cleanDesc)) {
         console.log(`  ✓ POWER ATTIC FAN MATCHED`);
         if (lineItems.powerAtticFan) {
           lineItems.powerAtticFan.quantity += qty;
@@ -1058,7 +1062,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Ice & water shield detection (for valley length calculation)
-      if (/ice.*water|ice\s*&\s*water/i.test(desc)) {
+      if (/ice.*water|ice\s*&\s*water/i.test(cleanDesc)) {
         iceWaterFoundOnLoss = true;
         if (unit === 'SF') {
           result.measurements.valleyLength = Math.ceil(qty / 3);
@@ -1067,13 +1071,13 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Tear off (for labor calculation)
-      if (/tear\s*off|remove.*shingle|disposal.*shingle/i.test(desc) && unit === 'SQ') {
+      if (/tear\s*off|remove.*shingle|disposal.*shingle/i.test(cleanDesc) && unit === 'SQ') {
         tearOffSquares = qty;
         console.log(`  ✓ TEAR OFF MATCHED: ${qty} SQ`);
       }
       
       // Shingle squares (override calculated value)
-      if (/laminated|composition.*shingle|architectural.*shingle/i.test(desc) && unit === 'SQ' && !/(tear|remove|disposal)/i.test(desc)) {
+      if (/laminated|composition.*shingle|architectural.*shingle/i.test(cleanDesc) && unit === 'SQ' && !/(tear|remove|disposal)/i.test(cleanDesc)) {
         shingleSquares = qty;
         console.log(`  ✓ SHINGLE SQUARES MATCHED: ${qty} SQ`);
       }
