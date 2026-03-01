@@ -859,6 +859,17 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Skip tearoff-only and detach/reset lines - never count as materials
       const descLower = item.description.toLowerCase();
+      
+      // DEBUG: Log siding/vinyl/wrap/fascia items at exclusion check
+      if (/siding|vinyl|wrap|fascia/i.test(item.description)) {
+        const willExclude = /^(remove|tear out)\b/i.test(descLower) || /detach\s*&?\s*reset/i.test(descLower) || /[-–]\s*(tear out|remove)$/i.test(descLower);
+        console.log(`[EXCLUSION DEBUG] Item ${idx + 1}:`);
+        console.log(`  Original: "${item.description}"`);
+        console.log(`  descLower: "${descLower}"`);
+        console.log(`  cleanDesc: "${cleanDesc}"`);
+        console.log(`  Will exclude: ${willExclude}`);
+      }
+      
       if (/^(remove|tear out)\b/i.test(descLower) || /detach\s*&?\s*reset/i.test(descLower) || /[-–]\s*(tear out|remove)$/i.test(descLower)) {
         return; // skip this line item entirely
       }
