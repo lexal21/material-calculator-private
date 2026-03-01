@@ -484,8 +484,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     console.log('[LOSS-PARSER] DEBUG: Lines[2] preview:', lines[2] ? lines[2].substring(0, 100) : 'N/A');
     
     // FIX: Split concatenated lines (common in Linux PDF extraction) - RECURSIVE
-    function splitLongLine(line) {
-      if (line.length <= 500) return [line];
+    function splitLongLine(line, depth) {
+      depth = depth || 0;
+      if (line.length <= 500 || depth > 5) return [line];
       
       const splits = [];
       const numberedItemRegex = /(?<![\d$.])(\d+(?:\.\s+|\s{2,}))(?=[A-Z])/g;
@@ -517,7 +518,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       const result = [];
       for (const seg of segments) {
         if (seg.length > 500) {
-          result.push(...splitLongLine(seg));
+          result.push(...splitLongLine(seg, depth + 1));
         } else if (seg.length > 0) {
           result.push(seg);
         }
