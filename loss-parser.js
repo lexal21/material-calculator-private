@@ -870,7 +870,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       // Strip action suffixes THEN check for tear out suffix
       const beforeStrip = item.description;
       const cleanDesc = item.description.replace(/^(Replace|Remove|Tear Out|Rem\/Reset|Detach\s*&\s*Reset|R&R)\s*-?\s*/i, '')
-        .replace(/\s*[-–]\s*(Tear Out|Remove|Supply|Install|Rem\/Reset)$/i, '').trim();
+        .replace(/\s*[-–]\s*(Replace|Tear Out|Remove|Supply|Install|Rem\/Reset)$/i, '').trim();
       
       // DEBUG: Log siding/vinyl/wrap/fascia items - show suffix stripping
       if (/siding|vinyl|wrap|fascia/i.test(item.description)) {
