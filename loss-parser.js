@@ -868,16 +868,18 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Strip action suffixes THEN check for tear out suffix
+      const beforeStrip = item.description;
       const cleanDesc = item.description.replace(/^(Replace|Remove|Tear Out|Rem\/Reset|Detach\s*&\s*Reset|R&R)\s*-?\s*/i, '')
         .replace(/\s*[-–]\s*(Tear Out|Remove|Supply|Install|Rem\/Reset)$/i, '').trim();
       
-      // DEBUG: Log siding/vinyl/wrap/fascia items at exclusion check
+      // DEBUG: Log siding/vinyl/wrap/fascia items - show suffix stripping
       if (/siding|vinyl|wrap|fascia/i.test(item.description)) {
+        const wasStripped = beforeStrip !== cleanDesc;
         const willExclude = /[-–]\s*(tear out|remove)$/i.test(item.description);
-        console.log(`[EXCLUSION DEBUG] Item ${idx + 1}:`);
-        console.log(`  Original: "${item.description}"`);
-        console.log(`  descLower: "${descLower}"`);
-        console.log(`  cleanDesc: "${cleanDesc}"`);
+        console.log(`[SUFFIX STRIP DEBUG] Item ${idx + 1}:`);
+        console.log(`  Before strip: "${beforeStrip}"`);
+        console.log(`  After strip:  "${cleanDesc}"`);
+        console.log(`  Was stripped: ${wasStripped}`);
         console.log(`  Will exclude: ${willExclude}`);
       }
       
