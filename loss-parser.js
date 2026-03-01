@@ -877,6 +877,12 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       const qty = parseFloat(item.quantity);
       const unit = item.unit;
       
+      // Skip tearoff-only and detach/reset lines - never count as materials
+      const descLower = item.description.toLowerCase();
+      if (/^remove\b/.test(descLower) || /detach\s*&?\s*reset/i.test(descLower)) {
+        return; // skip this line item entirely
+      }
+      
       console.log(`[CROSS-REF DEBUG] Item ${idx + 1}: "${item.description}"`);
       console.log(`  Quantity: ${qty} ${unit}`);
       
