@@ -211,35 +211,73 @@ const LossCompare = (() => {
     }
   }
 
+  // -- Progress modal helpers --
+  function showProgress(msg, sub) {
+    var overlay = document.getElementById('lc-progress-overlay');
+    overlay.style.display = 'flex';
+    overlay.classList.remove('lc-success');
+    document.getElementById('lc-progress-message').textContent = msg;
+    document.getElementById('lc-progress-sub').textContent = sub || '';
+  }
+
+  function updateProgress(msg, sub) {
+    document.getElementById('lc-progress-message').textContent = msg;
+    document.getElementById('lc-progress-sub').textContent = sub || '';
+  }
+
+  function dismissProgress(successMsg) {
+    var overlay = document.getElementById('lc-progress-overlay');
+    overlay.classList.add('lc-success');
+    document.getElementById('lc-spinner').style.borderTopColor = '#22c55e';
+    document.getElementById('lc-progress-message').textContent = successMsg || 'Done!';
+    document.getElementById('lc-progress-sub').textContent = '';
+    setTimeout(function() {
+      overlay.style.display = 'none';
+      overlay.classList.remove('lc-success');
+      document.getElementById('lc-spinner').style.borderTopColor = '#f59e0b';
+    }, 1800);
+  }
+
   // -- Generate report --
   async function generateReport() {
-    if (droppedFiles.length === 0) return;
-    clearError();
+    // Lock to prevent double execution
+    if (generateReport._running) return;
+    generateReport._running = true;
+    
+    var generateBtn = document.getElementById('lc-generateBtn');
+    if (generateBtn) generateBtn.disabled = true;
+    
+    try {
+      if (droppedFiles.length === 0) return;
+      clearError();
 
-    // Find roof report and loss sheet from dropped files
-    var roofFile = null;
-    var lossFile = null;
-    // Detect file types from chip dataset (already classified on drop)
-    droppedFiles.forEach(function(file) {
-      var chips = document.querySelectorAll('.lc-chip');
-      chips.forEach(function(chip) {
-        var chipName = chip.querySelector('.lc-chip-name')?.textContent;
-        if (chipName === file.name) {
-          if (chip.dataset.type === 'loss') {
-            lossFile = file;
-          } else {
-            roofFile = file;
+      showProgress('Starting...', 'Preparing files');
+
+      // Find roof report and loss sheet from dropped files
+      var roofFile = null;
+      var lossFile = null;
+      // Detect file types from chip dataset (already classified on drop)
+      droppedFiles.forEach(function(file) {
+        var chips = document.querySelectorAll('.lc-chip');
+        chips.forEach(function(chip) {
+          var chipName = chip.querySelector('.lc-chip-name')?.textContent;
+          if (chipName === file.name) {
+            if (chip.dataset.type === 'loss') {
+              lossFile = file;
+            } else {
+              roofFile = file;
+            }
           }
-        }
+        });
       });
-    });
 
-    // SINGLE FILE: Always use /api/parse-loss (backend routes to correct parser)
-    if (droppedFiles.length === 1) {
-      console.log('[LOSS-COMPARE] Single file upload - using /api/parse-loss');
-      var singleFile = droppedFiles[0];
-      
-      try {
+      // SINGLE FILE: Always use /api/parse-loss (backend routes to correct parser)
+      if (droppedFiles.length === 1) {
+        console.log('[LOSS-COMPARE] Single file upload - using /api/parse-loss');
+        updateProgress('Processing document...', 'Detecting file type and extracting data');
+        
+        var singleFile = droppedFiles[0];
+        
         var singleForm = new FormData();
         singleForm.append('pdf', singleFile);
         singleForm.append('shed_included', window.shedIncluded !== false ? 'true' : 'false');
@@ -265,21 +303,25 @@ const LossCompare = (() => {
             }
           }
           
+          updateProgress('Building report...', 'Rendering your material list');
           displayResults(singleData);
+          dismissProgress('Report complete!');
         } else {
-          showError('Failed to parse PDF: ' + (singleData.message || 'Unknown error'));
+          updateProgress('Something went wrong', singleData.message || 'Unknown error');
+          setTimeout(function() {
+            document.getElementById('lc-progress-overlay').style.display = 'none';
+            showError('Failed to parse PDF: ' + (singleData.message || 'Unknown error'));
+          }, 2500);
         }
-      } catch (err) {
-        showError('Error: ' + err.message);
+        return;
       }
-      return;
-    }
 
-    try {
       var uploadData = null;
 
       // Step 1: Always send roof report to /upload to populate Materials and Labor tabs
       if (roofFile) {
+        updateProgress('Processing roof report...', 'Extracting measurements and materials');
+        
         var locationEl = document.getElementById('locationSelect');
         var location = locationEl ? locationEl.value : 'charleston';
         var uploadForm = new FormData();
@@ -298,6 +340,8 @@ const LossCompare = (() => {
 
       // Step 2: If loss sheet present, extract and merge loss-only items
       if (lossFile && uploadData) {
+        updateProgress('Parsing loss sheet...', 'Identifying supplement items');
+        
         var lossForm2 = new FormData();
         lossForm2.append('pdf0', roofFile || lossFile);
         if (roofFile) lossForm2.append('pdf1', lossFile);
@@ -322,10 +366,19 @@ const LossCompare = (() => {
 
       // Step 3: Call displayResults once with merged data
       if (uploadData && uploadData.success && typeof displayResults === 'function') {
+        updateProgress('Merging results...', 'Building your material list');
         displayResults(uploadData);
+        dismissProgress('Report complete!');
       }
     } catch (err) {
-      showError('Error: ' + err.message);
+      updateProgress('Something went wrong', err.message || '');
+      setTimeout(function() {
+        document.getElementById('lc-progress-overlay').style.display = 'none';
+        showError('Error: ' + err.message);
+      }, 2500);
+    } finally {
+      generateReport._running = false;
+      if (generateBtn) generateBtn.disabled = false;
     }
   }
   
