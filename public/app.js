@@ -2367,13 +2367,13 @@ function addLaborFromModal() {
 // ----------------------------------------
 //PRINT/PDF FUNCTIONS - MATERIALS/LABOR
 // ----------------------------------------
-function printResults() {
-  const pdfDoc = buildMaterialsPDF();
+async function printResults() {
+  const pdfDoc = await buildMaterialsPDF();
   pdfMake.createPdf(pdfDoc).print();
 }
 
-function saveAsPDF() {
-  const pdfDoc = buildMaterialsPDF();
+async function saveAsPDF() {
+  const pdfDoc = await buildMaterialsPDF();
   const filename = 'Materials_' + (window.currentRawMeasurements?.address || 'Quote').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
   pdfMake.createPdf(pdfDoc).download(filename);
 }
@@ -2389,10 +2389,33 @@ function saveLaborPDF() {
   pdfMake.createPdf(pdfDoc).download(filename);
 }
 
-function buildMaterialsPDF() {
+async function buildMaterialsPDF() {
   const raw = window.currentRawMeasurements || {};
   const regularMaterials = window.materialsData || [];
   const supplementItems = window.supplementItems || [];
+  
+  // STEP 1: Read live field values
+  const customerName = document.getElementById('customerName')?.value?.trim() || '';
+  const jobAddress = document.getElementById('jobAddress')?.value?.trim() || '';
+  const orderNumber = document.getElementById('jobNumber')?.value?.trim() || '';
+  const shingleColor = document.getElementById('shingleColorInput')?.value?.trim() || document.getElementById('materialsShingleColorSelect')?.value?.trim() || '';
+  const jobDate = new Date().toLocaleDateString();
+  
+  // STEP 2: Load logos
+  const logoData = window.QB_LOGO_DATA || await window.loadQuikBitzLogo();
+  
+  // Load ARR logo
+  const arrLogo = await new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/jpeg'));
+    };
+    img.src = '/logo.jpg';
+  });
   
   // Merge regular materials and supplement items for PDF output
   const materials = [...regularMaterials];
@@ -2485,10 +2508,12 @@ function buildMaterialsPDF() {
 //Add cover page if cover photo exists
   if (coverPhoto && coverPhoto.data) {
     content.push(
-      { text: 'MATERIAL LIST', style: 'coverTitle', alignment: 'center', margin: [0, 0, 0, 20] },
-      { text: raw.customer_name || raw.customerName || '', style: 'coverCustomer', alignment: 'center', margin: [0, 0, 0, 8] },
-      { text: raw.address || '', style: 'coverAddress', alignment: 'center', margin: [0, 0, 0, 8] },
-      { text: 'Job #: ' + (raw.order_number || 'N/A'), style: 'coverJob', alignment: 'center', margin: [0, 0, 0, 30] },
+      { image: arrLogo, width: 220, alignment: 'center', margin: [0, 40, 0, 16] },
+      { text: 'MATERIAL LIST', style: 'coverTitle', alignment: 'center' },
+      { text: customerName, fontSize: 16, bold: true, alignment: 'center', margin: [0, 12, 0, 4] },
+      { text: jobAddress, fontSize: 12, alignment: 'center', margin: [0, 0, 0, 4] },
+      { text: `Job #: ${orderNumber}`, fontSize: 12, alignment: 'center', margin: [0, 0, 0, 4] },
+      { text: `Color: ${shingleColor}`, fontSize: 12, alignment: 'center', margin: [0, 0, 0, 20] },
       { image: coverPhoto.data, width: 350, alignment: 'center', margin: [0, 0, 0, 0] },
       { text: '', pageBreak: 'after' }
     );
@@ -2497,15 +2522,18 @@ function buildMaterialsPDF() {
 //Add main content
   content.push(
     { text: 'MATERIAL LIST', style: 'header' },
-    { text: 'Date: ' + new Date().toLocaleDateString(), margin: [0, 8, 0, 20] },
+    { text: 'Date: ' + jobDate, margin: [0, 8, 0, 20] },
     {
       columns: [
         {
           width: '50%',
           stack: [
             { text: 'JOB INFORMATION:', style: 'label' },
-            { text: raw.address || 'Address N/A', style: 'customerName', margin: [0, 4, 0, 0] },
-            { text: 'Order #: ' + (raw.order_number || 'N/A'), margin: [0, 4, 0, 0] }
+            { text: customerName, fontSize: 11, bold: true, margin: [0, 0, 0, 3] },
+            { text: jobAddress, fontSize: 9, margin: [0, 0, 0, 2] },
+            { text: `Job #: ${orderNumber}`, fontSize: 9, margin: [0, 0, 0, 2] },
+            { text: `Color: ${shingleColor}`, fontSize: 9, margin: [0, 0, 0, 2] },
+            { text: `Date: ${jobDate}`, fontSize: 9 }
           ]
         },
         {
