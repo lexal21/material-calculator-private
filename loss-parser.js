@@ -918,7 +918,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       const desc = item.description.toLowerCase();
       
       // Strip SageSure action prefixes before matching
-      const cleanDesc = desc.replace(/^(Replace|Remove|Tear Out|Rem\/Reset|Detach\s*&\s*Reset)\s*-\s*/i, '').trim();
+      const cleanDesc = desc.replace(/^(Replace|Remove|Tear Out|Rem\/Reset|Detach\s*&\s*Reset|R&R)\s*-?\s*/i, '').trim();
       
       const qty = parseFloat(item.quantity);
       const unit = item.unit;
@@ -1256,6 +1256,17 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       stepFlashingItem.missingData = true;
       stepFlashingItem.missingReason = 'Measurement not on loss sheet — verify manually';
     }
+    
+    // Zero out step flashing if not found in loss sheet at all
+    const hasStepFlashingInLoss = parsedLineItems.some(item => 
+      /step\s*flashing/i.test(item.description)
+    );
+    if (!hasStepFlashingInLoss) {
+      stepFlashingItem.quantity = 0;
+      stepFlashingItem.total = 0;
+      console.log('[LOSS-PARSER] Step flashing not found in loss sheet — zeroing material row');
+    }
+    
     result.materials.push(stepFlashingItem);
     if (lineItems.stepFlashing) {
       result.raw.step_flashing = lineItems.stepFlashing.quantity;
@@ -1274,6 +1285,17 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       lFlashingItem.missingData = true;
       lFlashingItem.missingReason = 'Measurement not on loss sheet — verify manually';
     }
+    
+    // Zero out L flashing if not found in loss sheet at all
+    const hasLFlashingInLoss = parsedLineItems.some(item => 
+      /l[\s-]*flashing|apron\s*flashing|counter\s*flashing/i.test(item.description)
+    );
+    if (!hasLFlashingInLoss) {
+      lFlashingItem.quantity = 0;
+      lFlashingItem.total = 0;
+      console.log('[LOSS-PARSER] L flashing not found in loss sheet — zeroing material row');
+    }
+    
     result.materials.push(lFlashingItem);
     if (lineItems.lFlashing) {
       result.raw.flashing_length = lineItems.lFlashing.quantity;
