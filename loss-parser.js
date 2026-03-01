@@ -493,7 +493,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         
         // Split on numbered items: "1. ", "2. ", etc. OR "2  " (SageSure)
         let segments = [line];
-        const numberedItemRegex = /(?<!\d)(\d+(?:\.\s+|\s{2,}))(?=[A-Z])/g;
+        const numberedItemRegex = /(?<![\d$])(\d+(?:\.\s+|\s{2,}))(?=[A-Z])/g;
         let match;
         const splits = [];
         let lastIndex = 0;
