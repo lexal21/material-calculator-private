@@ -2510,12 +2510,12 @@ async function buildMaterialsPDF() {
     content.push(
       { image: arrLogo, width: 180, alignment: 'center', margin: [0, 60, 0, 24] },
       { text: 'MATERIAL LIST', style: 'coverTitle', alignment: 'center', margin: [0, 0, 0, 24] },
-      { canvas: [{ type: 'line', x1: 100, y1: 0, x2: 415, y2: 0, lineWidth: 1, lineColor: '#0891b2' }], margin: [0, 0, 0, 24] },
+      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#0891b2' }], margin: [0, 0, 0, 24] },
       { text: customerName, fontSize: 18, bold: true, alignment: 'center', margin: [0, 0, 0, 6] },
       { text: jobAddress, fontSize: 11, alignment: 'center', color: '#444444', margin: [0, 0, 0, 4] },
       { text: `Job #: ${orderNumber}`, fontSize: 11, alignment: 'center', color: '#444444', margin: [0, 0, 0, 4] },
       { text: `Color: ${shingleColor}`, fontSize: 11, alignment: 'center', color: '#444444', margin: [0, 0, 0, 28] },
-      { canvas: [{ type: 'line', x1: 100, y1: 0, x2: 415, y2: 0, lineWidth: 1, lineColor: '#0891b2' }], margin: [0, 0, 0, 28] },
+      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#0891b2' }], margin: [0, 0, 0, 28] },
       { image: coverPhoto.data, width: 350, alignment: 'center', margin: [0, 0, 0, 0] },
       { text: '', pageBreak: 'after' }
     );
