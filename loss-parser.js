@@ -475,16 +475,43 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     // PARSE ORIGINAL LINE ITEMS FROM PDF TABLE
     // ==========================================
     const parsedLineItems = [];
+    const parsedItemNumbers = new Set();
     let parsingLineItems = false;
     
-    // DEBUG: Log line count and structure
-    console.log('[LOSS-PARSER] DEBUG: Total lines in text:', lines.length);
-    console.log('[LOSS-PARSER] DEBUG: Lines[0] length:', lines[0] ? lines[0].length : 0);
-    console.log('[LOSS-PARSER] DEBUG: Lines[1] length:', lines[1] ? lines[1].length : 0);
-    console.log('[LOSS-PARSER] DEBUG: Lines[2] preview:', lines[2] ? lines[2].substring(0, 100) : 'N/A');
+    // Liberty Mutual format: extract directly from raw text blob (not line-by-line)
+    const isLibertyMutual = result.raw.carrier === 'Liberty Mutual';
     
-    // FIX: Split concatenated lines (common in Linux PDF extraction) - RECURSIVE
-    function splitLongLine(line, depth) {
+    if (isLibertyMutual) {
+      console.log('[LOSS-PARSER] Liberty Mutual format detected - using direct blob extraction');
+      const itemRegex = /(\d+)\s{2,}([\w,\.\s\/\-'"()]+?)\s{2,}(\d+\.?\d*)\s+\$[\d,.]+\s+(SQ|LF|EA|SF|DY|LS)\s+\$[\d,.]+\s+\$[\d,.]+\s+\$([\d,.]+)/g;
+      let match;
+      
+      while ((match = itemRegex.exec(text)) !== null) {
+        parsedLineItems.push({
+          item_number: parseInt(match[1]),
+          description: match[2].trim(),
+          quantity: parseFloat(match[3]),
+          unit: match[4],
+          rcv: parseFloat((match[5] || '0').replace(/[,$]/g, '')) || 0
+        });
+        parsedItemNumbers.add(parseInt(match[1]));
+      }
+      
+      console.log(`[LOSS-PARSER] Liberty Mutual: ${parsedLineItems.length} items extracted`);
+      // Skip ALL line-based parsing - jump straight to supplement extraction
+      // Do NOT set lines = [] here, just fall through to the supplement matching code
+    }
+    
+    // Only run line-based parsing for non-Liberty Mutual formats
+    if (!isLibertyMutual) {
+      // DEBUG: Log line count and structure
+      console.log('[LOSS-PARSER] DEBUG: Total lines in text:', lines.length);
+      console.log('[LOSS-PARSER] DEBUG: Lines[0] length:', lines[0] ? lines[0].length : 0);
+      console.log('[LOSS-PARSER] DEBUG: Lines[1] length:', lines[1] ? lines[1].length : 0);
+      console.log('[LOSS-PARSER] DEBUG: Lines[2] preview:', lines[2] ? lines[2].substring(0, 100) : 'N/A');
+      
+      // FIX: Split concatenated lines (common in Linux PDF extraction) - RECURSIVE
+      function splitLongLine(line, depth) {
       depth = depth || 0;
       if (line.length <= 500 || depth > 5) return [line];
       
@@ -767,6 +794,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     } else {
       console.log(`[LOSS-PARSER] ✓ All ${foundItemNumbers.size} numbered items successfully parsed`);
     }
+    } // End if (!isLibertyMutual)
     
     result.lossItems = parsedLineItems;
     
