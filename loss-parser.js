@@ -1484,29 +1484,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
     }
     
-    if (lineItems.stepFlashing) {
-      result.supplementItems.push({
-        id: generateSupplementId(),
-        name: 'Step Flashing',
-        quantity: parseFloat(lineItems.stepFlashing.quantity),
-        unit: lineItems.stepFlashing.unit,
-        unitPrice: 0,
-        source: 'loss',
-        color: ''
-      });
-    }
+    // Step flashing and L flashing are NEVER extracted as supplement items
+    // They are handled directly by the material list with zero-out logic
     
-    if (lineItems.lFlashing) {
-      result.supplementItems.push({
-        id: generateSupplementId(),
-        name: 'L Flashing',
-        quantity: parseFloat(lineItems.lFlashing.quantity),
-        unit: lineItems.lFlashing.unit,
-        unitPrice: 0,
-        source: 'loss',
-        color: ''
-      });
-    }
     
     if (lineItems.skylights) {
       result.supplementItems.push({
