@@ -671,6 +671,15 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       // Two-stage approach: match the basic structure, then manually parse the numeric fields
       const basicMatch = line.match(/^(\d+[a-z]?)(?:[.,]\s+|\s{2,})(.+?)\s+(?:Dwelling|Other Struc[^\s]*\s+)?(\d+\.?\d*)\s*(SQ|LF|EA|SF)\s+(.+)$/i);
       
+      // TEMP DEBUG: Log exact line text for items 15 and 16 (pipe jacks)
+      const itemNumCheck = line.match(/^(\d+[a-z]?)(?:\.\s|\s{2,})/i);
+      if (itemNumCheck && (itemNumCheck[1] === '15' || itemNumCheck[1] === '16') && !basicMatch) {
+        console.log(`[TEMP DEBUG] Item ${itemNumCheck[1]} failed basicMatch:`);
+        console.log(`  Line length: ${line.length}`);
+        console.log(`  Line text: "${line}"`);
+        console.log(`  Char codes: ${line.split('').slice(0, 100).map((c, i) => `[${i}]${c}(${c.charCodeAt(0)})`).join(' ')}`);
+      }
+      
       // DEBUG: Log lines that look like items but don't match
       if (/^\d+\.\s+/.test(line) && !basicMatch && i >= 120 && i <= 140) {
         console.log(`[LOSS-PARSER] Line ${i} looks like item but doesn't match regex:`);
