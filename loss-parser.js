@@ -651,7 +651,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       // Single-line format: "1. Description 10.5 LF 52.47 0.00 ..."
       // Two-line format (Xactimate): "1. Description" then next line "10.5 LF 52.47 0.00 ..."
       if (!parsingLineItems) {
-        const isSingleLineItem = /^\d+[a-z]?\.\s+.+?\s+\d+\.?\d*\s+(SQ|LF|EA|SF)\s+/i.test(line);
+        const isSingleLineItem = /^\d+[a-z]?\.\s+.+?\s+\d+\.?\d*\s*(SQ|LF|EA|SF)\s+/i.test(line);
         const isNumberedDesc = /^(\d+[a-z]?)[.,]\s+.{5,}/i.test(line);
         const nextLineHasValues = /^\d+\.?\d*\s+(SQ|LF|EA|SF)\s+/i.test(lines[i + 1]?.trim() || '');
         
@@ -669,7 +669,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Parse numbered line items: "1. Description text QTY UNIT PRICE TAX RCV DEPREC ACV"
       // Two-stage approach: match the basic structure, then manually parse the numeric fields
-      const basicMatch = line.match(/^(\d+[a-z]?)[.,]\s+(.+?)\s+(\d+\.?\d*)\s+(SQ|LF|EA|SF)\s+(.+)$/i);
+      const basicMatch = line.match(/^(\d+[a-z]?)[.,]\s+(.+?)\s+(\d+\.?\d*)\s*(SQ|LF|EA|SF)\s+(.+)$/i);
       
       // DEBUG: Log lines that look like items but don't match
       if (/^\d+\.\s+/.test(line) && !basicMatch && i >= 120 && i <= 140) {
