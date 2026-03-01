@@ -846,23 +846,22 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     // Loop through already-parsed line items and extract field-measured items
     parsedLineItems.forEach((item, idx) => {
-      const desc = item.description.toLowerCase();
-      
-      // Strip SageSure action prefixes before matching
-      let cleanDesc = desc.replace(/^(Replace|Remove|Tear Out|Rem\/Reset|Detach\s*&\s*Reset|R&R)\s*-?\s*/i, '').trim();
-      
-      // Strip action suffixes (Liberty Mutual puts action at end)
-      cleanDesc = cleanDesc.replace(/\s*[-–]\s*(Tear Out|Remove|Supply|Install|Rem\/Reset)$/i, '').trim();
-      
+      const descLower = item.description.toLowerCase();
       const qty = parseFloat(item.quantity);
       const unit = item.unit;
       
-      // Skip tearoff-only and detach/reset lines - never count as materials
-      const descLower = item.description.toLowerCase();
+      // Exclude tearoff-only lines BEFORE stripping suffixes
+      if (/^(remove|tear out)\b/i.test(descLower) || /detach\s*&?\s*reset/i.test(descLower)) {
+        return;
+      }
+      
+      // Strip action suffixes THEN check for tear out suffix
+      const cleanDesc = item.description.replace(/^(Replace|Remove|Tear Out|Rem\/Reset|Detach\s*&\s*Reset|R&R)\s*-?\s*/i, '')
+        .replace(/\s*[-–]\s*(Tear Out|Remove|Supply|Install|Rem\/Reset)$/i, '').trim();
       
       // DEBUG: Log siding/vinyl/wrap/fascia items at exclusion check
       if (/siding|vinyl|wrap|fascia/i.test(item.description)) {
-        const willExclude = /^(remove|tear out)\b/i.test(descLower) || /detach\s*&?\s*reset/i.test(descLower) || /[-–]\s*(tear out|remove)$/i.test(descLower);
+        const willExclude = /[-–]\s*(tear out|remove)$/i.test(item.description);
         console.log(`[EXCLUSION DEBUG] Item ${idx + 1}:`);
         console.log(`  Original: "${item.description}"`);
         console.log(`  descLower: "${descLower}"`);
@@ -870,8 +869,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         console.log(`  Will exclude: ${willExclude}`);
       }
       
-      if (/^(remove|tear out)\b/i.test(descLower) || /detach\s*&?\s*reset/i.test(descLower) || /[-–]\s*(tear out|remove)$/i.test(descLower)) {
-        return; // skip this line item entirely
+      // Exclude if suffix was "Tear Out" or "Remove"
+      if (/[-–]\s*(tear out|remove)$/i.test(item.description)) {
+        return;
       }
       
       console.log(`[CROSS-REF DEBUG] Item ${idx + 1}: "${item.description}"`);
