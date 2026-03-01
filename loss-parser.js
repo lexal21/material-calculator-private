@@ -849,14 +849,17 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       const desc = item.description.toLowerCase();
       
       // Strip SageSure action prefixes before matching
-      const cleanDesc = desc.replace(/^(Replace|Remove|Tear Out|Rem\/Reset|Detach\s*&\s*Reset|R&R)\s*-?\s*/i, '').trim();
+      let cleanDesc = desc.replace(/^(Replace|Remove|Tear Out|Rem\/Reset|Detach\s*&\s*Reset|R&R)\s*-?\s*/i, '').trim();
+      
+      // Strip action suffixes (Liberty Mutual puts action at end)
+      cleanDesc = cleanDesc.replace(/\s*[-–]\s*(Tear Out|Remove|Supply|Install|Rem\/Reset)$/i, '').trim();
       
       const qty = parseFloat(item.quantity);
       const unit = item.unit;
       
       // Skip tearoff-only and detach/reset lines - never count as materials
       const descLower = item.description.toLowerCase();
-      if (/^remove\b/.test(descLower) || /detach\s*&?\s*reset/i.test(descLower)) {
+      if (/^(remove|tear out)\b/i.test(descLower) || /detach\s*&?\s*reset/i.test(descLower) || /[-–]\s*(tear out|remove)$/i.test(descLower)) {
         return; // skip this line item entirely
       }
       
