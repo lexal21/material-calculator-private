@@ -485,8 +485,19 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       console.log('[LOSS-PARSER] Liberty Mutual format detected - using direct blob extraction');
       const itemRegex = /(\d+)\s{2,}((?:(?!\d+\s{2,})[\w,\.\s\/\-'"()])+?)\s{2,}(\d+\.?\d*)\s+\$[\d,.]+\s+(SQ|LF|EA|SF|DY|LS)\s+\$[\d,.]+\s+\$[\d,.]+\s+\$([\d,.]+)/g;
       let match;
+      let matchCount = 0;
       
+      console.log('[LM REGEX] First 10 raw matches:');
       while ((match = itemRegex.exec(text)) !== null) {
+        if (matchCount < 10) {
+          console.log(`  Match ${matchCount + 1}:`);
+          console.log(`    [1] Item num: "${match[1]}"`);
+          console.log(`    [2] Description: "${match[2]}"`);
+          console.log(`    [3] Quantity: "${match[3]}"`);
+          console.log(`    [4] Unit: "${match[4]}"`);
+          console.log(`    [5] RCV: "${match[5]}"`);
+        }
+        
         parsedLineItems.push({
           item_number: parseInt(match[1]),
           description: match[2].trim(),
@@ -495,6 +506,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
           rcv: parseFloat((match[5] || '0').replace(/[,$]/g, '')) || 0
         });
         parsedItemNumbers.add(parseInt(match[1]));
+        matchCount++;
       }
       
       console.log(`[LOSS-PARSER] Liberty Mutual: ${parsedLineItems.length} items extracted`);
