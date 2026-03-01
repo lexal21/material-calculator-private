@@ -669,7 +669,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Parse numbered line items: "1. Description text QTY UNIT PRICE TAX RCV DEPREC ACV"
       // Two-stage approach: match the basic structure, then manually parse the numeric fields
-      const basicMatch = line.match(/^(\d+[a-z]?)(?:[.,]\s+|\s{2,})(.+?)\s+(?:Dwelling|Other Struc[^\s]*\s+)?(\d+\.?\d*)\s*(SQ|LF|EA|SF)\s+(.+)$/i);
+      const basicMatch = line.match(/^(\d+[a-z]?)(?:[.,]\s+|\s{2,})(.+?)\s+(?:Dwelling|Other Struc[^\s]*\s+)?(\d+\.?\d*)\s*(?:\$[\d,.]+\s+)?(SQ|LF|EA|SF)\s+(.+)$/i);
       
       // TEMP DEBUG: Log exact line text for items 15 and 16 (pipe jacks)
       const itemNumCheck = line.match(/^(\d+[a-z]?)(?:\.\s|\s{2,})/i);
