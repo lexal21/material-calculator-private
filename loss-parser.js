@@ -557,6 +557,22 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     console.log(`[LOSS-PARSER] After stop-marker splitting: ${splitLines.length} → ${finalLines.length} lines`);
     lines = finalLines;
     
+    // DEBUG: Test itemRegex against raw text
+    console.log('[REGEX TEST] Testing itemRegex against raw text...');
+    const itemRegex = /(\d+)\s{2,}([\w,\.\s\/\-'"()]+?)\s{2,}(\d+\.?\d*)\s+\$[\d,.]+\s+(SQ|LF|EA|SF|DY|LS)\s+\$[\d,.]+\s+\$[\d,.]+\s+\$([\d,.]+)/g;
+    const allMatches = [...text.matchAll(itemRegex)];
+    console.log(`[REGEX TEST] Found ${allMatches.length} matches in raw text`);
+    console.log('[REGEX TEST] First 3 matches:');
+    allMatches.slice(0, 3).forEach((match, idx) => {
+      console.log(`  Match ${idx + 1}:`);
+      console.log(`    [0] Full match: "${match[0].substring(0, 100)}"`);
+      console.log(`    [1] Item num: "${match[1]}"`);
+      console.log(`    [2] Description: "${match[2]}"`);
+      console.log(`    [3] Quantity: "${match[3]}"`);
+      console.log(`    [4] Unit: "${match[4]}"`);
+      console.log(`    [5] RCV: "${match[5]}"`);
+    });
+    
     // DEBUG: Pre-scan for all numbered items before parsing
     const foundItemNumbers = new Set();
     const parsedItemNumbers = new Set();
