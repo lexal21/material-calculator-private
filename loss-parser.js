@@ -843,6 +843,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       fascia: null,
       siding: [],
       windowWrap: [],
+      houseWrap: null,
       soffit: null,
       skylights: null,
       skylightFlashingKit: null,
@@ -915,13 +916,23 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Siding (sum duplicates - array format for multiple types)
-      if (/vinyl\s*siding|hardboard\s*siding|siding.*lap|lap.*siding/i.test(desc) && !/r&r|replace|paint|caulk|seal/i.test(desc)) {
+      if (/vinyl\s*siding|hardboard\s*siding|siding.*lap|lap.*siding|siding.*vinyl/i.test(desc) && !/r&r|replace|paint|caulk|seal/i.test(desc)) {
         console.log(`  ✓ SIDING MATCHED`);
         lineItems.siding.push({
           name: desc.includes('vinyl') ? 'Vinyl Siding' : desc.includes('hardboard') ? 'Hardboard Siding' : 'Siding',
           quantity: qty,
           unit: unit
         });
+      }
+      
+      // House wrap
+      if (/house\s*wrap|air.*moisture.*barrier|moisture.*barrier/i.test(desc)) {
+        console.log(`  ✓ HOUSE WRAP MATCHED`);
+        if (lineItems.houseWrap) {
+          lineItems.houseWrap.quantity += qty;
+        } else {
+          lineItems.houseWrap = { quantity: qty, unit };
+        }
       }
       
       // Window wrap (sum duplicates - array format)
@@ -1322,6 +1333,20 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         color: ''
       });
     });
+    
+    // House wrap - only add if total siding > 250 SF
+    const totalSidingSF = lineItems.siding.reduce((sum, s) => sum + s.quantity, 0);
+    if (lineItems.houseWrap && totalSidingSF > 250) {
+      result.supplementItems.push({
+        id: generateSupplementId(),
+        name: 'House Wrap',
+        quantity: lineItems.houseWrap.quantity,
+        unit: lineItems.houseWrap.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
     
     if (lineItems.soffit) {
       result.supplementItems.push({
