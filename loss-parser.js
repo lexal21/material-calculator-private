@@ -483,7 +483,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     if (isLibertyMutual) {
       console.log('[LOSS-PARSER] Liberty Mutual format detected - using direct blob extraction');
-      const itemRegex = /(\d+)\s{2,}((?:(?!\d+\s{2,})[\w,\.\s\/\-'"()])+?)\s{2,}(\d+\.?\d*)\s+\$[\d,.]+\s+(SQ|LF|EA|SF|DY|LS)\s+\$[\d,.]+\s+\$[\d,.]+\s+\$([\d,.]+)/g;
+      const itemRegex = /(\d+)\s{2,}((?:(?!\d+\s{2,}[A-Z])[\w,\.\s\/\-'"()])+?)\s{2,}(\d+\.?\d*)\s+\$[\d,.]+\s+(SQ|LF|EA|SF|DY|LS)\s+\$[\d,.]+\s+\$[\d,.]+\s+\$([\d,.]+)/g;
       let match;
       let matchCount = 0;
       
