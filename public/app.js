@@ -689,7 +689,7 @@ function displayResults(data) {
               <input 
                 type="text" 
                 class="editable-input" 
-                value="${item.name}"
+                value="${item.name === 'Pipe Jack' ? 'Pipe Boot' : item.name}"
                 data-supplement-id="${item.id}"
                 data-field="name"
                 onchange="updateLossItemName('${item.id}', this.value)"
@@ -698,7 +698,7 @@ function displayResults(data) {
               />
               <span style="background: #fbbf24; color: #78350f; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">FROM LOSS</span>
             </div>
-            <input 
+            ${item.name !== 'Pipe Jack' ? `<input 
               type="text" 
               class="editable-input" 
               placeholder="Enter color..." 
@@ -707,7 +707,7 @@ function displayResults(data) {
               data-field="color"
               onchange="updateLossItemColor('${item.id}', this.value)"
               style="max-width: 200px; font-size: 13px;"
-            />
+            />` : ''}
           </div>
         </td>
         <td data-label="Quantity" class="editable-cell">
