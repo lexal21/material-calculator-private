@@ -600,7 +600,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Start parsing when we see the table header
       // Pattern 1: Standard format with DESCRIPTION (Heritage, Allstate, etc.)
-      if (/DESCRIPTION.*(?:QUANTITY|QTY).*UNIT.*PRICE.*(?:RCV|ACV)/i.test(line) && line.length < 300) {
+      if (/DESCRIPTION.*(?:QUANTITY|QTY).*(?:UNIT.*PRICE|UNIT\s+PRICE).*(?:RCV|ACV)/i.test(line) && line.length < 300) {
         parsingLineItems = true;
         console.log('[LOSS-PARSER] ✓ Found line item table header at line', i, '(standard format)');
         continue;
@@ -696,7 +696,13 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
           };
           
           // Split beforeDep into PRICE, TAX, RCV (should be 3 numbers)
+          // beforeParts could be: PRICE TAX RCV (3 parts) or PRICE TAX O&P RCV (4 parts)
           const beforeParts = beforeDep.split(/\s+/).filter(p => /[\d.,]/.test(p));
+          
+          // If 4 parts, O&P is index 2 and RCV is index 3 — drop O&P
+          if (beforeParts.length === 4) {
+            beforeParts.splice(2, 1); // remove O&P, leaving PRICE TAX RCV
+          }
           
           // ACV is everything after the closing paren
           const acvText = afterDep;
@@ -751,7 +757,14 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
                   return parseFloat(cleaned) || 0;
                 };
                 
+                // beforeParts could be: PRICE TAX RCV (3 parts) or PRICE TAX O&P RCV (4 parts)
                 const beforeParts = beforeDep.split(/\s+/).filter(p => /[\d.,]/.test(p));
+                
+                // If 4 parts, O&P is index 2 and RCV is index 3 — drop O&P
+                if (beforeParts.length === 4) {
+                  beforeParts.splice(2, 1); // remove O&P, leaving PRICE TAX RCV
+                }
+                
                 const acvText = afterDep;
                 
                 if (beforeParts.length >= 3) {
