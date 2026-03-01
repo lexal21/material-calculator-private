@@ -241,6 +241,13 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     console.log('[LOSS-PARSER] Parsing complete loss sheet...');
     
+    // TEMP DEBUG: Dump first 100 lines with their index
+    lines.slice(0, 100).forEach((line, i) => {
+      if (line.trim().length > 0) {
+        console.log(`[DEBUG LINE ${i}]: "${line}"`);
+      }
+    });
+    
     // FIX 2: Detect Allstate extended column format
     const isAllstateFormat = text.includes('AGE/LIFE') && text.includes('DEP %');
     if (isAllstateFormat) {
