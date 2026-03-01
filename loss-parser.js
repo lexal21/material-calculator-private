@@ -577,7 +577,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     const parsedItemNumbers = new Set();
     for (let i = startParsingAt; i < lines.length; i++) {
       const line = lines[i].trim();
-      const itemMatch = line.match(/^(\d+)\.\s/);
+      const itemMatch = line.match(/^(\d+[a-z]?)\.\s/i);
       if (itemMatch) {
         foundItemNumbers.add(parseInt(itemMatch[1]));
       }
@@ -644,8 +644,8 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       // Single-line format: "1. Description 10.5 LF 52.47 0.00 ..."
       // Two-line format (Xactimate): "1. Description" then next line "10.5 LF 52.47 0.00 ..."
       if (!parsingLineItems) {
-        const isSingleLineItem = /^\d+\.\s+.+?\s+\d+\.?\d*\s+(SQ|LF|EA|SF)\s+/i.test(line);
-        const isNumberedDesc = /^(\d+)[.,]\s+.{5,}/.test(line);
+        const isSingleLineItem = /^\d+[a-z]?\.\s+.+?\s+\d+\.?\d*\s+(SQ|LF|EA|SF)\s+/i.test(line);
+        const isNumberedDesc = /^(\d+[a-z]?)[.,]\s+.{5,}/i.test(line);
         const nextLineHasValues = /^\d+\.?\d*\s+(SQ|LF|EA|SF)\s+/i.test(lines[i + 1]?.trim() || '');
         
         if (isSingleLineItem || (isNumberedDesc && nextLineHasValues)) {
@@ -662,7 +662,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Parse numbered line items: "1. Description text QTY UNIT PRICE TAX RCV DEPREC ACV"
       // Two-stage approach: match the basic structure, then manually parse the numeric fields
-      const basicMatch = line.match(/^(\d+)[.,]\s+(.+?)\s+(\d+\.?\d*)\s+(SQ|LF|EA|SF)\s+(.+)$/i);
+      const basicMatch = line.match(/^(\d+[a-z]?)[.,]\s+(.+?)\s+(\d+\.?\d*)\s+(SQ|LF|EA|SF)\s+(.+)$/i);
       
       // DEBUG: Log lines that look like items but don't match
       if (/^\d+\.\s+/.test(line) && !basicMatch && i >= 120 && i <= 140) {
@@ -720,8 +720,8 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       // Handle multi-line descriptions where values might be on next line
-      else if (/^(\d+)[.,]\s+(.+)/.test(line)) {
-        const numMatch = line.match(/^(\d+)[.,]\s+(.+)/);
+      else if (/^(\d+[a-z]?)[.,]\s+(.+)/i.test(line)) {
+        const numMatch = line.match(/^(\d+[a-z]?)[.,]\s+(.+)/i);
         if (numMatch) {
           const itemNum = numMatch[1];
           let description = numMatch[2];
