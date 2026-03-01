@@ -483,79 +483,58 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     console.log('[LOSS-PARSER] DEBUG: Lines[1] length:', lines[1] ? lines[1].length : 0);
     console.log('[LOSS-PARSER] DEBUG: Lines[2] preview:', lines[2] ? lines[2].substring(0, 100) : 'N/A');
     
-    // FIX: Split concatenated lines (common in Linux PDF extraction)
-    const splitLines = [];
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
+    // FIX: Split concatenated lines (common in Linux PDF extraction) - RECURSIVE
+    function splitLongLine(line) {
+      if (line.length <= 500) return [line];
       
-      if (line.length > 500) {
-        console.log(`[LOSS-PARSER] Splitting long line ${i} (${line.length} chars)`);
-        
-        // Split on numbered items: "1. ", "2. ", etc. OR "2  " (SageSure)
-        let segments = [line];
-        const numberedItemRegex = /(?<![\d$.])(\d+(?:\.\s+|\s{2,}))(?=[A-Z])/g;
-        let match;
-        const splits = [];
-        let lastIndex = 0;
-        
-        while ((match = numberedItemRegex.exec(line)) !== null) {
-          if (match.index > lastIndex) {
-            splits.push({ index: match.index, text: match[0] });
-          }
-          lastIndex = match.index + match[0].length;
-        }
-        
-        if (splits.length > 0) {
-          segments = [];
-          let currentIndex = 0;
-          for (let j = 0; j < splits.length; j++) {
-            if (j === 0 && splits[j].index > 0) {
-              segments.push(line.substring(0, splits[j].index));
-            }
-            const nextIndex = splits[j + 1]?.index || line.length;
-            segments.push(line.substring(splits[j].index, nextIndex));
-            currentIndex = nextIndex;
-          }
-        }
-        
-        // Further split on ALL CAPS section headers (at least 4 consecutive caps)
-        const finalSegments = [];
-        for (const seg of segments) {
-          const headerMatches = [];
-          const headerRegex = /([A-Z\s]{4,}:)/g;
-          let headerMatch;
-          let lastHeaderIndex = 0;
-          
-          while ((headerMatch = headerRegex.exec(seg)) !== null) {
-            headerMatches.push({ index: headerMatch.index, text: headerMatch[0] });
-          }
-          
-          if (headerMatches.length > 0) {
-            for (let k = 0; k < headerMatches.length; k++) {
-              if (k === 0 && headerMatches[k].index > 0) {
-                finalSegments.push(seg.substring(0, headerMatches[k].index));
-              }
-              const nextHeaderIndex = headerMatches[k + 1]?.index || seg.length;
-              finalSegments.push(seg.substring(headerMatches[k].index, nextHeaderIndex));
-            }
-          } else {
-            finalSegments.push(seg);
-          }
-        }
-        
-        const cleanedSegments = finalSegments.map(s => s.trim()).filter(s => s.length > 0);
-        console.log(`[LOSS-PARSER] Split into ${cleanedSegments.length} segments`);
-        splitLines.push(...cleanedSegments);
-      } else {
-        splitLines.push(line);
+      const splits = [];
+      const numberedItemRegex = /(?<![\d$.])(\d+(?:\.\s+|\s{2,}))(?=[A-Z])/g;
+      let match;
+      
+      while ((match = numberedItemRegex.exec(line)) !== null) {
+        splits.push(match.index);
       }
+      
+      // Also split on ALL CAPS section headers
+      const headerRegex = /([A-Z][A-Z\s\-:]{3,}:?\s)/g;
+      while ((match = headerRegex.exec(line)) !== null) {
+        if (!splits.includes(match.index)) splits.push(match.index);
+      }
+      
+      if (splits.length === 0) return [line];
+      
+      splits.sort((a, b) => a - b);
+      
+      const segments = [];
+      let lastIndex = 0;
+      for (const idx of splits) {
+        if (idx > lastIndex) segments.push(line.substring(lastIndex, idx).trim());
+        lastIndex = idx;
+      }
+      segments.push(line.substring(lastIndex).trim());
+      
+      // Recursively split any segments still over 500 chars
+      const result = [];
+      for (const seg of segments) {
+        if (seg.length > 500) {
+          result.push(...splitLongLine(seg));
+        } else if (seg.length > 0) {
+          result.push(seg);
+        }
+      }
+      
+      return result;
     }
     
-    console.log(`[LOSS-PARSER] After splitting: ${lines.length} → ${splitLines.length} lines`);
+    // Apply to all lines
+    const splitLines = [];
+    for (const line of lines) {
+      splitLines.push(...splitLongLine(line));
+    }
     
-    // Further split lines that contain PARSE_STOP_MARKERS
-    // Example: "6. Drywall labor minimum* 1.00 EA ... 378.87 Dwelling Totals: 90.7"
-    // Should split into: ["6. Drywall labor minimum* ...", "Dwelling Totals: 90.7"]
+    console.log(`[LOSS-PARSER] After recursive splitting: ${lines.length} → ${splitLines.length} lines`);
+    
+    // Stop-marker splitting
     const finalLines = [];
     for (const line of splitLines) {
       let remaining = line;
@@ -563,7 +542,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       for (const marker of PARSE_STOP_MARKERS) {
         const idx = remaining.indexOf(marker);
-        if (idx > -1 && idx > 10) { // Must have content before the marker
+        if (idx > -1 && idx > 10) {
           finalLines.push(remaining.substring(0, idx).trim());
           finalLines.push(remaining.substring(idx).trim());
           foundMarker = true;
@@ -571,9 +550,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
-      if (!foundMarker) {
-        finalLines.push(remaining);
-      }
+      if (!foundMarker) finalLines.push(remaining);
     }
     
     console.log(`[LOSS-PARSER] After stop-marker splitting: ${splitLines.length} → ${finalLines.length} lines`);
