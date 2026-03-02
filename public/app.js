@@ -2508,15 +2508,15 @@ async function buildMaterialsPDF() {
 //Add cover page if cover photo exists
   if (coverPhoto && coverPhoto.data) {
     content.push(
-      { table: { widths: ['*'], body: [[{ image: arrLogo, fit: [180, 180], alignment: 'center', border: [false, false, false, false] }]] }, layout: 'noBorders', margin: [0, 20, 0, 16] },
-      { text: 'MATERIAL LIST', style: 'coverTitle', alignment: 'center', margin: [0, 0, 0, 24] },
-      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 514, y2: 0, lineWidth: 0.5, lineColor: '#0891b2' }], margin: [0, 0, 0, 20] },
-      { text: customerName, fontSize: 18, bold: true, alignment: 'center', margin: [0, 0, 0, 6] },
-      { text: jobAddress, fontSize: 11, alignment: 'center', color: '#444444', margin: [0, 0, 0, 4] },
-      { text: `Job #: ${orderNumber}`, fontSize: 11, alignment: 'center', color: '#444444', margin: [0, 0, 0, 4] },
-      { text: `Color: ${shingleColor}`, fontSize: 11, alignment: 'center', color: '#444444', margin: [0, 0, 0, 28] },
-      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 514, y2: 0, lineWidth: 0.5, lineColor: '#0891b2' }], margin: [0, 0, 0, 20] },
-      { image: coverPhoto.data, width: 350, alignment: 'center', margin: [0, 0, 0, 0] },
+      { table: { widths: ['*'], body: [[{ image: arrLogo, fit: [160, 160], alignment: 'center', border: [false, false, false, false] }]] }, layout: 'noBorders', margin: [0, 10, 0, 8] },
+      { text: 'MATERIAL LIST', style: 'coverTitle', alignment: 'center', margin: [0, 0, 0, 8] },
+      { table: { widths: ['*'], body: [[{ text: '', border: [false, false, false, true], borderColor: ['#0891b2'], margin: [0, 0, 0, 0] }]] }, margin: [0, 0, 0, 20] },
+      { text: customerName, fontSize: 16, bold: true, alignment: 'center', margin: [0, 8, 0, 2] },
+      { text: jobAddress, fontSize: 11, alignment: 'center', margin: [0, 0, 0, 2] },
+      { text: `Job #: ${orderNumber}`, fontSize: 11, alignment: 'center', margin: [0, 0, 0, 2] },
+      { text: `Color: ${shingleColor}`, fontSize: 11, alignment: 'center', margin: [0, 0, 0, 8] },
+      { table: { widths: ['*'], body: [[{ text: '', border: [false, false, false, true], borderColor: ['#0891b2'], margin: [0, 0, 0, 0] }]] }, margin: [0, 0, 0, 20] },
+      { image: coverPhoto.data, width: 350, alignment: 'center', margin: [0, 12, 0, 0] },
       { text: '', pageBreak: 'after' }
     );
   }
