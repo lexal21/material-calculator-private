@@ -663,13 +663,15 @@ function displayResults(data) {
   // ==========================================
   // APPEND SUPPLEMENT ITEMS (cross-referenced field-measured items from loss sheet)
   // ==========================================
-  if (data.supplementItems && data.supplementItems.length > 0) {
-    console.log('[SUPPLEMENT] Appending', data.supplementItems.length, 'supplement items to materials table');
+  window.supplementItems = data.supplementItems || []; // always clear/set
+  
+  if (window.supplementItems.length > 0) {
+    console.log('[SUPPLEMENT] Appending', window.supplementItems.length, 'supplement items to materials table');
     
     // Use tableBody already declared above
     const startIndex = data.materials.length; // Start numbering after regular materials
     
-    data.supplementItems.forEach((item, idx) => {
+    window.supplementItems.forEach((item, idx) => {
       const rowIndex = startIndex + idx;
       const row = document.createElement('tr');
       row.dataset.row = rowIndex;
@@ -749,15 +751,12 @@ function displayResults(data) {
     // DEBUG: Check table state after appending supplements
     console.log('[DISPLAY] DEBUG: Table state after supplement append:');
     console.log('  tableBody.children.length:', tableBody.children.length);
-    console.log('  Expected:', data.materials.length + data.supplementItems.length);
+    console.log('  Expected:', data.materials.length + window.supplementItems.length);
     const allRowsAfter = document.querySelectorAll('tr[data-row]');
     console.log('  DOM tr[data-row] count:', allRowsAfter.length);
     
     // Force browser repaint/reflow
     void tableBody.offsetHeight;
-    
-//Store supplement items globally
-    window.supplementItems = data.supplementItems;
   } else {
     console.log('[DISPLAY] No supplement items to append');
   }
