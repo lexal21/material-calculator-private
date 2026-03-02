@@ -664,6 +664,7 @@ function displayResults(data) {
   // APPEND SUPPLEMENT ITEMS (cross-referenced field-measured items from loss sheet)
   // ==========================================
   window.supplementItems = data.supplementItems || []; // always clear/set
+  if (data.isNewJob !== false) window.supplementUndoStack = []; // clear undo stack on new job loads
   
   if (window.supplementItems.length > 0) {
     console.log('[SUPPLEMENT] Appending', window.supplementItems.length, 'supplement items to materials table');
@@ -2959,6 +2960,7 @@ function deleteLossItem(supplementId) {
   });
   console.log('[DELETE] Object being passed to displayResults:');
   const dataObject = {
+    isNewJob: false, // prevents undo stack from being cleared
     materials: window.materialsData || [],
     supplementItems: window.supplementItems || [],
     measurements: window.currentMeasurements || {},
@@ -3075,6 +3077,7 @@ window.undoLastAction = function() {
   
   // Re-render
   displayResults({
+    isNewJob: false, // prevents undo stack from being cleared
     materials: window.materialsData || [],
     supplementItems: window.supplementItems || [],
     measurements: window.currentMeasurements || {},
