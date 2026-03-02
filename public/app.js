@@ -1018,6 +1018,13 @@ function deleteSelectedMaterials() {
   // Delete regular materials (high to low to preserve indices)
   materialIndices.sort((a, b) => b - a).forEach(index => {
     if (window.materialsData && window.materialsData[index]) {
+      if (!window.supplementUndoStack) window.supplementUndoStack = [];
+      window.supplementUndoStack.push({
+        type: 'delete_material',
+        item: JSON.parse(JSON.stringify(window.materialsData[index])),
+        index: index,
+        timestamp: Date.now()
+      });
       window.materialsData.splice(index, 1);
     }
   });
@@ -1038,6 +1045,7 @@ function deleteSelectedMaterials() {
   });
   
   displayResults({
+    isNewJob: false,
     materials: window.materialsData,
     supplementItems: window.supplementItems || [],
     measurements: window.currentMeasurements || {},
@@ -1046,8 +1054,9 @@ function deleteSelectedMaterials() {
     success: true
   });
   
-  if (supplementIds.length > 0) {
-    showUndoNotification(supplementIds.length === 1 ? 'Supplement item deleted' : supplementIds.length + ' supplement items deleted');
+  const totalDeleted = materialIndices.length + supplementIds.length;
+  if (totalDeleted > 0) {
+    showUndoNotification(totalDeleted === 1 ? 'Item deleted' : totalDeleted + ' items deleted');
   }
   
   console.log('[MATERIALS] Deleted', materialIndices.length, 'materials,', supplementIds.length, 'supplement items');
