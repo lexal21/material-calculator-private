@@ -2549,7 +2549,7 @@ async function buildMaterialsPDF() {
         {
           width: '30%',
           stack: [
-            { text: '', fontSize: 9 },
+            { text: ' ', fontSize: 10, bold: true, margin: [0, 0, 0, 0] },
             { text: 'Valley: ' + parseFloat(raw.valley_length || 0).toFixed(2) + ' LF', fontSize: 9 },
             { text: 'Eave: ' + parseFloat(raw.eave_edge_length || 0).toFixed(2) + ' LF', fontSize: 9 },
             { text: 'Rake: ' + parseFloat(raw.rake_edge_length || 0).toFixed(2) + ' LF', fontSize: 9 }
