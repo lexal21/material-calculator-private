@@ -2510,12 +2510,12 @@ async function buildMaterialsPDF() {
     content.push(
       { table: { widths: ['*'], body: [[{ image: arrLogo, fit: [160, 160], alignment: 'center', border: [false, false, false, false] }]] }, layout: 'noBorders', margin: [0, 10, 0, 8] },
       { text: 'MATERIAL LIST', style: 'coverTitle', alignment: 'center', margin: [0, 0, 0, 8] },
-      { table: { widths: ['*'], body: [[{ text: '', border: [false, false, false, true], borderColor: ['#0891b2'], margin: [0, 0, 0, 0] }]] }, margin: [0, 0, 0, 20] },
+      { table: { widths: ['*'], body: [[{ text: '', border: [false, false, false, true], borderColor: ['', '', '', '#0891b2'], margin: [0, 0, 0, 0] }]] }, margin: [0, 0, 0, 20] },
       { text: customerName, fontSize: 16, bold: true, alignment: 'center', margin: [0, 8, 0, 2] },
       { text: jobAddress, fontSize: 11, alignment: 'center', margin: [0, 0, 0, 2] },
       { text: `Job #: ${orderNumber}`, fontSize: 11, alignment: 'center', margin: [0, 0, 0, 2] },
       { text: `Color: ${shingleColor}`, fontSize: 11, alignment: 'center', margin: [0, 0, 0, 8] },
-      { table: { widths: ['*'], body: [[{ text: '', border: [false, false, false, true], borderColor: ['#0891b2'], margin: [0, 0, 0, 0] }]] }, margin: [0, 0, 0, 20] },
+      { table: { widths: ['*'], body: [[{ text: '', border: [false, false, false, true], borderColor: ['', '', '', '#0891b2'], margin: [0, 0, 0, 0] }]] }, margin: [0, 0, 0, 20] },
       { image: coverPhoto.data, width: 350, alignment: 'center', margin: [0, 12, 0, 0] },
       { text: '', pageBreak: 'after' }
     );
@@ -2534,8 +2534,7 @@ async function buildMaterialsPDF() {
             { text: customerName, fontSize: 11, bold: true, margin: [0, 0, 0, 3] },
             { text: jobAddress, fontSize: 9, margin: [0, 0, 0, 2] },
             { text: `Job #: ${orderNumber}`, fontSize: 9, margin: [0, 0, 0, 2] },
-            { text: `Color: ${shingleColor}`, fontSize: 9, margin: [0, 0, 0, 2] },
-            { text: `Date: ${jobDate}`, fontSize: 9 }
+            { text: `Color: ${shingleColor}`, fontSize: 9 }
           ]
         },
         {
