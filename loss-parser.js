@@ -614,7 +614,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     // DEBUG: Pre-scan for all numbered items before parsing
     const foundItemNumbers = new Set();
-    const parsedItemNumbers = new Set();
+    // parsedItemNumbers already declared above
     for (let i = startParsingAt; i < lines.length; i++) {
       const line = lines[i].trim();
       const itemMatch = line.match(/^(\d+[a-z]?)(?:\.\s|\s{2,})/i);
@@ -1069,7 +1069,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     });
     
     // Underlayment - use calculateRoofRunner from calculator.js
-    const location = options.location || 'inland';
+    const COASTAL_CITIES = ['Charleston','James Island','Johns Island','Mount Pleasant','North Charleston','Hanahan','Goose Creek','Summerville','Ladson','Beaufort','Bluffton','Myrtle Beach','Georgetown','Pawleys Island'];
+    const jobCity = (result.raw.address || '').match(/,\s*([^,]+),\s*SC/i)?.[1]?.trim() || '';
+    const location = COASTAL_CITIES.some(c => new RegExp('\\b' + c + '\\b', 'i').test(jobCity)) ? 'coast' : (options.location || 'inland');
     const roofRunnerQty = calculateRoofRunner(shingleSquares, location);
     result.materials.push({
       name: MATERIALS.roofrunner.name,
