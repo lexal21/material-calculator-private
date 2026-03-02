@@ -2508,7 +2508,7 @@ async function buildMaterialsPDF() {
 //Add cover page if cover photo exists
   if (coverPhoto && coverPhoto.data) {
     content.push(
-      { table: { widths: ['*'], body: [[{ image: arrLogo, fit: [160, 160], alignment: 'center', border: [false, false, false, false] }]] }, layout: 'noBorders', margin: [0, 10, 0, 8] },
+      { table: { widths: ['*'], body: [[{ image: arrLogo, fit: [160, 160], alignment: 'center', border: [false, false, false, false] }]] }, layout: 'noBorders', margin: [0, -20, 0, 8] },
       { text: 'MATERIAL LIST', style: 'coverTitle', alignment: 'center', margin: [0, 0, 0, 8] },
       { table: { widths: ['*'], body: [[{ text: '', border: [false, false, false, true], borderColor: ['', '', '', '#0891b2'], margin: [0, 0, 0, 0] }]] }, margin: [0, 0, 0, 20] },
       { text: customerName, fontSize: 16, bold: true, alignment: 'center', margin: [0, 8, 0, 2] },
@@ -2528,29 +2528,35 @@ async function buildMaterialsPDF() {
     {
       columns: [
         {
-          width: '50%',
+          width: '33%',
           stack: [
             { text: 'JOB INFORMATION:', style: 'label' },
-            { text: customerName, fontSize: 11, bold: true, margin: [0, 0, 0, 3] },
-            { text: jobAddress, fontSize: 9, margin: [0, 0, 0, 2] },
-            { text: `Job #: ${orderNumber}`, fontSize: 9, margin: [0, 0, 0, 2] },
+            { text: customerName, fontSize: 9, bold: true },
+            { text: jobAddress, fontSize: 9 },
+            { text: `Job #: ${orderNumber}`, fontSize: 9 },
             { text: `Color: ${shingleColor}`, fontSize: 9 }
           ]
         },
         {
-          width: '50%',
+          width: '33%',
           stack: [
             { text: 'ROOF DETAILS:', style: 'label' },
-            { text: 'Size: ' + parseFloat(raw.roof_sq || 0).toFixed(2) + ' squares', fontSize: 9, margin: [0, 4, 0, 0] },
-            { text: 'Ridge: ' + parseFloat(raw.ridge_length || 0).toFixed(2) + ' LF', fontSize: 9, margin: [0, 4, 0, 0] },
-            { text: 'Hip: ' + parseFloat(raw.hip_length || 0).toFixed(2) + ' LF', fontSize: 9, margin: [0, 4, 0, 0] },
-            { text: 'Valley: ' + parseFloat(raw.valley_length || 0).toFixed(2) + ' LF', fontSize: 9, margin: [0, 4, 0, 0] },
-            { text: 'Eave: ' + parseFloat(raw.eave_edge_length || 0).toFixed(2) + ' LF', fontSize: 9, margin: [0, 4, 0, 0] },
-            { text: 'Rake: ' + parseFloat(raw.rake_edge_length || 0).toFixed(2) + ' LF', fontSize: 9, margin: [0, 4, 0, 0] }
+            { text: 'Size: ' + parseFloat(raw.roof_sq || 0).toFixed(2) + ' squares', fontSize: 9 },
+            { text: 'Ridge: ' + parseFloat(raw.ridge_length || 0).toFixed(2) + ' LF', fontSize: 9 },
+            { text: 'Hip: ' + parseFloat(raw.hip_length || 0).toFixed(2) + ' LF', fontSize: 9 }
+          ]
+        },
+        {
+          width: '33%',
+          stack: [
+            { text: '', fontSize: 9 },
+            { text: 'Valley: ' + parseFloat(raw.valley_length || 0).toFixed(2) + ' LF', fontSize: 9 },
+            { text: 'Eave: ' + parseFloat(raw.eave_edge_length || 0).toFixed(2) + ' LF', fontSize: 9 },
+            { text: 'Rake: ' + parseFloat(raw.rake_edge_length || 0).toFixed(2) + ' LF', fontSize: 9 }
           ]
         }
       ],
-      margin: [0, 0, 0, 30]
+      margin: [0, 0, 0, 12]
     },
     { text: 'MATERIALS', style: 'sectionHeader', margin: [0, 0, 0, 12] },
     {
