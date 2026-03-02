@@ -713,6 +713,15 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       // Two-stage approach: match the basic structure, then manually parse the numeric fields
       const basicMatch = line.match(/^(\d+[a-z]?)(?:[.,]\s+|\s{2,})(.+?)\s+(?:Dwelling|Other Struc[^\s]*\s+)?(\d+\.?\d*)\s*(?:\$[\d,.]+\s+)?(SQ|LF|EA|SF)\s+\$[\d,.]+\s+\$[\d,.]+\s+\$([\d,.]+)/i);
       
+      // DEBUG: Log first 10 lines that start with a number for troubleshooting
+      if (i < startParsingAt + 50 && /^\d+[a-z]?[\.\s]/.test(line)) {
+        console.log(`[LOSS-PARSER DEBUG] Line ${i}: "${line.substring(0, 100)}"`);
+        console.log(`  basicMatch: ${basicMatch ? 'YES' : 'NO'}`);
+        if (basicMatch) {
+          console.log(`  Item: ${basicMatch[1]}, Desc: "${basicMatch[2].substring(0, 40)}", Qty: ${basicMatch[3]}, Unit: ${basicMatch[4]}`);
+        }
+      }
+      
       // TEMP DEBUG: Log exact line text for items 15 and 16 (pipe jacks)
       const itemNumCheck = line.match(/^(\d+[a-z]?)(?:\.\s|\s{2,})/i);
       if (itemNumCheck && (itemNumCheck[1] === '15' || itemNumCheck[1] === '16')) {
@@ -987,9 +996,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
-      // Skylight flashing kit (sum duplicates)
-      if (/skylight.*flashing|flashing.*skylight|skylight.*kit/i.test(cleanDesc)) {
-        console.log(`  ✓ SKYLIGHT FLASHING KIT MATCHED`);
+      // Skylight flashing kit (sum duplicates) - includes "roof window" alias
+      if (/skylight.*flashing|flashing.*skylight|skylight.*kit|roof\s+window.*flashing|roof\s+window.*kit/i.test(cleanDesc)) {
+        console.log(`  ✓ SKYLIGHT FLASHING KIT MATCHED (desc: "${cleanDesc}")`);
         if (lineItems.skylightFlashingKit) {
           lineItems.skylightFlashingKit.quantity += qty;
           console.log(`    Summing with existing: ${lineItems.skylightFlashingKit.quantity} ${unit}`);
@@ -1553,11 +1562,12 @@ module.exports = {
   parseCompleteLossSheet,
   parseLossSheet,
   isLossSheet,
-  processDocuments: async function(pdfPaths) {
+  processDocuments: async function(pdfPaths, options = {}) {
     const results = { success: true, lossItems: [], supplementItems: [] };
     
     console.log('[PROCESS-DOCS] Starting loop, total files:', pdfPaths.length);
     console.log('[PROCESS-DOCS] File paths:', pdfPaths);
+    console.log('[PROCESS-DOCS] Options:', JSON.stringify(options));
     
     for (let i = 0; i < pdfPaths.length; i++) {
       const p = pdfPaths[i];
@@ -1568,7 +1578,7 @@ module.exports = {
       
       if (isLoss) {
         console.log('[PROCESS-DOCS] ✓ Detected LOSS SHEET, parsing...');
-        const parsed = await parseCompleteLossSheet(p);
+        const parsed = await parseCompleteLossSheet(p, options);
         if (parsed.success) {
           results.lossItems = parsed.lossItems || [];
           results.supplementItems = parsed.supplementItems || [];

@@ -345,6 +345,7 @@ const LossCompare = (() => {
         var lossForm2 = new FormData();
         lossForm2.append('pdf0', roofFile || lossFile);
         if (roofFile) lossForm2.append('pdf1', lossFile);
+        lossForm2.append('location', document.getElementById('location')?.value || 'Charleston');
 
         var lossResp2 = await fetch('/api/loss-compare', {
           method: 'POST',
@@ -416,6 +417,7 @@ const LossCompare = (() => {
       var form = new FormData();
       form.append('pdf', window.currentLossFile);
       form.append('shed_included', include ? 'true' : 'false');
+      form.append('location', document.getElementById('location')?.value || 'Charleston');
       
       var resp = await fetch('/api/parse-loss', {
         method: 'POST',

@@ -8,6 +8,31 @@ const parser = require('./pdf-parser');
 const lossParser = require('./loss-parser');
 const crypto = require('crypto');
 
+// Location type mapping (matches public/locations.js)
+const LOCATION_TYPES = {
+  'Charleston': 'coast',
+  'James Island': 'coast',
+  'Johns Island': 'coast',
+  'Mount Pleasant': 'coast',
+  'North Charleston': 'coast',
+  'Hanahan': 'coast',
+  'Goose Creek': 'coast',
+  'Summerville': 'coast',
+  'Ladson': 'coast',
+  'Walterboro': 'coast',
+  'Beaufort': 'coast',
+  'Bluffton': 'coast',
+  'Sumter': 'coast',
+  'Myrtle Beach': 'coast',
+  'Georgetown': 'coast',
+  'Pawleys Island': 'coast'
+};
+
+// Resolve location name to type ('coast' or 'inland')
+function getLocationType(locationName) {
+  return LOCATION_TYPES[locationName] || 'inland';
+}
+
 // After registration, update these with the hashes
 const HARDCODED_USERS = {
   'alexallen@ashleyriverroofing.com': {
@@ -495,11 +520,17 @@ app.post('/api/parse-loss', upload.single('pdf'), async (req, res) => {
   }
   
   const shedIncluded = req.body.shed_included !== 'false';
+  const locationName = req.body.location || 'Charleston';
+  const locationType = getLocationType(locationName);
   
   console.log('[PARSE-LOSS] Parsing loss sheet, shed_included:', shedIncluded);
+  console.log('[PARSE-LOSS] Location:', locationName, '→', locationType);
   
   try {
-    const result = await lossParser.parseCompleteLossSheet(req.file.path, { shed_included: shedIncluded });
+    const result = await lossParser.parseCompleteLossSheet(req.file.path, { 
+      shed_included: shedIncluded,
+      location: locationType 
+    });
     
     // Clean up temp file
     if (fs.existsSync(req.file.path)) {
@@ -552,9 +583,14 @@ app.post('/api/loss-compare', uploadMulti.fields([
     return res.status(400).json({ success: false, error: 'No PDF files uploaded' });
   }
 
+  // Get location from form data
+  const locationName = req.body.location || 'Charleston';
+  const locationType = getLocationType(locationName);
+  console.log('[LOSS-COMPARE] Location:', locationName, '→', locationType);
+  
   console.log('[LOSS-COMPARE] Processing', pdfPaths.length, 'file(s)');
   try {
-    const result = await lossParser.processDocuments(pdfPaths);
+    const result = await lossParser.processDocuments(pdfPaths, { location: locationType });
     console.log('[LOSS-COMPARE] SUCCESS');
     console.log('[LOSS-COMPARE] Result object keys:', Object.keys(result));
     console.log('[LOSS-COMPARE] result.supplementItems:', result.supplementItems);
