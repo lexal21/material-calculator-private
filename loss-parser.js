@@ -478,11 +478,12 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     const parsedItemNumbers = new Set();
     let parsingLineItems = false;
     
-    // Liberty Mutual format: extract directly from raw text blob (not line-by-line)
-    const isLibertyMutual = result.raw.carrier === 'Liberty Mutual';
+    // Liberty Mutual & USAA formats: extract directly from raw text blob (not line-by-line)
+    // Both carriers have line items concatenated into massive blob lines
+    const useBlobExtraction = result.raw.carrier === 'Liberty Mutual' || result.raw.carrier === 'USAA';
     
-    if (isLibertyMutual) {
-      console.log('[LOSS-PARSER] Liberty Mutual format detected - using direct blob extraction');
+    if (useBlobExtraction) {
+      console.log(`[LOSS-PARSER] ${result.raw.carrier} format detected - using direct blob extraction`);
       const itemRegex = /(\d+)\s{2,}((?:(?!\d+\s{2,}[A-Z])[\w,\.\s\/\-'"()])+?)\s{2,}(\d+\.?\d*)\s+\$[\d,.]+\s+(SQ|LF|EA|SF|DY|LS)\s+\$[\d,.]+\s+\$[\d,.]+\s+\$([\d,.]+)/g;
       let match;
       let matchCount = 0;
@@ -514,8 +515,8 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       // Do NOT set lines = [] here, just fall through to the supplement matching code
     }
     
-    // Only run line-based parsing for non-Liberty Mutual formats
-    if (!isLibertyMutual) {
+    // Only run line-based parsing for formats that don't use blob extraction
+    if (!useBlobExtraction) {
       // DEBUG: Log line count and structure
       console.log('[LOSS-PARSER] DEBUG: Total lines in text:', lines.length);
       console.log('[LOSS-PARSER] DEBUG: Lines[0] length:', lines[0] ? lines[0].length : 0);
@@ -815,7 +816,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     } else {
       console.log(`[LOSS-PARSER] ✓ All ${foundItemNumbers.size} numbered items successfully parsed`);
     }
-    } // End if (!isLibertyMutual)
+    } // End if (!useBlobExtraction)
     
     result.lossItems = parsedLineItems;
     
