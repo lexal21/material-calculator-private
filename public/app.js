@@ -2528,7 +2528,7 @@ async function buildMaterialsPDF() {
     {
       columns: [
         {
-          width: '33%',
+          width: '40%',
           stack: [
             { text: 'JOB INFORMATION:', style: 'label' },
             { text: customerName, fontSize: 9, bold: true },
@@ -2538,7 +2538,7 @@ async function buildMaterialsPDF() {
           ]
         },
         {
-          width: '33%',
+          width: '30%',
           stack: [
             { text: 'ROOF DETAILS:', style: 'label' },
             { text: 'Size: ' + parseFloat(raw.roof_sq || 0).toFixed(2) + ' squares', fontSize: 9 },
@@ -2547,7 +2547,7 @@ async function buildMaterialsPDF() {
           ]
         },
         {
-          width: '33%',
+          width: '30%',
           stack: [
             { text: '', fontSize: 9 },
             { text: 'Valley: ' + parseFloat(raw.valley_length || 0).toFixed(2) + ' LF', fontSize: 9 },
