@@ -2516,7 +2516,7 @@ async function buildMaterialsPDF() {
       { text: `Job #: ${orderNumber}`, fontSize: 11, alignment: 'center', margin: [0, 0, 0, 2] },
       { text: `Color: ${shingleColor}`, fontSize: 11, alignment: 'center', margin: [0, 0, 0, 8] },
       { table: { widths: ['*'], body: [[{ text: '', border: [false, false, false, true], borderColor: ['', '', '', '#0891b2'], margin: [0, 0, 0, 0] }]] }, margin: [0, 0, 0, 20] },
-      { image: coverPhoto.data, width: 350, alignment: 'center', margin: [0, 12, 0, 0] },
+      { image: coverPhoto.data, fit: [350, 280], alignment: 'center', margin: [0, 12, 0, 0] },
       { text: '', pageBreak: 'after' }
     );
   }
@@ -2541,12 +2541,12 @@ async function buildMaterialsPDF() {
           width: '50%',
           stack: [
             { text: 'ROOF DETAILS:', style: 'label' },
-            { text: 'Size: ' + parseFloat(raw.roof_sq || 0).toFixed(2) + ' squares', margin: [0, 4, 0, 0] },
-            { text: 'Ridge: ' + parseFloat(raw.ridge_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] },
-            { text: 'Hip: ' + parseFloat(raw.hip_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] },
-            { text: 'Valley: ' + parseFloat(raw.valley_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] },
-            { text: 'Eave: ' + parseFloat(raw.eave_edge_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] },
-            { text: 'Rake: ' + parseFloat(raw.rake_edge_length || 0).toFixed(2) + ' LF', margin: [0, 4, 0, 0] }
+            { text: 'Size: ' + parseFloat(raw.roof_sq || 0).toFixed(2) + ' squares', fontSize: 9, margin: [0, 4, 0, 0] },
+            { text: 'Ridge: ' + parseFloat(raw.ridge_length || 0).toFixed(2) + ' LF', fontSize: 9, margin: [0, 4, 0, 0] },
+            { text: 'Hip: ' + parseFloat(raw.hip_length || 0).toFixed(2) + ' LF', fontSize: 9, margin: [0, 4, 0, 0] },
+            { text: 'Valley: ' + parseFloat(raw.valley_length || 0).toFixed(2) + ' LF', fontSize: 9, margin: [0, 4, 0, 0] },
+            { text: 'Eave: ' + parseFloat(raw.eave_edge_length || 0).toFixed(2) + ' LF', fontSize: 9, margin: [0, 4, 0, 0] },
+            { text: 'Rake: ' + parseFloat(raw.rake_edge_length || 0).toFixed(2) + ' LF', fontSize: 9, margin: [0, 4, 0, 0] }
           ]
         }
       ],
