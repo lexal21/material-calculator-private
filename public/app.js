@@ -2412,9 +2412,9 @@ async function buildMaterialsPDF() {
       canvas.width = img.width;
       canvas.height = img.height;
       canvas.getContext('2d').drawImage(img, 0, 0);
-      resolve(canvas.toDataURL('image/png'));
+      resolve(canvas.toDataURL('image/jpeg'));
     };
-    img.src = '/logo.png';
+    img.src = '/logo.jpg';
   });
   
   // Merge regular materials and supplement items for PDF output
