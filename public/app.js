@@ -925,14 +925,36 @@ function deleteMaterialRow(rowIndex) {
     return;
   }
   
-//Remove from data array
-  if (window.materialsData && window.materialsData[rowIndex]) {
-    window.materialsData.splice(rowIndex, 1);
+  // Validate
+  if (!window.materialsData || !window.materialsData[rowIndex]) {
+    console.error('[DELETE] Material item not found at index:', rowIndex);
+    return;
   }
+  
+  const itemToDelete = window.materialsData[rowIndex];
+  
+  // Initialize undo stack if it doesn't exist
+  if (!window.supplementUndoStack) {
+    window.supplementUndoStack = [];
+  }
+  
+  // Push deletion action onto undo stack
+  window.supplementUndoStack.push({
+    type: 'delete_material',
+    item: JSON.parse(JSON.stringify(itemToDelete)),
+    index: rowIndex,
+    timestamp: Date.now()
+  });
+  
+  console.log('[UNDO] Pushed material deletion to stack:', itemToDelete.name);
+  
+//Remove from data array
+  window.materialsData.splice(rowIndex, 1);
   
 //Re-render the materials table
   if (typeof displayResults === 'function') {
     displayResults({
+      isNewJob: false, // prevents undo stack from being cleared
       materials: window.materialsData,
       supplementItems: window.supplementItems || [],
       measurements: window.currentMeasurements || {},
@@ -943,6 +965,9 @@ function deleteMaterialRow(rowIndex) {
   }
   
   console.log('[MATERIALS] Deleted item at index', rowIndex);
+  
+  // Show undo notification
+  showUndoNotification('Material item deleted');
 }
 
 function toggleMaterialSelection(rowIndex) {
@@ -3048,21 +3073,26 @@ window.undoLastAction = function() {
   
   // Pop the last action from the stack
   const lastAction = window.supplementUndoStack.pop();
+  const actionType = lastAction.type || 'delete'; // default to 'delete' (supplement) for backward compatibility
   
-  console.log('[UNDO] BEFORE restore:');
-  console.log('  supplementItems.length:', window.supplementItems?.length || 0);
+  console.log('[UNDO] Action type:', actionType);
   console.log('[UNDO] Restoring:', lastAction.item.name);
   console.log('[UNDO] Re-inserting at index:', lastAction.index);
-  console.log('[UNDO] Remaining undo actions:', window.supplementUndoStack.length);
   
-  // Re-insert the deleted item at its original position
-  // Ensure we're operating on the current global array reference
-  window.supplementItems = window.supplementItems || [];
-  window.supplementItems.splice(lastAction.index, 0, lastAction.item);
-  
-  console.log('[UNDO] AFTER restore:');
-  console.log('  supplementItems.length:', window.supplementItems.length);
-  console.log('  Restored item:', lastAction.item.name, '-', lastAction.item.quantity, lastAction.item.unit);
+  // Handle different action types
+  if (actionType === 'delete_material') {
+    // Restore to materialsData
+    console.log('[UNDO] BEFORE restore - materialsData.length:', window.materialsData?.length || 0);
+    window.materialsData = window.materialsData || [];
+    window.materialsData.splice(lastAction.index, 0, lastAction.item);
+    console.log('[UNDO] AFTER restore - materialsData.length:', window.materialsData.length);
+  } else {
+    // Default: restore to supplementItems (type === 'delete')
+    console.log('[UNDO] BEFORE restore - supplementItems.length:', window.supplementItems?.length || 0);
+    window.supplementItems = window.supplementItems || [];
+    window.supplementItems.splice(lastAction.index, 0, lastAction.item);
+    console.log('[UNDO] AFTER restore - supplementItems.length:', window.supplementItems.length);
+  }
   
   // Calculate totals before re-rendering
   const materialsTotal = (window.materialsData || []).reduce((sum, item) => sum + (item.total || 0), 0);
@@ -3072,6 +3102,7 @@ window.undoLastAction = function() {
   const grandTotal = subtotal + tax;
   
   console.log('[UNDO] Calling displayResults with:');
+  console.log('  materialsData.length:', window.materialsData.length);
   console.log('  supplementItems.length:', window.supplementItems.length);
   console.log('  subtotal:', subtotal.toFixed(2));
   
