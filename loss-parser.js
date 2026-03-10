@@ -731,6 +731,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Skip lines when not in parsing mode
+      if (!parsingLineItems && lines[i] && lines[i].trim().length > 5) {
+        console.log(`[HEADER SCAN] Line ${i}: "${lines[i].trim().substring(0, 80)}"`);
+      }
       if (!parsingLineItems) continue;
       
       if (debugLinesAfterHeader < 20) {
