@@ -800,10 +800,12 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
           // Check next line for the numeric values
           const nextLine = lines[i + 1]?.trim();
           if (nextLine) {
-            const valueMatch = nextLine.match(/^(SQ|LF|EA|SF|DY|LS)\s+[\d,.]+\s+[\d,.]+\s+[\d,.]+\s+([\d,.]+)/i);
+            const valueMatch = nextLine.match(/^(SQ|LF|EA|SF|DY|LS)\s+[\d,.]+\s+[\d,.]+\s+([\d,.]+)(?:\s+([\d,.]+))?(?:\s+\([\d,.]+\))?/i);
             
             if (valueMatch) {
-              const [, unit, rcvCapture] = valueMatch;
+              const [, unit, thirdNum, fourthNum] = valueMatch;
+              const isUSAA = result.raw.carrier === 'USAA';
+              const rcvCapture = isUSAA ? (fourthNum || thirdNum) : thirdNum;
               const rcv = parseFloat((rcvCapture || '0').replace(/[,$]/g, '')) || 0;
               
               // USAA format: quantity is at end of description line
