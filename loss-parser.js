@@ -1015,7 +1015,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Skylight flashing kit (sum duplicates) - includes "roof window" alias
-      if (/skylight.*flashing|flashing.*skylight|skylight.*kit|roof\s+window.*flashing|roof\s+window.*kit/i.test(cleanDesc)) {
+      if (/skylight.*flashing|flashing.*skylight|skylight.*kit|roof\s+window.*flashing|roof\s+window.*kit|step\s+flashing\s+kit/i.test(cleanDesc)) {
         console.log(`  ✓ SKYLIGHT FLASHING KIT MATCHED (desc: "${cleanDesc}")`);
         if (lineItems.skylightFlashingKit) {
           lineItems.skylightFlashingKit.quantity += qty;
