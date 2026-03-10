@@ -634,6 +634,14 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     }
     console.log('[LOSS-PARSER] Pre-scan: Found', foundItemNumbers.size, 'numbered items (1-' + Math.max(...foundItemNumbers) + ')');
     
+    // TEMP DEBUG: Find and log any line containing QUANTITY
+    for (let i = 0; i < Math.min(lines.length, 200); i++) {
+      const line = lines[i].trim();
+      if (/QUANTITY/i.test(line)) {
+        console.log(`[USAA HEADER DEBUG] Line ${i} (len=${line.length}): "${line.substring(0, 200)}"`);
+      }
+    }
+    
     for (let i = startParsingAt; i < lines.length; i++) {
       const line = lines[i].trim();
       
