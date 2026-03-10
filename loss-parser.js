@@ -256,7 +256,9 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     // FIX 3: Skip Allstate consumer guide boilerplate pages
     let startParsingAt = 0;
-    if (text.includes(ALLSTATE_BOILERPLATE_START)) {
+    const FARM_BUREAU_BOILERPLATE_START = 'South Carolina Farm Bureau Mutual Insurance Company has prepared this itemized estimate';
+    
+    if (text.includes(ALLSTATE_BOILERPLATE_START) || text.includes(FARM_BUREAU_BOILERPLATE_START)) {
       console.log('[LOSS-PARSER] Allstate boilerplate detected, skipping...');
       const boilerplateEndMarkers = [
         ALLSTATE_BOILERPLATE_END,
