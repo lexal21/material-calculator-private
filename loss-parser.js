@@ -705,7 +705,8 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       if (!parsingLineItems) {
         const isSingleLineItem = /^\d+[a-z]?(?:\.\s+|\s{2,}).+?\s+(?:Dwelling|Other Struc[^\s]*\s+)?\d+\.?\d*\s*(SQ|LF|EA|SF)\s+/i.test(line);
         const isNumberedDesc = /^(\d+[a-z]?)[.,]\s+.{5,}/i.test(line);
-        const nextLineHasValues = /^\d+\.?\d*\s+(SQ|LF|EA|SF)\s+/i.test(lines[i + 1]?.trim() || '');
+        const nextLineHasValues = /^\d+\.?\d*\s+(SQ|LF|EA|SF)\s+/i.test(lines[i + 1]?.trim() || '') || 
+          /^(SQ|LF|EA|SF|DY|LS)\s+[\d,.]+/i.test(lines[i + 1]?.trim() || '');
         
         if (isSingleLineItem || (isNumberedDesc && nextLineHasValues)) {
           console.log('[LOSS-PARSER] ✓ Found numbered line item without header at line', i, '- starting parse');
@@ -792,22 +793,27 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
           // Check next line for the numeric values
           const nextLine = lines[i + 1]?.trim();
           if (nextLine) {
-            const valueMatch = nextLine.match(/^(\d+\.?\d*)\s+(SQ|LF|EA|SF|DY|LS)\s+[\d,.]+\s+[\d,.]+\s+[\d,.]+\s+([\d,.]+)/i);
+            const valueMatch = nextLine.match(/^(SQ|LF|EA|SF|DY|LS)\s+[\d,.]+\s+[\d,.]+\s+[\d,.]+\s+([\d,.]+)/i);
             
             if (valueMatch) {
-              const [, qty, unit, rcvCapture] = valueMatch;
+              const [, unit, rcvCapture] = valueMatch;
               const rcv = parseFloat((rcvCapture || '0').replace(/[,$]/g, '')) || 0;
+              
+              // USAA format: quantity is at end of description line
+              const qtyMatch = description.match(/(\d+\.?\d*)\s*$/);
+              const qty = qtyMatch ? parseFloat(qtyMatch[1]) : 0;
+              const cleanDescription = qtyMatch ? description.replace(/\s*\d+\.?\d*\s*$/, '').trim() : description.trim();
               
               parsedLineItems.push({
                 item_number: parseInt(itemNum),
-                description: description.trim(),
-                quantity: parseFloat(qty),
+                description: cleanDescription,
+                quantity: qty,
                 unit: unit.toUpperCase(),
                 rcv: rcv
               });
               
               parsedItemNumbers.add(parseInt(itemNum)); // Track successfully parsed item
-              console.log(`[LOSS-PARSER] Parsed multi-line item ${itemNum}: ${description.substring(0, 40)}... RCV: $${rcv}`);
+              console.log(`[LOSS-PARSER] Parsed multi-line item ${itemNum}: ${cleanDescription.substring(0, 40)}... QTY: ${qty} RCV: $${rcv}`);
               i++; // Skip next line since we consumed it
             }
           }
