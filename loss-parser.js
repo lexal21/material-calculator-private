@@ -892,6 +892,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       skylights: null,
       skylightFlashingKit: null,
       turtleVents: null,
+      turbineVents: null,
       powerAtticFan: null
     };
     
@@ -1038,7 +1039,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       }
       
       // Turtle vents (sum duplicates)
-      if (/turtle.*vent|static.*vent|roof.*vent/i.test(cleanDesc) && !/ridge\s*vent/i.test(cleanDesc)) {
+      if (/turtle.*vent|static.*vent/i.test(cleanDesc) && !/ridge\s*vent|turbine/i.test(cleanDesc)) {
         console.log(`  ✓ TURTLE VENT MATCHED`);
         if (lineItems.turtleVents) {
           lineItems.turtleVents.quantity += qty;
@@ -1048,6 +1049,17 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         }
       }
       
+      // Turbine vent (sum duplicates)
+      if (/turbine.*vent|roof.*turbine|whirlybird/i.test(cleanDesc)) {
+        console.log(`  ✓ TURBINE VENT MATCHED`);
+        if (lineItems.turbineVents) {
+          lineItems.turbineVents.quantity += qty;
+          console.log(`    Summing with existing: ${lineItems.turbineVents.quantity} ${unit}`);
+        } else {
+          lineItems.turbineVents = { quantity: qty, unit };
+        }
+      }
+
       // Power attic fan (sum duplicates)
       if (/power.*fan|attic.*fan|powered.*vent/i.test(cleanDesc)) {
         console.log(`  ✓ POWER ATTIC FAN MATCHED`);
@@ -1518,6 +1530,18 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         name: 'Turtle Vent',
         quantity: parseFloat(lineItems.turtleVents.quantity),
         unit: lineItems.turtleVents.unit,
+        unitPrice: 0,
+        source: 'loss',
+        color: ''
+      });
+    }
+    
+    if (lineItems.turbineVents) {
+      result.supplementItems.push({
+        id: generateSupplementId(),
+        name: 'Turbine Vent',
+        quantity: parseFloat(lineItems.turbineVents.quantity),
+        unit: lineItems.turbineVents.unit,
         unitPrice: 0,
         source: 'loss',
         color: ''
