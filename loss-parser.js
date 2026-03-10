@@ -258,12 +258,21 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     let startParsingAt = 0;
     if (text.includes(ALLSTATE_BOILERPLATE_START)) {
       console.log('[LOSS-PARSER] Allstate boilerplate detected, skipping...');
-      const lastBoilerplateEnd = text.lastIndexOf(ALLSTATE_BOILERPLATE_END);
+      const boilerplateEndMarkers = [
+        ALLSTATE_BOILERPLATE_END,
+        '©2018 Allstate Insurance Company',
+        '© 2018 Allstate',
+        'LF = Linear Feet'
+      ];
+      let lastBoilerplateEnd = -1;
+      for (const marker of boilerplateEndMarkers) {
+        const idx = text.lastIndexOf(marker);
+        if (idx > lastBoilerplateEnd) lastBoilerplateEnd = idx;
+      }
       if (lastBoilerplateEnd > 0) {
-        // Find line index where boilerplate ends
         let charCount = 0;
         for (let i = 0; i < lines.length; i++) {
-          charCount += lines[i].length + 1; // +1 for newline
+          charCount += lines[i].length + 1;
           if (charCount >= lastBoilerplateEnd) {
             startParsingAt = i + 1;
             console.log('[LOSS-PARSER] Skipping first', startParsingAt, 'lines (Allstate boilerplate)');
@@ -480,7 +489,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     
     // Liberty Mutual & USAA formats: extract directly from raw text blob (not line-by-line)
     // Both carriers have line items concatenated into massive blob lines
-    const useBlobExtraction = result.raw.carrier === 'Liberty Mutual' || result.raw.carrier === 'USAA';
+    const useBlobExtraction = result.raw.carrier === 'Liberty Mutual';
     
     if (useBlobExtraction) {
       console.log(`[LOSS-PARSER] ${result.raw.carrier} format detected - using direct blob extraction`);
@@ -669,7 +678,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Pattern 3: Xactimate format header (no DESCRIPTION column)
       // "QUANTITY UNIT TAX RCV AGE/LIFE COND. DEP % DEPREC. ACV"
-      if (/^QUANTITY\s+UNIT\s+TAX\s+RCV/i.test(line) && line.length < 300) {
+      if (/^QUANTITY\s+UNIT\s+TAX\s+(?:O&P\s+)?RCV/i.test(line) && line.length < 300) {
         parsingLineItems = true;
         console.log('[LOSS-PARSER] ✓ Found Xactimate column header at line', i, '(Xactimate format)');
         continue;
@@ -712,7 +721,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Parse numbered line items: "1. Description text QTY UNIT PRICE TAX RCV DEPREC ACV"
       // Two-stage approach: match the basic structure, then manually parse the numeric fields
-      const basicMatch = line.match(/^(\d+[a-z]?)(?:[.,]\s+|\s{2,})(.+?)\s+(?:Dwelling|Other Struc[^\s]*\s+)?(\d+\.?\d*)\s*(?:\$[\d,.]+\s+)?(SQ|LF|EA|SF)\s+\$[\d,.]+\s+\$[\d,.]+\s+\$([\d,.]+)/i);
+      const basicMatch = line.match(/^(\d+[a-z]?)(?:[.,]\s+|\s{2,})(.+?)\s+(?:Dwelling|Other Struc[^\s]*\s+)?(\d+\.?\d*)\s*(?:\$?[\d,.]+\s+)?(SQ|LF|EA|SF)\s+\$?[\d,.]+\s+\$?[\d,.]+\s+\$?([\d,.]+)/i);
       
       // DEBUG: Log first 10 lines that start with a number for troubleshooting
       if (i < startParsingAt + 50 && /^\d+[a-z]?[\.\s]/.test(line)) {
@@ -769,7 +778,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
           // Check next line for the numeric values
           const nextLine = lines[i + 1]?.trim();
           if (nextLine) {
-            const valueMatch = nextLine.match(/^(\d+\.?\d*)\s+(SQ|LF|EA|SF)\s+\$[\d,.]+\s+\$[\d,.]+\s+\$([\d,.]+)/i);
+            const valueMatch = nextLine.match(/^(\d+\.?\d*)\s+(SQ|LF|EA|SF|DY|LS)\s+[\d,.]+\s+[\d,.]+\s+[\d,.]+\s+([\d,.]+)/i);
             
             if (valueMatch) {
               const [, qty, unit, rcvCapture] = valueMatch;
