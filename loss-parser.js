@@ -486,6 +486,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
     const parsedLineItems = [];
     const parsedItemNumbers = new Set();
     let parsingLineItems = false;
+    let debugLinesAfterHeader = 0;
     
     // Liberty Mutual & USAA formats: extract directly from raw text blob (not line-by-line)
     // Both carriers have line items concatenated into massive blob lines
@@ -726,6 +727,11 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Skip lines when not in parsing mode
       if (!parsingLineItems) continue;
+      
+      if (debugLinesAfterHeader < 20) {
+        console.log(`[AFTER HEADER LINE ${i}]: "${line.substring(0, 150)}"`);
+        debugLinesAfterHeader++;
+      }
       
       // Parse numbered line items: "1. Description text QTY UNIT PRICE TAX RCV DEPREC ACV"
       // Two-stage approach: match the basic structure, then manually parse the numeric fields
