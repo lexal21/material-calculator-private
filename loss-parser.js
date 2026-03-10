@@ -941,7 +941,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       console.log(`  Quantity: ${qty} ${unit}`);
       
       // Fascia (sum duplicates - e.g., main house + shed)
-      if (/fascia/i.test(cleanDesc) && !/replace|paint|caulk|seal|prime|clean|detach|reset/i.test(cleanDesc)) {
+      if (/fascia|wrap.*garage.*door.*frame|wrap.*wood.*trim.*aluminum|aluminum.*wrap.*trim/i.test(cleanDesc) && !/replace|paint|caulk|seal|prime|clean|detach|reset/i.test(cleanDesc)) {
         console.log(`  ✓ FASCIA MATCHED`);
         if (lineItems.fascia) {
           lineItems.fascia.quantity += qty;
