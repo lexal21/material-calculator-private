@@ -262,7 +262,8 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
         ALLSTATE_BOILERPLATE_END,
         '©2018 Allstate Insurance Company',
         '© 2018 Allstate',
-        'LF = Linear Feet'
+        'LF = Linear Feet',
+        'South Carolina Farm Bureau Mutual Insurance Company has prepared this itemized estimate'
       ];
       let lastBoilerplateEnd = -1;
       for (const marker of boilerplateEndMarkers) {
@@ -337,7 +338,8 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       { pattern: /MERCURY/i, name: 'Mercury' },
       { pattern: /METLIFE/i, name: 'MetLife' },
       { pattern: /HARTFORD/i, name: 'The Hartford' },
-      { pattern: /CHUBB/i, name: 'Chubb' }
+      { pattern: /CHUBB/i, name: 'Chubb' },
+      { pattern: /south carolina farm bureau|sc farm bureau|scfbins\.com/i, name: 'SC Farm Bureau' }
     ];
     
     for (const { pattern, name } of carrierPatterns) {
