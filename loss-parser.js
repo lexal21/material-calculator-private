@@ -686,7 +686,7 @@ async function parseCompleteLossSheet(pdfPath, options = {}) {
       
       // Pattern 3: Xactimate format header (no DESCRIPTION column)
       // "QUANTITY UNIT TAX RCV AGE/LIFE COND. DEP % DEPREC. ACV"
-      if (/^QUANTITY\s+UNIT\s+TAX\s+(?:O&P\s+)?RCV/i.test(line) && line.length < 300) {
+      if (/^QUANTITY\s+UNIT\s+(?:TAX|RCV)/i.test(line) && line.length < 300) {
         parsingLineItems = true;
         console.log('[LOSS-PARSER] ✓ Found Xactimate column header at line', i, '(Xactimate format)');
         continue;
