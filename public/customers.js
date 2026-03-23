@@ -311,38 +311,8 @@ async function loadCustomerQuick(id) {
     const res = await fetch(`/api/customers/${id}`);
     const data = await res.json();
     if (!data.success) throw new Error(data.message);
-    if (!data.estimates.length) { alert('No estimates saved for this customer.'); return; }
 
-    const e = data.estimates[0];
-    const parse = v => typeof v === 'string' ? JSON.parse(v) : (v || null);
-
-    if (typeof displayResults === 'function') {
-      displayResults({
-        success: true,
-        source: 'customer_db',
-        raw: {
-          customer_name: data.customer.name,
-          address: e.job_address || '',
-          carrier: e.carrier || '',
-          claim_number: e.claim_number || '',
-          roof_sq: e.roof_squares || 0,
-          order_number: (e.notes || '').replace('Job #', '')
-        },
-        measurements: {
-          roofSquares: parseFloat(e.roof_squares) || 0,
-          ridgeLength: 0, hipLength: 0, valleyLength: 0,
-          eaveLength: 0, rakeLength: 0, ridgeCount: 0
-        },
-        materials: parse(e.materials) || [],
-        supplementItems: parse(e.supplement_items) || [],
-        labor: parse(e.labor) || { items: [] },
-        subtotal: parseFloat(e.subtotal) || 0,
-        tax: parseFloat(e.tax) || 0,
-        grandTotal: parseFloat(e.grand_total) || 0
-      });
-    }
-
-    if (typeof switchTab === 'function') switchTab('calculator');
+    openCustomerProfile(data);
 
   } catch (err) {
     alert('Error loading customer: ' + err.message);
