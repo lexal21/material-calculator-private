@@ -371,6 +371,10 @@ function createNavMenu() {
       </div>
 
       <div class="nav-footer">
+        <button class="nav-item" onclick="openCustomerDrawer(); closeNavMenu();">
+          <span class="nav-icon">👥</span>
+          <span class="nav-label">Customers</span>
+        </button>
         <button class="nav-logout-btn" onclick="handleLogout()">
           <span class="nav-icon">🚪</span>
           <span class="nav-label">Logout</span>
@@ -399,6 +403,13 @@ function createModuleContainers() {
     <!-- Retail Module - Independent -->
     <div id="moduleRetail" class="module-container">
       <div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <div style="position:relative; margin-bottom:16px;">
+          <input id="retailQuickSearch" type="text" placeholder="🔍 Load past customer estimate…"
+            style="width:100%;max-width:340px;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;"
+            onfocus="this.style.borderColor='#0891b2'" onblur="this.style.borderColor='#e2e8f0'"
+          />
+          <div id="retailQuickResults" class="quick-search-results" style="display:none;position:absolute;top:100%;left:0;width:340px;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.1);z-index:1000;max-height:280px;overflow-y:auto;"></div>
+        </div>
         <div class="section">
           <h2>💰 Retail Estimate Generator</h2>
           <p class="pricing-note">Upload a measurement PDF to generate customer-facing retail estimates.</p>

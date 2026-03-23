@@ -1,95 +1,104 @@
 // ==========================================
-// CUSTOMER SEARCH — Global Modal
-// Trigger: Customers nav button or Ctrl+K
+// CUSTOMER DRAWER
 // ==========================================
 
-let _csTimeout = null;
+let _drawerSearchTimeout = null;
 
-// Open on Ctrl+K
-document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-    e.preventDefault();
-    openCustomerModal();
-  }
-  if (e.key === 'Escape') closeCustomerModal();
-});
-
-function openCustomerModal() {
-  const modal = document.getElementById('customerModal');
-  if (!modal) return;
-  modal.style.display = 'flex';
+function openCustomerDrawer() {
+  const drawer = document.getElementById('customerDrawer');
+  const backdrop = document.getElementById('customerDrawerBackdrop');
+  if (!drawer) return;
+  backdrop.style.display = 'block';
   requestAnimationFrame(() => {
-    modal.classList.add('cs-visible');
-    const input = document.getElementById('csInput');
+    drawer.style.right = '0';
+    const input = document.getElementById('drawerSearchInput');
     if (input) { input.value = ''; input.focus(); }
-    setResults('<p class="cs-hint">Start typing a customer name…</p>');
+    setDrawerResults('<div style="text-align:center;color:#94a3b8;font-size:14px;padding:32px 0;">Start typing to find a customer</div>');
   });
 }
 
-function closeCustomerModal() {
-  const modal = document.getElementById('customerModal');
-  if (!modal) return;
-  modal.classList.remove('cs-visible');
-  setTimeout(() => { modal.style.display = 'none'; }, 180);
+function closeCustomerDrawer() {
+  const drawer = document.getElementById('customerDrawer');
+  const backdrop = document.getElementById('customerDrawerBackdrop');
+  if (!drawer) return;
+  drawer.style.right = '-100%';
+  backdrop.style.display = 'none';
 }
 
-function setResults(html) {
-  const el = document.getElementById('csResults');
+function setDrawerResults(html) {
+  const el = document.getElementById('drawerResults');
   if (el) el.innerHTML = html;
 }
 
 function highlightMatch(text, query) {
   if (!query) return text;
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return text.replace(new RegExp(`(${escaped})`, 'gi'), '<strong>$1</strong>');
+  return text.replace(new RegExp(`(${escaped})`, 'gi'), '<strong style="color:#0891b2">$1</strong>');
 }
 
-async function csSearch(value) {
-  const q = value.trim();
+function drawerSearch(value) {
+  clearTimeout(_drawerSearchTimeout);
+  _drawerSearchTimeout = setTimeout(() => searchCustomersDrawer(value), 220);
+}
+
+async function searchCustomersDrawer(name) {
+  const q = name.trim();
   if (q.length < 2) {
-    setResults('<p class="cs-hint">Start typing a customer name…</p>');
+    setDrawerResults('<div style="text-align:center;color:#94a3b8;font-size:14px;padding:32px 0;">Start typing to find a customer</div>');
     return;
   }
 
-  setResults('<p class="cs-hint">Searching…</p>');
+  setDrawerResults('<div style="text-align:center;color:#94a3b8;font-size:14px;padding:32px 0;">Searching…</div>');
 
   try {
     const res = await fetch(`/api/customers/search?name=${encodeURIComponent(q)}`);
     const data = await res.json();
 
     if (!data.success || !data.customers.length) {
-      setResults('<p class="cs-hint">No customers found.</p>');
+      setDrawerResults('<div style="text-align:center;color:#94a3b8;font-size:14px;padding:32px 0;">No customers found</div>');
       return;
     }
 
-    setResults(data.customers.map(c => `
-      <div class="cs-row" onclick="loadCustomer(${c.id})">
-        <div class="cs-name">${highlightMatch(c.name, q)}</div>
-        <div class="cs-meta">
+    setDrawerResults(data.customers.map(c => `
+      <div onclick="loadCustomerFromDrawer(${c.id})" style="
+        padding: 14px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.12s;
+        background: white;
+      "
+      onmouseover="this.style.borderColor='#0891b2';this.style.background='#f0f9ff'"
+      onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'"
+      >
+        <div style="font-weight:600;color:#1e293b;font-size:15px;">${highlightMatch(c.name, q)}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:3px;">
           ${[c.address, c.carrier, c.claim_number ? 'Claim #' + c.claim_number : ''].filter(Boolean).join(' · ')}
         </div>
       </div>
     `).join(''));
+
   } catch {
-    setResults('<p class="cs-hint" style="color:#ef4444">Error — try again.</p>');
+    setDrawerResults('<div style="text-align:center;color:#ef4444;font-size:14px;padding:32px 0;">Error loading results</div>');
   }
 }
 
-async function loadCustomer(id) {
-  setResults('<p class="cs-hint">Loading…</p>');
+async function loadCustomerFromDrawer(id) {
+  setDrawerResults('<div style="text-align:center;color:#94a3b8;font-size:14px;padding:32px 0;">Loading estimate…</div>');
   try {
     const res = await fetch(`/api/customers/${id}`);
     const data = await res.json();
     if (!data.success) throw new Error(data.message);
     if (!data.estimates.length) {
-      setResults('<p class="cs-hint">No estimates saved for this customer.</p>');
+      setDrawerResults('<div style="text-align:center;color:#94a3b8;font-size:14px;padding:32px 0;">No estimates saved for this customer</div>');
       return;
     }
 
     const e = data.estimates[0];
     const parse = v => typeof v === 'string' ? JSON.parse(v) : (v || null);
 
-    closeCustomerModal();
+    closeCustomerDrawer();
 
     if (typeof displayResults === 'function') {
       displayResults({
@@ -120,7 +129,113 @@ async function loadCustomer(id) {
     if (typeof switchTab === 'function') switchTab('calculator');
 
   } catch (err) {
-    setResults(`<p class="cs-hint" style="color:#ef4444">Error: ${err.message}</p>`);
+    setDrawerResults(`<div style="text-align:center;color:#ef4444;font-size:14px;padding:32px 0;">Error: ${err.message}</div>`);
+  }
+}
+
+// ==========================================
+// QUICK SEARCH BAR (Materials, Labor, Retail)
+// ==========================================
+
+let _quickSearchTimeout = null;
+
+function initQuickCustomerSearch(inputId, resultsId) {
+  const input = document.getElementById(inputId);
+  const results = document.getElementById(resultsId);
+  if (!input || !results) return;
+
+  input.addEventListener('input', () => {
+    clearTimeout(_quickSearchTimeout);
+    _quickSearchTimeout = setTimeout(() => quickCustomerSearch(input.value, results), 220);
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => { results.style.display = 'none'; }, 200);
+  });
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim().length >= 2) results.style.display = 'block';
+  });
+}
+
+async function quickCustomerSearch(value, resultsEl) {
+  const q = value.trim();
+  if (q.length < 2) { resultsEl.style.display = 'none'; return; }
+
+  resultsEl.style.display = 'block';
+  resultsEl.innerHTML = '<div style="padding:10px 14px;color:#94a3b8;font-size:13px;">Searching…</div>';
+
+  try {
+    const res = await fetch(`/api/customers/search?name=${encodeURIComponent(q)}`);
+    const data = await res.json();
+
+    if (!data.success || !data.customers.length) {
+      resultsEl.innerHTML = '<div style="padding:10px 14px;color:#94a3b8;font-size:13px;">No customers found</div>';
+      return;
+    }
+
+    resultsEl.innerHTML = data.customers.map(c => `
+      <div onclick="loadCustomerQuick(${c.id})" style="
+        padding: 10px 14px;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.1s;
+      "
+      onmouseover="this.style.background='#f0f9ff'"
+      onmouseout="this.style.background='white'"
+      >
+        <div style="font-weight:600;color:#1e293b;font-size:14px;">${highlightMatch(c.name, q)}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">${c.address || ''}</div>
+      </div>
+    `).join('');
+  } catch {
+    resultsEl.innerHTML = '<div style="padding:10px 14px;color:#ef4444;font-size:13px;">Error</div>';
+  }
+}
+
+async function loadCustomerQuick(id) {
+  // Hide all quick search dropdowns
+  document.querySelectorAll('.quick-search-results').forEach(el => el.style.display = 'none');
+
+  try {
+    const res = await fetch(`/api/customers/${id}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    if (!data.estimates.length) { alert('No estimates saved for this customer.'); return; }
+
+    const e = data.estimates[0];
+    const parse = v => typeof v === 'string' ? JSON.parse(v) : (v || null);
+
+    if (typeof displayResults === 'function') {
+      displayResults({
+        success: true,
+        source: 'customer_db',
+        raw: {
+          customer_name: data.customer.name,
+          address: e.job_address || '',
+          carrier: e.carrier || '',
+          claim_number: e.claim_number || '',
+          roof_sq: e.roof_squares || 0,
+          order_number: (e.notes || '').replace('Job #', '')
+        },
+        measurements: {
+          roofSquares: parseFloat(e.roof_squares) || 0,
+          ridgeLength: 0, hipLength: 0, valleyLength: 0,
+          eaveLength: 0, rakeLength: 0, ridgeCount: 0
+        },
+        materials: parse(e.materials) || [],
+        supplementItems: parse(e.supplement_items) || [],
+        labor: parse(e.labor) || { items: [] },
+        subtotal: parseFloat(e.subtotal) || 0,
+        tax: parseFloat(e.tax) || 0,
+        grandTotal: parseFloat(e.grand_total) || 0
+      });
+    }
+
+    if (typeof switchTab === 'function') switchTab('calculator');
+
+  } catch (err) {
+    alert('Error loading customer: ' + err.message);
   }
 }
 
@@ -191,3 +306,9 @@ async function saveToCustomer() {
     if (btn) { btn.disabled = false; btn.textContent = 'Save to Customer'; }
   }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  initQuickCustomerSearch('matQuickSearch', 'matQuickResults');
+  initQuickCustomerSearch('laborQuickSearch', 'laborQuickResults');
+  initQuickCustomerSearch('retailQuickSearch', 'retailQuickResults');
+});
