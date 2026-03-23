@@ -56,7 +56,13 @@ pool.query(`
   END $$;
 
   CREATE INDEX IF NOT EXISTS idx_customers_name ON customers USING gin(to_tsvector('english', name));
-`).then(() => {
+`).then(async () => {
+  await pool.query(`
+    ALTER TABLE estimates ADD COLUMN IF NOT EXISTS doc_type TEXT DEFAULT 'material';
+    ALTER TABLE estimates ADD COLUMN IF NOT EXISTS retail_data JSONB;
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS carrier TEXT;
+    ALTER TABLE customers ADD COLUMN IF NOT EXISTS claim_number TEXT;
+  `);
   console.log('[DB] Tables verified/created');
 }).catch(err => {
   console.error('[DB] Migration error:', err.message);
