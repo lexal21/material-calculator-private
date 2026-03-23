@@ -53,64 +53,69 @@ async function searchCustomers(name) {
 }
 
 async function loadCustomer(customerId) {
-  const detailDiv = document.getElementById('customerDetail');
-  const searchSection = document.getElementById('customerSearchSection');
-  detailDiv.style.display = 'block';
-  searchSection.style.display = 'none';
-  detailDiv.innerHTML = '<div style="padding: 20px; color: #64748b;">Loading...</div>';
-
   try {
     const res = await fetch(`/api/customers/${customerId}`);
     const data = await res.json();
     if (!data.success) throw new Error(data.message);
 
-    const c = data.customer;
     const estimates = data.estimates;
+    if (estimates.length === 0) {
+      alert('This customer has no saved estimates yet.');
+      return;
+    }
 
-    detailDiv.innerHTML = `
-      <div style="margin-bottom: 20px;">
-        <button onclick="backToSearch()" style="
-          background: none; border: none; color: #0891b2; cursor: pointer;
-          font-size: 14px; padding: 0; margin-bottom: 16px; display: flex; align-items: center; gap: 4px;
-        ">← Back to Search</button>
-        <h2 style="margin: 0 0 4px 0; color: #1e293b;">${c.name}</h2>
-        <div style="color: #64748b; font-size: 14px;">
-          ${[c.phone, c.email, c.address, c.carrier].filter(Boolean).join(' · ')}
-        </div>
-      </div>
+    // Load the most recent estimate
+    const e = estimates[0];
 
-      <h3 style="color: #0891b2; margin-bottom: 12px;">Estimate History (${estimates.length})</h3>
+    // Parse stored JSON fields (Railway returns them as objects already, but guard either way)
+    const materials = typeof e.materials === 'string' ? JSON.parse(e.materials) : (e.materials || []);
+    const supplementItems = typeof e.supplement_items === 'string' ? JSON.parse(e.supplement_items) : (e.supplement_items || []);
+    const labor = typeof e.labor === 'string' ? JSON.parse(e.labor) : (e.labor || { items: [] });
 
-      ${estimates.length === 0 ? '<div style="color: #64748b;">No estimates saved yet.</div>' : ''}
+    // Build a raw measurements object from what we stored
+    const raw = {
+      customer_name: data.customer.name,
+      address: e.job_address || '',
+      carrier: e.carrier || '',
+      claim_number: e.claim_number || '',
+      roof_sq: e.roof_squares || 0,
+      order_number: e.notes ? e.notes.replace('Job #', '') : ''
+    };
 
-      ${estimates.map(e => `
-        <div style="
-          border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          padding: 16px;
-          margin-bottom: 12px;
-          background: white;
-        ">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-            <div>
-              <div style="font-weight: 600; color: #1e293b;">${e.job_address || 'No address'}</div>
-              <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
-                ${new Date(e.created_at).toLocaleDateString()} 
-                ${e.carrier ? '· ' + e.carrier : ''}
-                ${e.claim_number ? '· Claim #' + e.claim_number : ''}
-              </div>
-            </div>
-            <div style="text-align: right;">
-              <div style="font-weight: 700; color: #0891b2; font-size: 18px;">$${parseFloat(e.grand_total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
-              <div style="font-size: 12px; color: #64748b;">${e.roof_squares ? e.roof_squares + ' sq' : ''}</div>
-            </div>
-          </div>
-          ${e.notes ? `<div style="font-size: 13px; color: #475569; border-top: 1px solid #f1f5f9; padding-top: 8px; margin-top: 8px;">${e.notes}</div>` : ''}
-        </div>
-      `).join('')}
-    `;
+    const measurements = {
+      roofSquares: parseFloat(e.roof_squares) || 0,
+      ridgeLength: 0,
+      hipLength: 0,
+      valleyLength: 0,
+      eaveLength: 0,
+      rakeLength: 0,
+      ridgeCount: 0
+    };
+
+    // Fire displayResults exactly as if a PDF was just processed
+    if (typeof displayResults === 'function') {
+      displayResults({
+        success: true,
+        source: 'customer_db',
+        raw: raw,
+        measurements: measurements,
+        materials: materials,
+        supplementItems: supplementItems,
+        labor: labor,
+        subtotal: parseFloat(e.subtotal) || 0,
+        tax: parseFloat(e.tax) || 0,
+        grandTotal: parseFloat(e.grand_total) || 0
+      });
+    }
+
+    // Switch to materials tab
+    if (typeof switchTab === 'function') {
+      switchTab('calculator');
+    }
+
   } catch (err) {
-    detailDiv.innerHTML = `<div style="padding: 20px; color: #ef4444;">Error: ${err.message}</div>`;
+    console.error('[LOAD-CUSTOMER] Error:', err);
+    alert('Error loading customer: ' + err.message);
   }
 }
 
