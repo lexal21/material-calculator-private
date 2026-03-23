@@ -403,12 +403,46 @@ function createModuleContainers() {
     <!-- Retail Module - Independent -->
     <div id="moduleRetail" class="module-container">
       <div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
-        <div style="position:relative; margin-bottom:16px;">
-          <input id="retailQuickSearch" type="text" placeholder="🔍 Load past customer estimate…"
-            style="width:100%;max-width:340px;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;"
-            onfocus="this.style.borderColor='#0891b2'" onblur="this.style.borderColor='#e2e8f0'"
-          />
-          <div id="retailQuickResults" class="quick-search-results" style="display:none;position:absolute;top:100%;left:0;width:340px;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.1);z-index:1000;max-height:280px;overflow-y:auto;"></div>
+        <div style="position: relative; margin-bottom: 20px;">
+          <div style="position: relative; max-width: 380px;">
+            <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              id="retailQuickSearch"
+              type="text"
+              placeholder="Load past customer estimate…"
+              autocomplete="off"
+              style="
+                width: 100%;
+                padding: 10px 14px 10px 38px;
+                border: 1.5px solid #e2e8f0;
+                border-radius: 10px;
+                font-size: 14px;
+                color: #1e293b;
+                background: #f8fafc;
+                box-sizing: border-box;
+                outline: none;
+                transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+              "
+              onfocus="this.style.borderColor='#0891b2';this.style.background='white';this.style.boxShadow='0 0 0 3px rgba(8,145,178,0.1)'"
+              onblur="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc';this.style.boxShadow='none'"
+            />
+          </div>
+          <div id="retailQuickResults" class="quick-search-results" style="
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            width: 380px;
+            background: white;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-height: 280px;
+            overflow-y: auto;
+          "></div>
         </div>
         <div class="section">
           <h2>💰 Retail Estimate Generator</h2>
