@@ -6,6 +6,7 @@ const fs = require('fs');
 const cookieParser = require('cookie-parser');
 const parser = require('./pdf-parser');
 const lossParser = require('./loss-parser');
+const customersRoutes = require('./customers-routes');
 const crypto = require('crypto');
 
 // Location type mapping (matches public/locations.js)
@@ -242,6 +243,7 @@ app.get('/api/users', requireAuth, (req, res) => {
 
 // Protected routes (require authentication)
 app.use(requireAuth);
+app.use('/api/customers', customersRoutes);
 
 // CompanyCam API Proxy Endpoints - Uses native query parameter for search
 app.get('/api/companycam/projects', async (req, res) => {

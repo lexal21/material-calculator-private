@@ -27,7 +27,8 @@
     "pdf-parse-fork": "^1.2.0",
     "pdf2json": "^4.0.2",
     "pdfjs-dist": "^5.4.624",
-    "pdfmake": "^0.3.3"
+    "pdfmake": "^0.3.3",
+    "pg": "^8.20.0"
   },
   "engines": {
     "node": ">=14.x"
