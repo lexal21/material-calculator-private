@@ -7,7 +7,60 @@ const cookieParser = require('cookie-parser');
 const parser = require('./pdf-parser');
 const lossParser = require('./loss-parser');
 const customersRoutes = require('./customers-routes');
+const pool = require('./db');
 const crypto = require('crypto');
+
+// Auto-migrate on startup
+pool.query(`
+  CREATE TABLE IF NOT EXISTS customers (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    phone TEXT,
+    email TEXT,
+    address TEXT,
+    carrier TEXT,
+    claim_number TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+  );
+
+  CREATE TABLE IF NOT EXISTS estimates (
+    id SERIAL PRIMARY KEY,
+    customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE,
+    job_address TEXT,
+    carrier TEXT,
+    claim_number TEXT,
+    roof_squares NUMERIC,
+    materials JSONB,
+    supplement_items JSONB,
+    labor JSONB,
+    subtotal NUMERIC,
+    tax NUMERIC,
+    grand_total NUMERIC,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  );
+
+  DO $$ 
+  BEGIN
+    BEGIN
+      ALTER TABLE customers ADD COLUMN carrier TEXT;
+    EXCEPTION
+      WHEN duplicate_column THEN NULL;
+    END;
+    BEGIN
+      ALTER TABLE customers ADD COLUMN claim_number TEXT;
+    EXCEPTION
+      WHEN duplicate_column THEN NULL;
+    END;
+  END $$;
+
+  CREATE INDEX IF NOT EXISTS idx_customers_name ON customers USING gin(to_tsvector('english', name));
+`).then(() => {
+  console.log('[DB] Tables verified/created');
+}).catch(err => {
+  console.error('[DB] Migration error:', err.message);
+});
 
 // Location type mapping (matches public/locations.js)
 const LOCATION_TYPES = {
