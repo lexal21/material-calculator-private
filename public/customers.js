@@ -64,15 +64,12 @@ async function loadCustomer(customerId) {
       return;
     }
 
-    // Load the most recent estimate
     const e = estimates[0];
 
-    // Parse stored JSON fields (Railway returns them as objects already, but guard either way)
     const materials = typeof e.materials === 'string' ? JSON.parse(e.materials) : (e.materials || []);
     const supplementItems = typeof e.supplement_items === 'string' ? JSON.parse(e.supplement_items) : (e.supplement_items || []);
     const labor = typeof e.labor === 'string' ? JSON.parse(e.labor) : (e.labor || { items: [] });
 
-    // Build a raw measurements object from what we stored
     const raw = {
       customer_name: data.customer.name,
       address: e.job_address || '',
@@ -92,7 +89,6 @@ async function loadCustomer(customerId) {
       ridgeCount: 0
     };
 
-    // Fire displayResults exactly as if a PDF was just processed
     if (typeof displayResults === 'function') {
       displayResults({
         success: true,
@@ -108,7 +104,6 @@ async function loadCustomer(customerId) {
       });
     }
 
-    // Switch to materials tab
     if (typeof switchTab === 'function') {
       switchTab('calculator');
     }
