@@ -97,6 +97,11 @@ function switchTab(tabName) {
       initPricingTab();
     }
   }
+  if (tabName === 'customers') {
+    if (typeof initCustomersTab === 'function') {
+      initCustomersTab();
+    }
+  }
 }
 
 //Load current user on page load
