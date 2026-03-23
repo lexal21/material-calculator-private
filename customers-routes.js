@@ -58,20 +58,28 @@ router.post('/', async (req, res) => {
 // Get a single customer with their estimates
 router.get('/:id', async (req, res) => {
   try {
-    const customerResult = await pool.query('SELECT * FROM customers WHERE id = $1', [req.params.id]);
-    if (customerResult.rows.length === 0) {
+    const customer = await pool.query('SELECT * FROM customers WHERE id = $1', [req.params.id]);
+    if (customer.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Customer not found' });
     }
-    
-    const estimatesResult = await pool.query(
+    const estimates = await pool.query(
       'SELECT * FROM estimates WHERE customer_id = $1 ORDER BY created_at DESC',
       [req.params.id]
     );
-    
+
+    // Group by doc_type
+    const grouped = {};
+    estimates.rows.forEach(e => {
+      const type = e.doc_type || 'material';
+      if (!grouped[type]) grouped[type] = [];
+      grouped[type].push(e);
+    });
+
     res.json({
       success: true,
-      customer: customerResult.rows[0],
-      estimates: estimatesResult.rows
+      customer: customer.rows[0],
+      estimates: estimates.rows,
+      grouped
     });
   } catch (err) {
     console.error('[CUSTOMERS] Get error:', err);
@@ -116,15 +124,24 @@ router.delete('/:id', async (req, res) => {
 
 // Save estimate to a customer
 router.post('/:id/estimates', async (req, res) => {
-  const { job_address, carrier, claim_number, roof_squares, materials, supplement_items, labor, subtotal, tax, grand_total, notes } = req.body;
+  const {
+    doc_type,
+    job_address, carrier, claim_number, roof_squares,
+    materials, supplement_items, labor,
+    subtotal, tax, grand_total, notes,
+    retail_data
+  } = req.body;
+
   try {
     const result = await pool.query(
-      `INSERT INTO estimates 
-      (customer_id, job_address, carrier, claim_number, roof_squares, materials, supplement_items, labor, subtotal, tax, grand_total, notes)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      `INSERT INTO estimates
+      (customer_id, doc_type, job_address, carrier, claim_number, roof_squares,
+       materials, supplement_items, labor, subtotal, tax, grand_total, notes, retail_data)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
       RETURNING *`,
       [
         req.params.id,
+        doc_type || 'material',
         job_address || null,
         carrier || null,
         claim_number || null,
@@ -135,7 +152,8 @@ router.post('/:id/estimates', async (req, res) => {
         subtotal || 0,
         tax || 0,
         grand_total || 0,
-        notes || null
+        notes || null,
+        retail_data ? JSON.stringify(retail_data) : null
       ]
     );
     res.json({ success: true, estimate: result.rows[0] });

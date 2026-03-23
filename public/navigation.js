@@ -745,6 +745,16 @@ function createModuleContainers() {
               </button>
               <button class="btn-primary" onclick="printRetailEstimate()">Print Estimate</button>
               <button class="btn-primary" onclick="saveRetailEstimate()">Save as PDF</button>
+              <button id="saveRetailToCustomerBtn" onclick="saveRetailToCustomer()" style="
+                background: #7c3aed;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 14px;
+              ">Save to Customer</button>
             </div>
 
             <!-- Retail Photo Section -->

@@ -61,6 +61,13 @@ async function migrate() {
     `);
     console.log('[MIGRATE] ✓ estimates table created/verified');
 
+    // Add doc_type and retail_data columns to estimates
+    await client.query(`
+      ALTER TABLE estimates ADD COLUMN IF NOT EXISTS doc_type TEXT DEFAULT 'material';
+      ALTER TABLE estimates ADD COLUMN IF NOT EXISTS retail_data JSONB;
+    `);
+    console.log('[MIGRATE] ✓ estimates columns updated (doc_type, retail_data)');
+
     // Create search index on customer name
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_customers_name ON customers USING gin(to_tsvector('english', name));

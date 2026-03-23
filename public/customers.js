@@ -106,52 +106,141 @@ async function searchCustomersDrawer(name) {
 }
 
 async function loadCustomerFromDrawer(id) {
-  setDrawerResults('<div style="text-align:center;color:#94a3b8;font-size:14px;padding:32px 0;">Loading estimate…</div>');
+  setDrawerResults('<div style="text-align:center;color:#94a3b8;font-size:14px;padding:32px 0;">Loading…</div>');
   try {
     const res = await fetch(`/api/customers/${id}`);
     const data = await res.json();
     if (!data.success) throw new Error(data.message);
-    if (!data.estimates.length) {
-      setDrawerResults('<div style="text-align:center;color:#94a3b8;font-size:14px;padding:32px 0;">No estimates saved for this customer</div>');
-      return;
-    }
 
-    const e = data.estimates[0];
-    const parse = v => typeof v === 'string' ? JSON.parse(v) : (v || null);
+    // Reset drawer search
+    const input = document.getElementById('drawerSearchInput');
+    if (input) await searchCustomersDrawer(input.value);
 
-    closeCustomerDrawer();
-
-    if (typeof displayResults === 'function') {
-      displayResults({
-        success: true,
-        source: 'customer_db',
-        raw: {
-          customer_name: data.customer.name,
-          address: e.job_address || '',
-          carrier: e.carrier || '',
-          claim_number: e.claim_number || '',
-          roof_sq: e.roof_squares || 0,
-          order_number: (e.notes || '').replace('Job #', '')
-        },
-        measurements: {
-          roofSquares: parseFloat(e.roof_squares) || 0,
-          ridgeLength: 0, hipLength: 0, valleyLength: 0,
-          eaveLength: 0, rakeLength: 0, ridgeCount: 0
-        },
-        materials: parse(e.materials) || [],
-        supplementItems: parse(e.supplement_items) || [],
-        labor: parse(e.labor) || { items: [] },
-        subtotal: parseFloat(e.subtotal) || 0,
-        tax: parseFloat(e.tax) || 0,
-        grandTotal: parseFloat(e.grand_total) || 0
-      });
-    }
-
-    if (typeof switchTab === 'function') switchTab('calculator');
-
+    openCustomerProfile(data);
   } catch (err) {
     setDrawerResults(`<div style="text-align:center;color:#ef4444;font-size:14px;padding:32px 0;">Error: ${err.message}</div>`);
   }
+}
+
+function openCustomerProfile(data) {
+  const modal = document.getElementById('customerProfileModal');
+  const c = data.customer;
+  const grouped = data.grouped || {};
+
+  document.getElementById('profileCustomerName').textContent = c.name;
+  document.getElementById('profileCustomerMeta').textContent =
+    [c.address, c.carrier, c.claim_number ? 'Claim #' + c.claim_number : ''].filter(Boolean).join(' · ') || 'No additional info';
+
+  const sections = document.getElementById('profileDocSections');
+
+  const typeConfig = {
+    material: { label: '📋 Material Estimates', color: '#0891b2', action: 'loadMaterialEstimate' },
+    retail: { label: '💰 Retail Estimates', color: '#7c3aed', action: 'loadRetailEstimate' }
+  };
+
+  const order = ['material', 'retail'];
+  let html = '';
+
+  order.forEach(type => {
+    const docs = grouped[type] || [];
+    const config = typeConfig[type];
+
+    html += `
+      <div style="margin-bottom: 20px;">
+        <div style="font-size: 13px; font-weight: 700; color: ${config.color}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+          ${config.label} (${docs.length})
+        </div>
+        ${docs.length === 0 ? `
+          <div style="color: #94a3b8; font-size: 13px; padding: 10px 0;">None saved yet</div>
+        ` : docs.map(e => `
+          <div onclick="${config.action}(${JSON.stringify(e).replace(/"/g, '&quot;')})" style="
+            padding: 12px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.12s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+          onmouseover="this.style.borderColor='${config.color}';this.style.background='#f8fafc'"
+          onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'"
+          >
+            <div>
+              <div style="font-weight: 600; color: #1e293b; font-size: 14px;">${e.job_address || 'No address'}</div>
+              <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                ${new Date(e.created_at).toLocaleDateString()}
+                ${e.notes ? ' · ' + e.notes : ''}
+              </div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0; margin-left: 12px;">
+              <div style="font-weight: 700; color: ${config.color}; font-size: 15px;">
+                $${parseFloat(e.grand_total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}
+              </div>
+              ${e.roof_squares ? `<div style="font-size: 11px; color: #94a3b8;">${e.roof_squares} sq</div>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  });
+
+  sections.innerHTML = html;
+  modal.style.display = 'flex';
+}
+
+function closeCustomerProfile() {
+  document.getElementById('customerProfileModal').style.display = 'none';
+}
+
+function loadMaterialEstimate(e) {
+  const parse = v => typeof v === 'string' ? JSON.parse(v) : (v || null);
+  closeCustomerProfile();
+  closeCustomerDrawer();
+
+  if (typeof displayResults === 'function') {
+    displayResults({
+      success: true,
+      source: 'customer_db',
+      raw: {
+        customer_name: e.customer_name || '',
+        address: e.job_address || '',
+        carrier: e.carrier || '',
+        claim_number: e.claim_number || '',
+        roof_sq: e.roof_squares || 0,
+        order_number: (e.notes || '').replace('Job #', '')
+      },
+      measurements: {
+        roofSquares: parseFloat(e.roof_squares) || 0,
+        ridgeLength: 0, hipLength: 0, valleyLength: 0,
+        eaveLength: 0, rakeLength: 0, ridgeCount: 0
+      },
+      materials: parse(e.materials) || [],
+      supplementItems: parse(e.supplement_items) || [],
+      labor: parse(e.labor) || { items: [] },
+      subtotal: parseFloat(e.subtotal) || 0,
+      tax: parseFloat(e.tax) || 0,
+      grandTotal: parseFloat(e.grand_total) || 0
+    });
+  }
+  if (typeof switchTab === 'function') switchTab('calculator');
+}
+
+function loadRetailEstimate(e) {
+  const parse = v => typeof v === 'string' ? JSON.parse(v) : (v || null);
+  const retailData = parse(e.retail_data);
+  closeCustomerProfile();
+  closeCustomerDrawer();
+
+  if (retailData && typeof displayRetailEstimate === 'function') {
+    window.retailData = retailData;
+    displayRetailEstimate();
+  }
+
+  // Navigate to retail module
+  if (typeof switchModule === 'function') switchModule('retail');
+  else if (typeof switchTab === 'function') switchTab('retail');
 }
 
 // ==========================================
@@ -335,6 +424,70 @@ async function saveToCustomer() {
         tax: getNum('taxCell'),
         grand_total: getNum('grandTotal'),
         notes: jobNum ? `Job #${jobNum}` : null
+      })
+    });
+
+    const ed = await er.json();
+    if (!ed.success) throw new Error(ed.message);
+
+    if (btn) {
+      btn.textContent = '✓ Saved';
+      btn.style.background = '#10b981';
+      setTimeout(() => { btn.textContent = 'Save to Customer'; btn.style.background = ''; btn.disabled = false; }, 3000);
+    }
+  } catch (err) {
+    alert('Error saving: ' + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Save to Customer'; }
+  }
+}
+
+// ==========================================
+// SAVE RETAIL TO CUSTOMER
+// ==========================================
+
+async function saveRetailToCustomer() {
+  const name = document.getElementById('retailCustomerName')?.value?.trim();
+  const address = document.getElementById('retailJobAddress')?.value?.trim();
+  const jobNum = document.getElementById('retailJobNumber')?.value?.trim();
+
+  if (!name) { alert('Enter a customer name in the Retail section first.'); return; }
+
+  const btn = document.getElementById('saveRetailToCustomerBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  try {
+    const searchRes = await fetch(`/api/customers/search?name=${encodeURIComponent(name)}`);
+    const searchData = await searchRes.json();
+    const match = searchData.customers?.find(c => c.name.toLowerCase() === name.toLowerCase());
+
+    let customerId;
+    if (match) {
+      customerId = match.id;
+    } else {
+      const cr = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, address: address || null })
+      });
+      const cd = await cr.json();
+      if (!cd.success) throw new Error(cd.message);
+      customerId = cd.customer.id;
+    }
+
+    const totals = typeof calculateRetailTotals === 'function' ? calculateRetailTotals() : {};
+
+    const er = await fetch(`/api/customers/${customerId}/estimates`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        doc_type: 'retail',
+        job_address: address || null,
+        roof_squares: window.retailData?.measurements?.squares || null,
+        subtotal: totals.subtotal || 0,
+        tax: totals.taxAmount || 0,
+        grand_total: totals.grandTotal || 0,
+        notes: jobNum ? `Job #${jobNum}` : null,
+        retail_data: window.retailData || {}
       })
     });
 
