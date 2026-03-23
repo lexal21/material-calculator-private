@@ -122,6 +122,23 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Delete a single estimate
+router.delete('/:id/estimates/:estimateId', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'DELETE FROM estimates WHERE id = $1 AND customer_id = $2 RETURNING id',
+      [req.params.estimateId, req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Estimate not found' });
+    }
+    res.json({ success: true, deleted: result.rows[0] });
+  } catch (err) {
+    console.error('[CUSTOMERS] Delete estimate error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Save estimate to a customer
 router.post('/:id/estimates', async (req, res) => {
   const {

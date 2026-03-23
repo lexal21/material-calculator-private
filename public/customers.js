@@ -153,30 +153,44 @@ function openCustomerProfile(data) {
         ${docs.length === 0 ? `
           <div style="color: #94a3b8; font-size: 13px; padding: 10px 0;">None saved yet</div>
         ` : docs.map(e => `
-          <div onclick="${config.action}(${JSON.stringify(e).replace(/"/g, '&quot;')})" style="
+          <div style="
             padding: 12px 14px;
             border: 1.5px solid #e2e8f0;
             border-radius: 8px;
             margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.12s;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-          "
-          onmouseover="this.style.borderColor='${config.color}';this.style.background='#f8fafc'"
-          onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'"
-          >
-            <div>
+            gap: 10px;
+            transition: all 0.12s;
+          ">
+            <div onclick="${config.action}(${JSON.stringify(e).replace(/"/g, '&quot;')})" style="
+              flex: 1;
+              cursor: pointer;
+              min-width: 0;
+            "
+            onmouseover="this.parentElement.style.borderColor='${config.color}';this.parentElement.style.background='#f8fafc'"
+            onmouseout="this.parentElement.style.borderColor='#e2e8f0';this.parentElement.style.background='white'"
+            >
               <div style="font-weight: 600; color: #1e293b; font-size: 14px;">${e.job_address || 'No address'}</div>
               <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
                 ${new Date(e.created_at).toLocaleDateString()}
                 ${e.notes ? ' · ' + e.notes : ''}
               </div>
             </div>
-            <div style="text-align: right; flex-shrink: 0; margin-left: 12px;">
-              ${e.roof_squares ? `<div style="font-size: 12px; color: #94a3b8;">${e.roof_squares} sq</div>` : ''}
-            </div>
+            <button onclick="deleteEstimate(${e.id}, ${data.customer.id}); event.stopPropagation();" style="
+              flex-shrink: 0;
+              background: none;
+              border: 1px solid #fca5a5;
+              color: #ef4444;
+              border-radius: 6px;
+              padding: 5px 10px;
+              font-size: 12px;
+              cursor: pointer;
+              transition: all 0.1s;
+            "
+            onmouseover="this.style.background='#fef2f2'"
+            onmouseout="this.style.background='none'"
+            >Delete</button>
           </div>
         `).join('')}
       </div>
@@ -337,6 +351,27 @@ async function deleteCustomer(id, name) {
     }
   } catch (err) {
     alert('Error deleting customer: ' + err.message);
+  }
+}
+
+async function deleteEstimate(estimateId, customerId) {
+  if (!confirm('Delete this document? This cannot be undone.')) return;
+
+  try {
+    const res = await fetch(`/api/customers/${customerId}/estimates/${estimateId}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+
+    // Reload the customer profile to reflect the deletion
+    const refreshRes = await fetch(`/api/customers/${customerId}`);
+    const refreshData = await refreshRes.json();
+    if (!refreshData.success) throw new Error(refreshData.message);
+    openCustomerProfile(refreshData);
+
+  } catch (err) {
+    alert('Error deleting document: ' + err.message);
   }
 }
 
