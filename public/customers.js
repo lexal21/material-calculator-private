@@ -175,10 +175,7 @@ function openCustomerProfile(data) {
               </div>
             </div>
             <div style="text-align: right; flex-shrink: 0; margin-left: 12px;">
-              <div style="font-weight: 700; color: ${config.color}; font-size: 15px;">
-                $${parseFloat(e.grand_total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}
-              </div>
-              ${e.roof_squares ? `<div style="font-size: 11px; color: #94a3b8;">${e.roof_squares} sq</div>` : ''}
+              ${e.roof_squares ? `<div style="font-size: 12px; color: #94a3b8;">${e.roof_squares} sq</div>` : ''}
             </div>
           </div>
         `).join('')}
