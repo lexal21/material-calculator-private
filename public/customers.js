@@ -358,16 +358,36 @@ async function saveToCustomer() {
   try {
     const searchRes = await fetch(`/api/customers/search?name=${encodeURIComponent(name)}`);
     const searchData = await searchRes.json();
-    const match = searchData.customers?.find(c => c.name.toLowerCase() === name.toLowerCase());
+    const matches = searchData.customers?.filter(c => c.name.toLowerCase() === name.toLowerCase());
 
     let customerId;
-    if (match) {
-      customerId = match.id;
+    if (matches && matches.length > 0) {
+      // Build a prompt showing existing matches
+      const matchList = matches.map((c, i) =>
+        `${i + 1}) ${c.name}${c.address ? ' — ' + c.address : ''}${c.carrier ? ' (' + c.carrier + ')' : ''}`
+      ).join('\n');
+
+      const choice = confirm(
+        `A customer named "${name}" already exists:\n\n${matchList}\n\nClick OK to save to the existing customer.\nClick Cancel to create a new customer instead.`
+      );
+
+      if (choice) {
+        customerId = matches[0].id;
+      } else {
+        const cr = await fetch('/api/customers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, address: address || null, carrier: raw?.carrier || null, claim_number: raw?.claim_number || null })
+        });
+        const cd = await cr.json();
+        if (!cd.success) throw new Error(cd.message);
+        customerId = cd.customer.id;
+      }
     } else {
       const cr = await fetch('/api/customers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, address: address || null, carrier: raw.carrier || null, claim_number: raw.claim_number || null })
+        body: JSON.stringify({ name, address: address || null, carrier: raw?.carrier || null, claim_number: raw?.claim_number || null })
       });
       const cd = await cr.json();
       if (!cd.success) throw new Error(cd.message);
@@ -425,11 +445,31 @@ async function saveRetailToCustomer() {
   try {
     const searchRes = await fetch(`/api/customers/search?name=${encodeURIComponent(name)}`);
     const searchData = await searchRes.json();
-    const match = searchData.customers?.find(c => c.name.toLowerCase() === name.toLowerCase());
+    const matches = searchData.customers?.filter(c => c.name.toLowerCase() === name.toLowerCase());
 
     let customerId;
-    if (match) {
-      customerId = match.id;
+    if (matches && matches.length > 0) {
+      // Build a prompt showing existing matches
+      const matchList = matches.map((c, i) =>
+        `${i + 1}) ${c.name}${c.address ? ' — ' + c.address : ''}${c.carrier ? ' (' + c.carrier + ')' : ''}`
+      ).join('\n');
+
+      const choice = confirm(
+        `A customer named "${name}" already exists:\n\n${matchList}\n\nClick OK to save to the existing customer.\nClick Cancel to create a new customer instead.`
+      );
+
+      if (choice) {
+        customerId = matches[0].id;
+      } else {
+        const cr = await fetch('/api/customers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, address: address || null })
+        });
+        const cd = await cr.json();
+        if (!cd.success) throw new Error(cd.message);
+        customerId = cd.customer.id;
+      }
     } else {
       const cr = await fetch('/api/customers', {
         method: 'POST',
