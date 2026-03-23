@@ -97,17 +97,17 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete a customer
+// Delete a customer (and their estimates via CASCADE)
 router.delete('/:id', async (req, res) => {
   try {
-    // Delete associated estimates first
-    await pool.query('DELETE FROM estimates WHERE customer_id = $1', [req.params.id]);
-    
-    const result = await pool.query('DELETE FROM customers WHERE id = $1 RETURNING *', [req.params.id]);
+    const result = await pool.query(
+      'DELETE FROM customers WHERE id = $1 RETURNING id, name',
+      [req.params.id]
+    );
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Customer not found' });
     }
-    res.json({ success: true, message: 'Customer deleted' });
+    res.json({ success: true, deleted: result.rows[0] });
   } catch (err) {
     console.error('[CUSTOMERS] Delete error:', err);
     res.status(500).json({ success: false, message: err.message });

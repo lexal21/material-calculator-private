@@ -60,22 +60,43 @@ async function searchCustomersDrawer(name) {
     }
 
     setDrawerResults(data.customers.map(c => `
-      <div onclick="loadCustomerFromDrawer(${c.id})" style="
+      <div style="
         padding: 14px 12px;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         margin-bottom: 8px;
-        cursor: pointer;
-        transition: all 0.12s;
         background: white;
-      "
-      onmouseover="this.style.borderColor='#0891b2';this.style.background='#f0f9ff'"
-      onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'"
-      >
-        <div style="font-weight:600;color:#1e293b;font-size:15px;">${highlightMatch(c.name, q)}</div>
-        <div style="font-size:12px;color:#64748b;margin-top:3px;">
-          ${[c.address, c.carrier, c.claim_number ? 'Claim #' + c.claim_number : ''].filter(Boolean).join(' · ')}
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      ">
+        <div onclick="loadCustomerFromDrawer(${c.id})" style="
+          flex: 1;
+          cursor: pointer;
+          min-width: 0;
+        "
+        onmouseover="this.style.opacity='0.75'"
+        onmouseout="this.style.opacity='1'"
+        >
+          <div style="font-weight:600;color:#1e293b;font-size:15px;">${highlightMatch(c.name, q)}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:3px;">
+            ${[c.address, c.carrier, c.claim_number ? 'Claim #' + c.claim_number : ''].filter(Boolean).join(' · ')}
+          </div>
         </div>
+        <button onclick="deleteCustomer(${c.id}, '${c.name.replace(/'/g, "\\'")}'); event.stopPropagation();" style="
+          flex-shrink: 0;
+          background: none;
+          border: 1px solid #fca5a5;
+          color: #ef4444;
+          border-radius: 6px;
+          padding: 5px 10px;
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.1s;
+        "
+        onmouseover="this.style.background='#fef2f2'"
+        onmouseout="this.style.background='none'"
+        >Delete</button>
       </div>
     `).join(''));
 
@@ -236,6 +257,30 @@ async function loadCustomerQuick(id) {
 
   } catch (err) {
     alert('Error loading customer: ' + err.message);
+  }
+}
+
+// ==========================================
+// DELETE CUSTOMER
+// ==========================================
+
+async function deleteCustomer(id, name) {
+  if (!confirm(`Delete ${name} and all their estimates? This cannot be undone.`)) return;
+
+  try {
+    const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+
+    // Re-run the current search to refresh the list
+    const input = document.getElementById('drawerSearchInput');
+    if (input && input.value.trim().length >= 2) {
+      searchCustomersDrawer(input.value);
+    } else {
+      setDrawerResults('<div style="text-align:center;color:#94a3b8;font-size:14px;padding:32px 0;">Customer deleted</div>');
+    }
+  } catch (err) {
+    alert('Error deleting customer: ' + err.message);
   }
 }
 
