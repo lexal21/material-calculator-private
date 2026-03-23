@@ -2,6 +2,28 @@ const express = require('express');
 const router = express.Router();
 const pool = require('./db');
 
+// Search customers by name
+router.get('/search', async (req, res) => {
+  const { name } = req.query;
+  if (!name || name.trim().length < 2) {
+    return res.json({ success: true, customers: [] });
+  }
+  try {
+    const result = await pool.query(
+      `SELECT id, name, phone, email, address, carrier, claim_number, created_at
+       FROM customers
+       WHERE name ILIKE $1
+       ORDER BY name ASC
+       LIMIT 20`,
+      [`%${name.trim()}%`]
+    );
+    res.json({ success: true, customers: result.rows });
+  } catch (err) {
+    console.error('[CUSTOMERS] Search error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Get all customers
 router.get('/', async (req, res) => {
   try {
@@ -17,11 +39,14 @@ router.get('/', async (req, res) => {
 
 // Create a new customer
 router.post('/', async (req, res) => {
-  const { name, phone, email, address } = req.body;
+  const { name, phone, email, address, carrier, claim_number } = req.body;
+  if (!name) {
+    return res.status(400).json({ success: false, message: 'Name is required' });
+  }
   try {
     const result = await pool.query(
-      'INSERT INTO customers (name, phone, email, address) VALUES ($1, $2, $3, $4) RETURNING *',
-      [name, phone || null, email || null, address || null]
+      'INSERT INTO customers (name, phone, email, address, carrier, claim_number) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [name, phone || null, email || null, address || null, carrier || null, claim_number || null]
     );
     res.json({ success: true, customer: result.rows[0] });
   } catch (err) {
@@ -56,11 +81,11 @@ router.get('/:id', async (req, res) => {
 
 // Update a customer
 router.put('/:id', async (req, res) => {
-  const { name, phone, email, address } = req.body;
+  const { name, phone, email, address, carrier, claim_number } = req.body;
   try {
     const result = await pool.query(
-      'UPDATE customers SET name = $1, phone = $2, email = $3, address = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING *',
-      [name, phone || null, email || null, address || null, req.params.id]
+      'UPDATE customers SET name = $1, phone = $2, email = $3, address = $4, carrier = $5, claim_number = $6, updated_at = NOW() WHERE id = $7 RETURNING *',
+      [name, phone || null, email || null, address || null, carrier || null, claim_number || null, req.params.id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Customer not found' });
